@@ -187,7 +187,7 @@ do
 		scrollFrame.numRows = math.floor(scrollFrame:GetHeight()/scrollFrame.rowHeight)
 
 		if scrollFrame.numRows < scrollFrame.numData then
-			local maxValue = math.floor(scrollFrame.numData * scrollFrame.rowHeight - scrollFrame:GetHeight()+.5)
+			local maxValue = math.floor((scrollFrame.numData+1) * scrollFrame.rowHeight - scrollFrame:GetHeight()+.5)
 
 			scrollFrame.scrollBar:Show()
 			scrollFrame:SetPoint("RIGHT",scrollFrame:GetParent(),-18,0)
@@ -621,6 +621,13 @@ do
 
 		local sf = libScrollKit:Create(parentFrame, 15)
 
+		if not self.scrollFrameList then
+			self.scrollFrameList = {}
+		end
+
+		table.insert(self.scrollFrameList, sf)
+
+
 		sf.columnHighlight = sf:CreateTexture(nil,"BACKGROUND")
 		sf.columnHighlight:SetTexture("Interface\\Buttons\\BLUEGRAD64.blp")
 
@@ -670,6 +677,22 @@ do
 				t:SetTexCoord(0,1,0,1)
 			end
 		end
+
+
+		local function AdjustColumnWidths()
+			sf.headerWidth = 0
+
+			for i=1,#columnHeaders do
+--				sf.columnWidth[i] = sf.columnHeaders[i].width
+				local c = sf.columnFrames[i]
+
+				c:SetPoint("LEFT", sf, "LEFT", sf.headerWidth, 0)
+				c:SetPoint("RIGHT", sf, "LEFT", sf.headerWidth + sf.columnWidth[i],0)
+
+				sf.headerWidth = sf.headerWidth + sf.columnWidth[i]
+			end
+		end
+
 
 
 		sf.AddColumn = function(scrollFrame, header, plugin)
@@ -934,7 +957,7 @@ do
 		fs:SetPoint("BOTTOMRIGHT")
 		fs:SetJustifyH("CENTER")
 
-		fs:SetText("Click to adjust column display")
+		fs:SetText("Click to enable/disable columns")
 
 
 		c.columnPlacement = {}
@@ -1046,6 +1069,8 @@ do
 
 					frame.columnPlacement[i] = f
 
+					f.index = i
+
 					f:EnableMouse(true)
 					f:SetScript("OnEnter", function(frame)
 						frame:SetAlpha(.2)
@@ -1055,11 +1080,40 @@ do
 						frame:SetAlpha(.05)
 					end)
 
+
+					f:SetScript("OnMouseDown", function(frame)
+						sf.columnSizeStart = GetCursorPosition()
+						sf.columnSizeIndex = frame.index
+					end)
+
+
+					f:SetScript("OnMouseUp", function(frame)
+						sf.columnSizeStart = nil
+					end)
 				end
 			end
 		end)
 
 
+		c:SetScript("OnUpdate", function(frame, elapsed)
+			if sf.columnSizeStart then
+				local stop = GetCursorPosition()
+
+				local delta = (stop - sf.columnSizeStart) / frame:GetEffectiveScale()
+
+				local index = sf.columnSizeIndex
+
+				sf.columnWidth[index]= sf.columnWidth[index] + delta
+				sf.columnWidth[index+1] = sf.columnWidth[index+1] - delta
+
+				sf.columnSizeStart = stop
+
+
+				AdjustColumnWidths()
+			end
+		end)
+
+--[[
 		sf:RegisterEvent("MODIFIER_STATE_CHANGED")
 
 		sf:SetScript("OnEvent",function(frame, event, ...)
@@ -1076,7 +1130,7 @@ do
 				end
 			end
 		end)
-
+]]
 
 		return sf
 	end

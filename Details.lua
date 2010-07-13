@@ -207,6 +207,10 @@ do
 								end
 							end
 						end,
+			OnLeave =	function()
+							GameTooltip:Hide()
+						end,
+
 			draw =	function (rowFrame,cellFrame,entry)
 --[[
 						local bag = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "craftedBag queue")
@@ -556,7 +560,8 @@ do
 		detailNameButton:SetScript("OnEnter", function(frame,...)
 			GameTooltip:SetOwner(frame, "ANCHOR_TOP")
 			GameTooltip:ClearLines()
-			GameTooltip:AddLine("Shift-Click to Link Recipe|rCtrl-Click to Dress Up")
+			GameTooltip:AddLine(detailNameLabel:GetText())
+			GameTooltip:AddLine("Shift-Click to Link Recipe\nCtrl-Click to Dress Up")
 			GameTooltip:Show()
 
 			detailNameLabel:SetTextColor(1,1,1)

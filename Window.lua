@@ -612,4 +612,89 @@ do
 	end
 
 	GnomeWorks.Window = Window
+
+
+
+	local buttonTextureNames = {"Highlight", "Disabled", "Up", "Down"}
+
+	function GnomeWorks:CreateButton(parent, height)
+		local newButton = CreateFrame("Button", nil, parent)
+		newButton:SetHeight(height)
+		newButton:SetWidth(50)
+		newButton:SetPoint("CENTER")
+
+		newButton.state = {}
+
+		for k,state in pairs(buttonTextureNames) do
+			local f = CreateFrame("Frame",nil,newButton)
+			f:SetAllPoints()
+
+			if state ~= "Highlight" then
+				f:SetFrameLevel(f:GetFrameLevel()-1)
+			end
+
+			local leftTexture = f:CreateTexture(nil,"BACKGROUND")
+			local rightTexture = f:CreateTexture(nil,"BACKGROUND")
+			local middleTexture = f:CreateTexture(nil,"BACKGROUND")
+
+			leftTexture:SetTexture("Interface\\Buttons\\UI-Panel-Button-"..state)
+			rightTexture:SetTexture("Interface\\Buttons\\UI-Panel-Button-"..state)
+			middleTexture:SetTexture("Interface\\Buttons\\UI-Panel-Button-"..state)
+
+			leftTexture:SetTexCoord(0,.25*.625, 0,.6875)
+			rightTexture:SetTexCoord(.75*.625,1*.625, 0,.6875)
+			middleTexture:SetTexCoord(.25*.625,.75*.625, 0,.6875)
+
+			leftTexture:SetPoint("LEFT")
+			leftTexture:SetWidth(height)
+			leftTexture:SetHeight(height)
+
+			rightTexture:SetPoint("RIGHT")
+			rightTexture:SetWidth(height)
+			rightTexture:SetHeight(height)
+
+			middleTexture:SetPoint("LEFT", height, 0)
+			middleTexture:SetPoint("RIGHT", -height, 0)
+			middleTexture:SetHeight(height)
+
+			if state == "Highlight" then
+				leftTexture:SetBlendMode("ADD")
+				rightTexture:SetBlendMode("ADD")
+				middleTexture:SetBlendMode("ADD")
+			end
+
+--				middleTexture:Hide()
+
+			newButton.state[state] = f
+
+			if state ~= "Up" then
+				f:Hide()
+			end
+		end
+
+		newButton.origDisable = newButton.Disable
+		newButton.origEnable = newButton.Enable
+
+		newButton.Disable = function(b)
+			b.state.Up:Hide()
+			b.state.Disabled:Show()
+			b:origDisable()
+		end
+
+		newButton.Enable = function(b)
+			b.state.Up:Show()
+			b.state.Disabled:Hide()
+			b:origEnable()
+		end
+
+
+		newButton:HookScript("OnEnter", function(b) b.state.Highlight:Show() end)
+		newButton:HookScript("OnLeave", function(b) b.state.Highlight:Hide() end)
+
+		newButton:HookScript("OnMouseDown", function(b) if b:IsEnabled()>0 then b.state.Down:Show() b.state.Up:Hide() end end)
+		newButton:HookScript("OnMouseUp", function(b) if b:IsEnabled()>0 then b.state.Down:Hide() b.state.Up:Show() end end)
+
+		return newButton
+	end
+
 end

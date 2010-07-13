@@ -930,7 +930,6 @@ do
 			player = queuePlayer
 		end
 
-
 		local queueData = self.data.queueData[player]
 		local constructionQueue = self.data.constructionQueue[player]
 
@@ -955,20 +954,10 @@ do
 			table.insert(constructionQueue, CreateConstructionQueue(player, qEntry, #queueData))
 		end
 
---[[
-		local itemID, made = next(GnomeWorksDB.results[recipeID])
 
-		AddToConstructionQueue(player, tradeID, recipeID, made, itemID, made*count, queueData, sourcePlayer, true)
-
-		AdjustConstructionQueueCounts(queueData)
-
-		self:ShowQueueList()
-		self:ShowSkillList()
-]]
-
-		self:SendMessageDispatch("GnomeWorksSkillsChanged")
-		self:SendMessageDispatch("GnomeWorksDetailsChanged")
 		self:SendMessageDispatch("GnomeWorksQueueChanged")
+		self:SendMessageDispatch("GnomeWorksSkillListChanged")
+		self:SendMessageDispatch("GnomeWorksDetailsChanged")
 	end
 
 
@@ -1148,9 +1137,10 @@ do
 			table.wipe(GnomeWorks.data.constructionQueue[queuePlayer])
 			table.wipe(GnomeWorks.data.inventoryData[queuePlayer]["queue"])
 
+
+			GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
 			GnomeWorks:SendMessageDispatch("GnomeWorksDetailsChanged")
 			GnomeWorks:SendMessageDispatch("GnomeWorksSkillListChanged")
-			GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
 		end
 
 
@@ -1195,74 +1185,11 @@ do
 --		controlFrame:SetPoint("RIGHT",-20,0)
 
 
-		local function CreateButton(parent, height)
-			local newButton = CreateFrame("Button", nil, parent)
-			newButton:SetHeight(height)
-			newButton:SetWidth(50)
-			newButton:SetPoint("CENTER")
-
-			newButton.state = {}
-
-			for k,state in pairs({"Disabled", "Up", "Down", "Highlight"}) do
-				local f = CreateFrame("Frame",nil,newButton)
-				f:SetAllPoints()
-
-				f:SetFrameLevel(f:GetFrameLevel()-1)
-
-				local leftTexture = f:CreateTexture(nil,"BACKGROUND")
-				local rightTexture = f:CreateTexture(nil,"BACKGROUND")
-				local middleTexture = f:CreateTexture(nil,"BACKGROUND")
-
-				leftTexture:SetTexture("Interface\\Buttons\\UI-Panel-Button-"..state)
-				rightTexture:SetTexture("Interface\\Buttons\\UI-Panel-Button-"..state)
-				middleTexture:SetTexture("Interface\\Buttons\\UI-Panel-Button-"..state)
-
-				leftTexture:SetTexCoord(0,.25*.625, 0,.6875)
-				rightTexture:SetTexCoord(.75*.625,1*.625, 0,.6875)
-				middleTexture:SetTexCoord(.25*.625,.75*.625, 0,.6875)
-
-				leftTexture:SetPoint("LEFT")
-				leftTexture:SetWidth(height)
-				leftTexture:SetHeight(height)
-
-				rightTexture:SetPoint("RIGHT")
-				rightTexture:SetWidth(height)
-				rightTexture:SetHeight(height)
-
-				middleTexture:SetPoint("LEFT", height, 0)
-				middleTexture:SetPoint("RIGHT", -height, 0)
-				middleTexture:SetHeight(height)
-
-				if state == "Highlight" then
-					leftTexture:SetBlendMode("ADD")
-					rightTexture:SetBlendMode("ADD")
-					middleTexture:SetBlendMode("ADD")
-				end
-
---				middleTexture:Hide()
-
-				newButton.state[state] = f
-
-				if state ~= "Up" then
-					f:Hide()
-				end
-			end
-
-			newButton:HookScript("OnEnter", function(b) b.state.Highlight:Show() end)
-			newButton:HookScript("OnLeave", function(b) b.state.Highlight:Hide() end)
-
-			newButton:HookScript("OnMouseDown", function(b) b.state.Down:Show() b.state.Up:Hide() end)
-			newButton:HookScript("OnMouseUp", function(b) b.state.Down:Hide() b.state.Up:Show() end)
-
-			return newButton
-		end
-
-
 		for i, config in pairs(buttonConfig) do
 			if not config.style or config.style == "Button" then
 --				local newButton = CreateFrame("Button", nil, controlFrame, "UIPanelButtonTemplate")
 
-				local newButton = CreateButton(controlFrame, 18)
+				local newButton = GnomeWorks:CreateButton(controlFrame, 18)
 
 				newButton:SetPoint("LEFT", position,-line*20)
 				if config.width then

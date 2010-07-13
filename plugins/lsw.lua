@@ -95,8 +95,8 @@ do
 			draw = function (rowFrame, cellFrame, entry)
 				if not entry.subGroup then
 					local itemFate = entry.fate or "?"
-					local costAmount = entry.cost
-					local valueAmount = entry.value
+					local costAmount = entry.cost or 0
+					local valueAmount = entry.value or 0
 
 					local itemFateString = string.format("|c%s%s|r", itemFateColor[itemFate], itemFate)
 					local hilight = (costAmount or 0) < (valueAmount or 0)

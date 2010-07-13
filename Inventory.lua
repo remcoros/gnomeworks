@@ -326,7 +326,9 @@ do
 			DebugSpam("|cffff0000WARNING: GnomeWorks Inventory Scan took ",math.floor(elapsed*100)/100," seconds")
 		end
 
-		GnomeWorks:SendMessageDispatch("GnomeWorksInventoryScanComplete")
+		GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
+		GnomeWorks:SendMessageDispatch("GnomeWorksSkillListChanged")
+		GnomeWorks:SendMessageDispatch("GnomeWorksDetailsChanged")
 	end
 
 end

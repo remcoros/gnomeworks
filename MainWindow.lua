@@ -1269,10 +1269,101 @@ do
 	end
 
 
+	local function CreateButtons(buttonConfig, buttons, dataTable)
+		local position = 0
 
-	function GnomeWorks:CreateControlFrame(frame)
+		for i, config in pairs(buttonConfig) do
+			if not config.style or config.style == "Button" then
+				local newButton = GnomeWorks:CreateButton(controlFrame, 18)
+
+				newButton:SetPoint("LEFT", position,0)
+				newButton:SetWidth(config.width)
+				newButton:SetNormalFontObject("GameFontNormalSmall")
+				newButton:SetHighlightFontObject("GameFontHighlightSmall")
+				newButton:SetDisabledFontObject("GameFontDisableSmall")
+
+				newButton:SetText(config.text)
+
+				newButton:SetScript("OnClick", config.operation)
+
+				newButton.validate = config.validate
+
+				buttons[i] = newButton
+
+				newButton.setting = config.setting
+
+
+				position = position + config.width
+			else
+				local newButton = CreateFrame(config.style, nil, controlFrame)
+
+				newButton:SetPoint("LEFT", position,0)
+				newButton:SetWidth(config.width)
+				newButton:SetHeight(18)
+				newButton:SetFontObject("GameFontHighlightSmall")
+--				newButton:SetHighlightFontObject("GameFontHighlightSmall")
+
+--				newButton:SetText(config.text or "")
+
+				newButton.validate = config.validate
+
+				if config.style == "EditBox" then
+					newButton:SetAutoFocus(false)
+
+					newButton:SetNumeric(true)
+
+					newButton:SetScript("OnEnterPressed", EditBox_ClearFocus)
+					newButton:SetScript("OnEscapePressed", EditBox_ClearFocus)
+					newButton:SetScript("OnEditFocusLost", EditBox_ClearHighlight)
+					newButton:SetScript("OnEditFocusGained", EditBox_HighlightText)
+
+
+					newButton:SetScript("OnTextChanged", function(f)
+						local n = f:GetNumber()
+
+						if n<=0 then
+							f:SetNumber(1)
+
+							dataTable[config.setting] = 1
+						else
+							dataTable[config.setting] = n
+						end
+					end)
+
+					newButton:SetJustifyH("CENTER")
+					newButton:SetJustifyV("CENTER")
+
+					local searchBackdrop  = {
+							bgFile = "Interface\\AddOns\\GnomeWorks\\Art\\frameInsetSmallBackground.tga",
+							edgeFile = "Interface\\AddOns\\GnomeWorks\\Art\\frameInsetSmallBorder.tga",
+							tile = true, tileSize = 16, edgeSize = 16,
+							insets = { left = 10, right = 10, top = 8, bottom = 10 }
+						}
+
+					GnomeWorks.Window:SetBetterBackdrop(newButton, searchBackdrop)
+
+					newButton:SetText("")
+					newButton:SetMaxLetters(4)
+
+
+					newButton:SetNumber(config.default)
+				end
+
+				buttons[i] = newButton
+
+				position = position + config.width
+			end
+		end
+
+		return position
+	end
+
+
+	local function CreateQueueButtons(frame)
+		local dataTable = {}
+
 		local function MaterialsOnHand(button)
-			local entry = self.selectedEntry
+			local entry = GnomeWorks.selectedEntry
 
 			if entry then
 				if entry.craftable then
@@ -1286,7 +1377,7 @@ do
 
 		local function MaterialsOnAlt(button)
 
-			local entry = self.selectedEntry
+			local entry = GnomeWorks.selectedEntry
 
 			if entry then
 				if entry.alt and entry.alt >= 1 then
@@ -1300,15 +1391,15 @@ do
 
 
 		local function Create(button)
-			local numItems = button.count
+			local numItems = dataTable[button.setting]
 
 			DoTradeSkill(GnomeWorks.selectedSkill, numItems)
 		end
 
 
 		local function AddToQueue(button)
-			local numItems = button.count
-			local entry = self.selectedEntry
+			local numItems = dataTable[button.setting]
+			local entry = GnomeWorks.selectedEntry
 
 --			local recipeLink = self:GetTradeSkillRecipeLink(GnomeWorks.selectedSkill)
 
@@ -1340,8 +1431,49 @@ do
 				end
 			end
 
+			GnomeWorks:ShowQueueList()
 			GnomeWorks:AddToQueue(GnomeWorks.player, GnomeWorks.tradeID, entry.recipeID, numItems)
 		end
+
+
+		local buttons = {}
+
+		local buttonConfig = {
+			{ text = "Create", operation = Create, width = 50, setting = "queueCount", validate = MaterialsOnHand },
+			{ text = "Queue", operation = AddToQueue, setting = "queueCount", width = 50 },
+			{ style = "EditBox", setting = "queueCount", width = 50, default = 1},
+			{ text = "Create All", operation = Create, width = 70, validate = MaterialsOnHand },
+			{ text = "Queue All", operation = AddToQueue, width = 70, validate = MaterialsOnAlt },
+		}
+
+
+		controlFrame = CreateFrame("Frame", nil, frame)
+
+		controlFrame:SetHeight(20)
+		controlFrame:SetWidth(200)
+
+		controlFrame:SetPoint("TOPLEFT", GnomeWorks.skillFrame, "BOTTOMLEFT", 0, -2)
+
+		local position = CreateButtons(buttonConfig, buttons, dataTable)
+
+		controlFrame:SetWidth(position)
+
+		GnomeWorks:RegisterMessageDispatch("GnomeWorksDetailsChanged", function()
+			for i, b in pairs(buttons) do
+				if b.validate then
+					b:validate()
+				end
+			end
+		end)
+
+		return controlFrame
+	end
+
+
+	local function CreateOptionButtons(frame)
+		local dataTable = {}
+		local layoutMode
+
 
 		local function PopRecipe()
 			GnomeWorks:PopSelection()
@@ -1398,134 +1530,39 @@ do
 			end
 		end
 
---[[
-		local buttons = {
-			{ text = "Add To Queue",  operation = AddToQueue, count = 1 },
-			{ text = "Queue All", operation = AddToQueue },
-			{ text = "Plugins", operation = ShowPlugins },
---			{ text = "Back", operation = PopRecipe },
-		}
-]]
+
+		local function ToggleLayoutMode()
+			layoutMode = not layoutMode
+
+			for k,f in ipairs(GnomeWorks.scrollFrameList) do
+				if not layoutMode then
+					f.controlOverlay:Hide()
+				else
+					f.controlOverlay:Show()
+				end
+			end
+		end
+
+
 
 		local buttons = {}
 
 
-		local function SetRepeatCount(button)
---print("validate",buttons[1].count)
-			button:SetText(buttons[1].count)
-		end
-
-
 		local buttonConfig = {
-			{ text = "Create", operation = Create, width = 50, validate = MaterialsOnHand },
-			{ text = "Queue", operation = AddToQueue, width = 50 },
-			{ style = "EditBox", label = "QueueCount", width = 50, default = 1, validate = SetRepeatCount },
-			{ text = "Queue All", operation = AddToQueue, width = 70, validate = MaterialsOnAlt },
-
+--			{ text = "Back", operation = PopRecipe, width = 50 },
+			{ text = "Adjust Layout", operation = ToggleLayoutMode, width = 100 },
 			{ text = "Plugins", operation = ShowPlugins, width = 50 },
 		}
 
-
-
-
-
-		local position = 0
 
 		controlFrame = CreateFrame("Frame", nil, frame)
 
 		controlFrame:SetHeight(20)
 		controlFrame:SetWidth(200)
 
-		controlFrame:SetPoint("TOP", self.skillFrame, "BOTTOM", 0, -2)
+		controlFrame:SetPoint("TOPRIGHT", GnomeWorks.skillFrame, "BOTTOMRIGHT", 0, -2)
 
-		for i, config in pairs(buttonConfig) do
-			if not config.style or config.style == "Button" then
-				local newButton = CreateFrame("Button", nil, controlFrame, "UIPanelButtonTemplate")
-
-				newButton:SetPoint("LEFT", position,0)
-				newButton:SetWidth(config.width)
-				newButton:SetHeight(18)
-				newButton:SetNormalFontObject("GameFontNormalSmall")
-				newButton:SetHighlightFontObject("GameFontHighlightSmall")
-				newButton:SetDisabledFontObject("GameFontDisableSmall")
-
-				newButton:SetText(config.text)
-
-				newButton:SetScript("OnClick", config.operation)
-
-				newButton.validate = config.validate
-
-				buttons[i] = newButton
-
-
-				position = position + config.width
-			else
-				local newButton = CreateFrame(config.style, nil, controlFrame)
-
-				newButton:SetPoint("LEFT", position,0)
-				newButton:SetWidth(config.width)
-				newButton:SetHeight(18)
-				newButton:SetFontObject("GameFontHighlightSmall")
---				newButton:SetHighlightFontObject("GameFontHighlightSmall")
-
---				newButton:SetText(config.text or "")
-
-				newButton.validate = config.validate
-
-				if config.style == "EditBox" then
-					newButton:SetAutoFocus(false)
-
-					newButton:SetNumeric(true)
-
-					newButton:SetScript("OnEnterPressed", EditBox_ClearFocus)
-					newButton:SetScript("OnEscapePressed", EditBox_ClearFocus)
-					newButton:SetScript("OnEditFocusLost", EditBox_ClearHighlight)
-					newButton:SetScript("OnEditFocusGained", EditBox_HighlightText)
-
-
-					newButton:SetScript("OnTextChanged", function(f)
-						local n = f:GetNumber()
-
-						if n<=0 then
-							f:SetNumber(1)
-
-							buttons[1].count = 1
-							buttons[2].count = 1
-						else
-							buttons[1].count = n
-							buttons[2].count = n
-						end
-
---						EditBox_ClearFocus(f)
-					end)
-
-					newButton:SetJustifyH("CENTER")
-					newButton:SetJustifyV("CENTER")
-
-					local searchBackdrop  = {
-							bgFile = "Interface\\AddOns\\GnomeWorks\\Art\\frameInsetSmallBackground.tga",
-							edgeFile = "Interface\\AddOns\\GnomeWorks\\Art\\frameInsetSmallBorder.tga",
-							tile = true, tileSize = 16, edgeSize = 16,
-							insets = { left = 10, right = 10, top = 8, bottom = 10 }
-						}
-
-					self.Window:SetBetterBackdrop(newButton, searchBackdrop)
-
-					buttons[1].count = config.default
-					buttons[2].count = config.default
-
---					newButton:SetNumber()
-
-					newButton:SetText("")
-					newButton:SetMaxLetters(4)
-
-				end
-
-				buttons[i] = newButton
-
-				position = position + config.width
-			end
-		end
+		local position = CreateButtons(buttonConfig, buttons, dataTable)
 
 		controlFrame:SetWidth(position)
 
@@ -1541,6 +1578,15 @@ do
 		return controlFrame
 	end
 
+
+	local function CreateControlFrame(parent)
+		local frame = CreateFrame("Frame",nil,parent)
+
+		frame.QueueButtons = CreateQueueButtons(frame)
+		frame.OptionButtons = CreateOptionButtons(frame)
+
+		return frame
+	end
 
 
 	function GnomeWorks:CreateMainWindow()
@@ -1558,7 +1604,7 @@ do
 
 		self.skillFrame = BuildScrollingTable()
 
-		self.controlFrame = self:CreateControlFrame(frame)
+		self.controlFrame = CreateControlFrame(frame)
 
 		local tradeButtonFrame = CreateFrame("Frame", nil, frame)
 		tradeButtonFrame:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -20,-48)
