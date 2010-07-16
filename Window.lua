@@ -185,31 +185,32 @@ do
 	local function GetSizingPoint(frame)
 		local x,y = GetCursorPosition()
 		local s = frame:GetEffectiveScale()
+		local resizeWidth = 20
 
 		local left,bottom,width,height = frame:GetRect()
 
 		x = x/s - left
 		y = y/s - bottom
 
-		if x < 10 then
-			if y < 10 then return "BOTTOMLEFT" end
+		if x < resizeWidth then
+			if y < resizeWidth then return "BOTTOMLEFT" end
 
-			if y > height-10 then return "TOPLEFT" end
+			if y > height-resizeWidth then return "TOPLEFT" end
 
 			return "LEFT"
 		end
 
-		if x > width-10 then
-			if y < 10 then return "BOTTOMRIGHT" end
+		if x > width-resizeWidth then
+			if y < resizeWidth then return "BOTTOMRIGHT" end
 
-			if y > height-10 then return "TOPRIGHT" end
+			if y > height-resizeWidth then return "TOPRIGHT" end
 
 			return "RIGHT"
 		end
 
-		if y < 10 then return "BOTTOM" end
+		if y < resizeWidth then return "BOTTOM" end
 
-		if y > height-10 then return "TOP" end
+		if y > height-resizeWidth then return "TOP" end
 
 		return "UNKNOWN"
 	end
@@ -383,11 +384,13 @@ do
 		frame:SetScript("OnMouseDown", function()
 			local sizePoint = GetSizingPoint(frame)
 
-			if not frame.dockParent or not frame.dockParent:IsShown() then
-				frame:StartSizing(GetSizingPoint(frame))
-			else
-				if sizePoint == opposingPoint[frame.dockPoint] then
-					frame:StartSizing(GetSizingPoint(frame))
+			if sizePoint ~= "UNKNOWN" then
+				if not frame.dockParent or not frame.dockParent:IsShown() then
+					frame:StartSizing(sizePoint)
+				else
+					if sizePoint == opposingPoint[frame.dockPoint] then
+						frame:StartSizing(sizePoint)
+					end
 				end
 			end
 		end)

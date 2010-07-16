@@ -854,7 +854,7 @@ do
 		[100001] = "[Vendor Conversion]",
 	}
 
-	local tradeName = {
+	local tradeIcon = {
 		[100000] = "-",
 		[100001] = "-",
 	}

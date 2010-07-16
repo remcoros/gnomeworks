@@ -12,6 +12,7 @@ end
 do
 	local clientVersion, clientBuild = GetBuildInfo()
 
+	local updateEventFrames
 
 	local skillTypeStyle = {
 		["unknown"]			= { r = 1.00, g = 0.00, b = 0.00, level = 5, alttext="???", cstring = "|cffff0000"},
@@ -438,6 +439,22 @@ DebugSpam("done parsing skill list")
 
 
 
+	local function UnregisterUpdateEvents()
+		updateEventFrames = { GetFramesRegisteredForEvent("TRADE_SKILL_UPDATE") }
+
+		for k,f in pairs(updateEventFrames) do
+			f:UnregisterEvent("TRADE_SKILL_UPDATE")
+		end
+	end
+
+	local function ReguisterUpdateEvents()
+		for k,f in pairs(updateEventFrames) do
+			f:RegisterEvent("TRADE_SKILL_UPDATE")
+		end
+
+		updateEventFrames = nil
+	end
+
 
 
 	function GnomeWorks:ScanTrade()
@@ -508,7 +525,10 @@ DebugSpam("done parsing skill list")
 
 
 	-- expand all headers, but turn off update events so we don't end up with recursion
-		self:UnregisterEvent("TRADE_SKILL_UPDATE")
+--		self:UnregisterEvent("TRADE_SKILL_UPDATE")
+
+		UnregisterUpdateEvents()
+
 		for i = 1, GetNumTradeSkills() do
 			local skillName, skillType, _, isExpanded = GetTradeSkillInfo(i)
 
@@ -519,7 +539,7 @@ DebugSpam("done parsing skill list")
 
 			end
 		end
-		self:RegisterEvent("TRADE_SKILL_UPDATE")
+--		self:RegisterEvent("TRADE_SKILL_UPDATE")
 
 
 		local numSkills = GetNumTradeSkills()
@@ -731,6 +751,9 @@ DebugSpam("done parsing skill list")
 		self:ScanSlotGroups(slotGroup)
 
 
+		ReguisterUpdateEvents()
+
+
 --		self:RecipeGroupConstructDBString(mainGroup)
 --		self:RecipeGroupConstructDBString(flatGroup)
 --		self:RecipeGroupConstructDBString(slotGroup)
@@ -801,7 +824,7 @@ DebugSpam("done parsing skill list")
 	function GnomeWorks:ScanSlotGroups(mainGroup)
 		local groupList = {}
 
-		self:UnregisterEvent("TRADE_SKILL_UPDATE")
+--		self:UnregisterEvent("TRADE_SKILL_UPDATE")
 
 		if mainGroup then
 
@@ -853,7 +876,7 @@ DebugSpam("adding "..(recipeLink or "nil").." to "..groupName)
 
 		SetTradeSkillInvSlotFilter(0,1,1)
 
-		self:RegisterEvent("TRADE_SKILL_UPDATE")
+--		self:RegisterEvent("TRADE_SKILL_UPDATE")
 	end
 
 

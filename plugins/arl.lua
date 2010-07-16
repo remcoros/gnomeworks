@@ -118,10 +118,12 @@ do
 
 			local function updateData(scrollFrame, entry)
 
-				ARL:InitializeProfession(GetTradeSkillLine())
+				if GetTradeSkillLine() ~= "UNKNOWN" then
+					ARL:InitializeProfession(GetTradeSkillLine())
 
-				if not entry.subGroup then
-					entry.arlFlags = ARL:GetRecipeData(entry.recipeID,"flags")
+					if not entry.subGroup then
+						entry.arlFlags = ARL:GetRecipeData(entry.recipeID,"flags")
+					end
 				end
 			end
 
@@ -179,7 +181,7 @@ local function ttAdd(
 			plugin:AddButton("Scan", function() ARL:Scan(false) end)
 			plugin:AddButton("Text Dump", function() ARL:Scan(true) end)
 			plugin:AddButton("Clear Map", function() ARL:ClearMap() end)
---			plugin:AddButton("Hide", function() ARL.frame:Hide() end)
+
 			plugin:AddButton("Setup Map", function() ARL:SetupMap() end)
 
 

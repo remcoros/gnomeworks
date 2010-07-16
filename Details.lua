@@ -534,7 +534,6 @@ do
 		detailNumMadeLabel:SetJustifyH("RIGHT")
 		detailNumMadeLabel:SetJustifyV("BOTTOM")
 
-
 		local detailNameButton = CreateFrame("Button",nil,detailFrame)
 		detailNameButton:SetPoint("TOPLEFT", detailIcon, "TOPRIGHT", 5,0)
 		detailNameButton:SetPoint("RIGHT", -5,0)
@@ -636,26 +635,30 @@ do
 
 				local tiplines = tooltipScanner:NumLines()
 
+				if firstLine < tiplines then
+					for i=firstLine, tiplines do
+						local fs = getglobal("GWParsingTooltipTextLeft"..i)
+
+						local r,g,b,a = fs:GetTextColor()
+
+						left = string.format("%s|c%2x%2x%2x%2x%s|r\n",left,a*255,r*255,g*255,b*255,fs:GetText())
 
 
-				for i=firstLine, tiplines do
-					local fs = getglobal("GWParsingTooltipTextLeft"..i)
+						local fs = getglobal("GWParsingTooltipTextRight"..i)
 
-					local r,g,b,a = fs:GetTextColor()
+						local r,g,b,a = fs:GetTextColor()
 
-					left = string.format("%s|c%2x%2x%2x%2x%s|r\n",left,a*255,r*255,g*255,b*255,fs:GetText())
-
-
-					local fs = getglobal("GWParsingTooltipTextRight"..i)
-
-					local r,g,b,a = fs:GetTextColor()
-
-					right = string.format("%s|c%2x%2x%2x%2x%s|r\n",right,a*255,r*255,g*255,b*255,fs:GetText() or "")
+						right = string.format("%s|c%2x%2x%2x%2x%s|r\n",right,a*255,r*255,g*255,b*255,fs:GetText() or "")
+					end
+				else
+					left = left..(self:GetTradeSkillDescription(index) or "").."\n"
+					right = right .. "\n"
 				end
 			else
 				left = left..(self:GetTradeSkillDescription(index) or "").."\n"
 				right = right .. "\n"
 			end
+
 
 			return left,right
 		end)
