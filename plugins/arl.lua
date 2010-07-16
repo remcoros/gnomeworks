@@ -171,18 +171,18 @@ local function ttAdd(
 
 
 
-			local hiddenFrame = CreateFrame("Frame",nil,UIParent)
+--			local hiddenFrame = CreateFrame("Frame",nil,UIParent)
 
-			ARL.scan_button:SetParent(GWFrame)
-			ARL.scan_button:SetPoint("BOTTOMLEFT",UIParent,"BOTTOMLEFT", -100,-100)
+--			ARL.scan_button:SetParent(GWFrame)
+--			ARL.scan_button:SetPoint("BOTTOMLEFT",UIParent,"BOTTOMLEFT", -100,-100)
 
 --			ARL.scan_button:Hide()
 
 			plugin:AddButton("Scan", function() ARL:Scan(false) end)
 			plugin:AddButton("Text Dump", function() ARL:Scan(true) end)
-			plugin:AddButton("Clear Map", function() ARL:ClearMap() end)
+			plugin:AddButton("Clear Waypoints", function() ARL:ClearWaypoints() end)
 
-			plugin:AddButton("Setup Map", function() ARL:SetupMap() end)
+			plugin:AddButton("Add Waypoints", function() ARL:AddWaypoint() end)
 
 
 			GWScrollFrame:RegisterRowUpdate(updateData, plugin)
