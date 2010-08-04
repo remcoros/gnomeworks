@@ -116,56 +116,6 @@ end
 
 
 
--- test
---[[
-do
-	local function TestEB()
-		local eb = CreateFrame("EditBox", nil, UIParent)
-
-		eb:SetWidth(100)
-		eb:SetHeight(100)
-		eb:SetPoint("CENTER")
-
-		eb:SetNumeric(true)
-
-		eb:SetAutoFocus(false)
-
-		eb:SetFontObject("GameFontNormal")
-
-		eb:SetScript("OnEnterPressed", EditBox_ClearFocus)
-		eb:SetScript("OnEscapePressed", EditBox_ClearFocus)
-		eb:SetScript("OnEditFocusLost", EditBox_ClearHighlight)
-		eb:SetScript("OnEditFocusGained", EditBox_HighlightText)
-
-		eb:SetJustifyH("CENTER")
-		eb:SetJustifyV("CENTER")
-
-		local searchBackdrop  = {
-				bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-				edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-				tile = true, tileSize = 16, edgeSize = 16,
-				insets = { left = 4, right = 4, top = 4, bottom = 4 }
-			}
-
-		eb:SetBackdrop(eb, searchBackdrop)
-
-		eb:SetNumber(1000)
-
-		eb:SetMaxLetters(4)
-	end
-
-
-	local testFrame = CreateFrame("Frame")
-
-	testFrame:SetScript("OnUpdate", function(f)
-		TestEB()
-		f:Hide()
-	end)
-
-end
-]]
-
-
 -- handle load sequence
 do
 	-- To fix Blizzard's bug caused by the new "self:SetFrameLevel(2);"
@@ -188,42 +138,6 @@ do
 	-- To fix Blizzard's bug caused by the new "self:SetFrameLevel(2);"
 	hooksecurefunc("UIDropDownMenu_CreateFrames", FixMenuFrameLevels)
 
---[[
-	function GnomeWorks:ConvertRecipeDB()
-		local reagentTable, itemTable, tradeTable = {}, {}, {}
-
-		for recipeID, recipeData in pairs(GnomeWorksDB.recipeDB) do
-			local rtable = {}
-
-			for i=1,#recipeData.reagentData do
-				rtable[recipeData.reagentData[i].id] = recipeData.reagentData[i].numNeeded
-			end
-
-			reagentTable[recipeID] = rtable
-
-			itemTable[recipeID] = { [recipeData.itemID] = recipeData.numMade }
-			tradeTable[recipeID] = recipeData.tradeID
-		end
-
-
---		GnomeWorksDB.recipeDB = nil
-		GnomeWorksDB.reagentTable = reagentTable
-		GnomeWorksDB.itemTable = itemTable
-		GnomeWorksDB.tradeTable = tradeTable
-
-	end
-
-
-	function GnomeWorks:ConvertRecipeDB2()
-		local recipeDB = {}
-
-		for recipeID, reagents in pairs(GnomeWorksDB.reagents) do
-			recipeDB[recipeID] = { reagents = reagents, results = GnomeWorksDB.results[recipeID], tradeID = GnomeWorksDB.tradeIDs[recipeID] }
-		end
-
-		GnomeWorks.data.recipeDB = recipeDB
-	end
-]]
 
 	function memUsage(t)
 		local slots = 0
@@ -267,6 +181,9 @@ do
 		TradeSkillFrame_Show = function()
 		end
 
+		local factionServer = GetRealmName().."-"..UnitFactionGroup("player")
+
+
 		if LibStub then
 			self.libPT = LibStub:GetLibrary("LibPeriodicTable-3.1", true)
 			self.libTS = LibStub:GetLibrary("LibTradeSkill", true)
@@ -279,7 +196,9 @@ do
 					GnomeWorksDB[var] = {}
 				end
 
-				InitDBTables(...)
+				if ... then
+					InitDBTables(...)
+				end
 
 --				GnomeWorks.data[var] = GnomeWorksDB[var]
 			end
@@ -289,7 +208,29 @@ do
 
 
 
-		local function InitServerDBTables(server, player, var, ...)
+		local function InitServerDBTables(server, var, ...)
+			if var then
+				if not GnomeWorksDB.serverData[server] then
+					GnomeWorksDB.serverData[server] = { [var] = {}}
+				else
+					if not GnomeWorksDB.serverData[server][var] then
+						GnomeWorksDB.serverData[server][var] = {}
+					end
+				end
+
+				GnomeWorks.data[var] = GnomeWorksDB.serverData[server][var]
+
+				if ... then
+					InitServerDBTables(server, player, ...)
+				end
+			end
+		end
+
+
+		InitServerDBTables(factionServer, "auctionData")
+
+
+		local function InitServerPlayerDBTables(server, player, var, ...)
 			if var then
 				if not GnomeWorksDB.serverData[server] then
 					GnomeWorksDB.serverData[server] = { [var] = {}}
@@ -305,17 +246,15 @@ do
 
 				GnomeWorks.data[var] = GnomeWorksDB.serverData[server][var]
 
-				InitServerDBTables(server, player, ...)
+				if ... then
+					InitServerPlayerDBTables(server, player, ...)
+				end
 			end
 		end
 
---[[
-		print("results mem usage = ",math.floor(memUsage(GnomeWorksDB.results)/1024).."kb")
-		print("reagents mem usage = ",math.floor(memUsage(GnomeWorksDB.reagents)/1024).."kb")
-		print("tradeIDs mem usage = ",math.floor(memUsage(GnomeWorksDB.tradeIDs)/1024).."kb")
-]]
-		InitServerDBTables(GetRealmName().."-"..UnitFactionGroup("player"), UnitName("player"), "playerData", "inventoryData", "queueData", "recipeGroupData", "cooldowns")
-		InitServerDBTables(GetRealmName().."-"..UnitFactionGroup("player"), "All Recipes", "playerData", "inventoryData", "queueData", "recipeGroupData", "cooldowns")
+		for k, player in pairs({ UnitName("player"), "All Recipes" } ) do
+			InitServerPlayerDBTables(factionServer, player, "playerData", "inventoryData", "queueData", "recipeGroupData", "cooldowns", "vendorQueue","bankQueue","guildBankQueue")
+		end
 
 
 		local itemSource = {}
@@ -352,12 +291,12 @@ do
 
 
 --		GnomeWorks.data.inventoryData["All Recipes"] = {}
-		GnomeWorks.data.constructionQueue = {}
+--		GnomeWorks.data.constructionQueue = {}
 		GnomeWorks.data.selectionStack = {}
 
 		GnomeWorks:ConstructPseudoTrades("All Recipes")
 
-		GnomeWorks:PopulateQueues()
+--		GnomeWorks:PopulateQueues()
 
 
 		GnomeWorks.groupLabel = "By Category"
@@ -375,6 +314,10 @@ do
 		GnomeWorks:RegisterEvent("GUILDBANKBAGSLOTS_CHANGED")
 
 		GnomeWorks:RegisterEvent("PLAYER_GUILD_UPDATE")
+
+
+		GnomeWorks:RegisterEvent("AUCTION_HOUSE_SHOW")
+		GnomeWorks:RegisterEvent("AUCTION_HOUSE_CLOSE")
 	end
 
 
@@ -407,7 +350,6 @@ do
 		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_FAILED", "SpellCastFailed")
 		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED", "SpellCastFailed")
 		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_STOPPED", "SpellCastFailed")
-
 
 
 		for name,plugin in pairs(GnomeWorks.plugins) do

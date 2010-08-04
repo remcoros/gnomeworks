@@ -219,6 +219,75 @@ do
 	end
 
 
+	local containerChild = {
+		["bank"] = "bag",
+		["guildBank"] = "bank",
+	}
+
+-- gets the inventory count exclusive of heirarchy
+	function GnomeWorks:GetInventoryCountExclusive(itemID, player, containerList, factionPlayer)
+		if player ~= "faction" then
+			local inventoryData = self.data.inventoryData[player]
+
+			if inventoryData then
+				local count = 0
+
+				for container in string.gmatch(containerList, "%a+") do
+					if container == "vendor" then
+						if self:VendorSellsItem(itemID) then
+							return LARGE_NUMBER
+						end
+					elseif container == "guildBank" and self.data.playerData[player].guild then
+						local key = "GUILD:"..self.data.playerData[player].guild
+
+						if self.data.inventoryData[key] and self.data.inventoryData[key].bank then
+							count = count + (self.data.inventoryData[key].bank[itemID] or 0)
+						end
+					else
+						if inventoryData[container] then
+							if containerChild[container] and inventoryData[containerChild[container]] then
+								count = count + (inventoryData[container][itemID] or 0) - (inventoryData[containerChild[container]][itemID] or 0)
+							else
+								count = count + (inventoryData[container][itemID] or 0)
+							end
+						end
+					end
+				end
+
+				return count
+			end
+
+			return 0
+		else -- faction-wide materials
+			local count = 0
+
+			for container in string.gmatch(containerList, "%a+") do
+				if container == "vendor" then
+					if self:VendorSellsItem(itemID) then
+						return LARGE_NUMBER
+					end
+				end
+
+				for inv, inventoryData in pairs(self.data.inventoryData) do
+					if inv ~= factionPlayer then
+						if container == "craftedGuildBank" and self.data.playerData[inv] and not self.data.playerData[inv].guild then
+							container = "craftedBank"
+						end
+
+						if inventoryData[container] then
+							count = count + (inventoryData[container][itemID] or 0)
+						end
+					end
+				end
+			end
+
+			return count
+		end
+
+		return 0
+	end
+
+
 	local invscan = 1
 
 	function GnomeWorks:InventoryScan(playerOverride)

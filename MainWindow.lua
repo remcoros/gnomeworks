@@ -1392,6 +1392,35 @@ do
 
 		local function Create(button)
 			local numItems = dataTable[button.setting]
+			local entry = GnomeWorks.selectedEntry
+
+
+			if not numItems then
+
+
+				local _, _, _, _, _, _, _, itemStackCount = GetItemInfo(next(GnomeWorksDB.results[entry.recipeID]))
+
+				if entry.alt < 1 then
+					numItems = itemStackCount
+				else
+					if entry.bag > 1 then
+						numItems = entry.bag
+					elseif entry.vendor > 1 then
+						numItems = entry.vendor
+					elseif entry.bank > 1 then
+						numItems = entry.bank
+					else
+						numItems = entry.alt
+					end
+				end
+
+
+
+				if numItems == LARGE_NUMBER then
+					numItems = itemStackCount
+				end
+			end
+
 
 			DoTradeSkill(GnomeWorks.selectedSkill, numItems)
 		end

@@ -4,6 +4,8 @@
 
 
 do
+	local vendorThrottle
+
 
 	local function RecordMerchantItem(itemID, i)
 		local spoofedRecipeID = itemID+200000
@@ -20,7 +22,7 @@ do
 				elseif arenaPoints == 0 and honorPoints == 0 then
 					local reagents = {}
 					GnomeWorksDB.results[spoofedRecipeID] = { [itemID] = quantity }
-					GnomeWorksDB.names[spoofedRecipeID] = "Purchase "..name
+
 					GnomeWorksDB.tradeIDs[spoofedRecipeID] = 100001
 
 					for n=1,itemCount do
@@ -32,6 +34,8 @@ do
 
 						GnomeWorks:AddToReagentCache(costItemID, spoofedRecipeID, itemValue)
 					end
+
+					GnomeWorksDB.names[spoofedRecipeID] = string.format("Vendor Conversion: %s",name)
 
 					GnomeWorksDB.reagents[spoofedRecipeID] = reagents
 
@@ -68,14 +72,8 @@ do
 
 
 	local merchantLocked
-	function GnomeWorks:MERCHANT_SHOW(...)
-		if self:GetExecutionHold("ITEM_PUSH", "MERCHANT_SHOW", ...) then return end
-
-		if merchantLocked then return end
-
-		merchantLocked = true
-
-		local totalSpent = 0
+	function GnomeWorks:BuyVendorItems(player)
+		local vendorQueue = self.data.vendorQueue[player]
 
 		for i=1,GetMerchantNumItems() do
 			local link = GetMerchantItemLink(i)
@@ -83,22 +81,15 @@ do
 			if link then
 				local itemID = tonumber(string.match(link, "item:(%d+)"))
 
-				RecordMerchantItem(itemID, i)
+				local count = vendorQueue[itemID]
 
-
-				local onHand = self:GetInventoryCount(itemID, self.player, "bag queue")
-
-				if onHand < 0 then
-					local count = -onHand
-
+				if count and count > 0 then
 					local name, texture, price, quantity, numAvailable, isUsable, extendedCost = GetMerchantItemInfo(i)
 					local _, _, _, _, _, _, _, stackSize = GetItemInfo(link)
 
 					local numPurchase = math.ceil(count/quantity)
 --print(numAvailable)
 					if numAvailable ~= 0 then
-						self:SetExecutionHold("ITEM_PUSH")			-- hold off buying any more until a ITEM_PUSH has occured
-
 						local numStacksNeeded    		= math.floor(count/stackSize);
 						local numVendorStacksPerStack 	= math.floor(stackSize/quantity);
 						local subStackCount        		= math.ceil((count-(numStacksNeeded*stackSize))/quantity);
@@ -110,9 +101,11 @@ do
 						if subStackCount > 0 then
 							BuyMerchantItem(i,subStackCount)
 						end
-						self:print("auto-purchased",name,"x",numPurchase * quantity)
 
-						self:ReserveItemForQueue(self.player, itemID, -numPurchase * quantity)
+						vendorQueue[itemID] = vendorQueue[itemID] - numPurchase * quantity
+
+
+						self:print("auto-purchased",name,"x",numPurchase * quantity)
 
 						totalSpent = totalSpent + price * numPurchase
 					end
@@ -126,9 +119,43 @@ do
 		if totalSpent>0 then
 			self:print("spent on reagents: ",QuickMoneyFormat(totalSpent))
 		end
+	end
+
+
+
+	local merchantLocked
+	function GnomeWorks:VendorScan(...)
+		if merchantLocked then return end
+
+		merchantLocked = true
+
+		local totalSpent = 0
+
+		for i=1,GetMerchantNumItems() do
+			local link = GetMerchantItemLink(i)
+
+			if link then
+				local itemID = tonumber(string.match(link, "item:(%d+)"))
+
+				RecordMerchantItem(itemID, i)
+			end
+		end
+
+
+		self:BuyVendorItems(self.player)
 
 		merchantLocked = nil
 	end
+
+
+	function GnomeWorks:MERCHANT_SHOW(...)
+		if vendorThrottle then
+			self:CancelTimer(vendorThrottle, true)
+		end
+
+		vendorThrottle = self:ScheduleTimer("VendorScan",.25)
+	end
+
 
 	function GnomeWorks:MERCHANT_UPDATE(...)
 		self:MERCHANT_SHOW(...)

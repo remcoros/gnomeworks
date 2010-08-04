@@ -88,13 +88,15 @@ do
 
 		-- temporarily disable bag update scanning while we're grabbing items from the bank.  we'll do a manual adjustment after each retrieval
 		-- (if only -- i don't think unregisters happen until after the current event cycle)
---		self:UnregisterEvent("BAG_UPDATE")
+		self:UnregisterEvent("BAG_UPDATE")
 
 		bankLocked = true
 
 		for id,cache in pairs(bagCache) do
 			table.wipe(cache)
 		end
+
+		local player = self.player or UnitName("player")
 
 		for k,bag in pairs(bankBags) do
 			for i = 1, GetContainerNumSlots(bag), 1 do
@@ -104,12 +106,9 @@ do
 				if link then
 					local itemID = tonumber(string.match(link, "item:(%d+)"))
 
-					local onHand = self:GetInventoryCount(itemID, self.player, "craftedBag queue")
+					local count = self.data.bankQueue[player][itemID]
 
-					if onHand < 0 then
-
-						local count = -onHand
-
+					if count and count > 0 then
 						local _,numAvailable = GetContainerItemInfo(bag, i)
 
 						ClearCursor()
@@ -132,8 +131,9 @@ do
 
 							PickupContainerItem(toBag, toSlot)
 
-							-- "un"reserve items from the queue inventory
-							self:ReserveItemForQueue(self.player, itemID, -numMoved)
+
+							self.data.bankQueue[player][itemID] = self.data.bankQueue[player][itemID] - numMoved
+
 
 							self:print("collecting",itemName,"x",numMoved,"from bank")
 							itemMoved = true
@@ -145,7 +145,7 @@ do
 
 		bankLocked = nil
 
---		self:RegisterEvent("BAG_UPDATE")
+		self:RegisterEvent("BAG_UPDATE")
 
 		if itemMoved then
 			self:InventoryScan()
@@ -188,6 +188,7 @@ do
 
 
 		-- temporarily disable bag update scanning while we're grabbing items from the bank.  we'll do a manual adjustment after each retrieval
+		self:UnregisterEvent("GUILDBANKBAGSLOTS_CHANGED")
 		self:UnregisterEvent("BAG_UPDATE")
 
 		for id,cache in pairs(bagCache) do
@@ -213,10 +214,9 @@ do
 							invData[itemID] = (invData[itemID] or 0) + numAvailable
 						end
 
-						local onHand = self:GetInventoryCount(itemID, self.player, "craftedBag queue")
+						local count = self.data.guildBankQueue[player][itemID]
 
-						if onHand < 0 then
-							local count = -onHand
+						if count and count > 0 then
 
 							ClearCursor()
 
@@ -237,8 +237,7 @@ do
 
 								PickupContainerItem(toBag, toSlot)
 
-								-- "un"reserve items from the queue inventory
-								self:ReserveItemForQueue(self.player, itemID, -numMoved)
+								self.data.guildBankQueue[player][itemID] = self.data.guildBankQueue[player][itemID] - numMoved
 
 								self:print("collecting",itemName,"x",numMoved,"from guild bank")
 								itemMoved = true
@@ -251,6 +250,7 @@ do
 
 		bankLocked = nil
 
+		self:RegisterEvent("GUILDBANKBAGSLOTS_CHANGED")
 		self:RegisterEvent("BAG_UPDATE")
 
 		if itemMoved then
