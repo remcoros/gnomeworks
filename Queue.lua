@@ -1052,13 +1052,14 @@ do
 	function GnomeWorks:SpellCastCompleted(event,unit,spell,rank)
 --print("SPELL CAST COMPLETED", ...)
 
-		if unit == "player"	and doTradeEntry then
+		if unit == "player"	and doTradeEntry and spell == GetSpellInfo(doTradeEntry.recipeID) then
 			doTradeEntry.count = doTradeEntry.count - 1
 
 			if doTradeEntry.count == 0 then
 				DeleteQueueEntry(self.data.queueData[queuePlayer], doTradeEntry)
 
 				doTradeEntry = nil
+				GnomeWorks.processSpell = nil
 			end
 
 			self:ShowQueueList()
@@ -1097,12 +1098,12 @@ do
 							end
 						end
 
-						doTradeEntry = entry
-
 						if skillIndex then
+							doTradeEntry = entry
 							GnomeWorks:print("executing",GnomeWorks:GetRecipeName(entry.recipeID),"x",math.min(entry.count, entry.numCraftable))
 							DoTradeSkill(skillIndex,math.min(entry.count, entry.numCraftable))
 						else
+							doTradeEntry = nil
 							GnomeWorks:print("can't find recipe:",GnomeWorks:GetRecipeName(entry.recipeID))
 						end
 
@@ -1140,7 +1141,7 @@ do
 			local entry = FirstCraftableEntry(GnomeWorks.data.queueData[queuePlayer])
 
 			if entry then
-				button:SetFormattedText("Process %s x %d",GetSpellInfo(entry.recipeID),math.min(entry.numCraftable,entry.count))
+				button:SetFormattedText("Process %s x %d",GetSpellInfo(entry.recipeID) or "spell:"..entry.recipeID,math.min(entry.numCraftable,entry.count))
 				button:Enable()
 			else
 				button:Disable()

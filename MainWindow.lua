@@ -1322,7 +1322,7 @@ do
 						local n = f:GetNumber()
 
 						if n<=0 then
-							f:SetNumber(1)
+							f:SetText("")
 
 							dataTable[config.setting] = 1
 						else

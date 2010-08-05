@@ -74,6 +74,7 @@ do
 	local merchantLocked
 	function GnomeWorks:BuyVendorItems(player)
 		local vendorQueue = self.data.vendorQueue[player]
+		local totalSpent = 0
 
 		for i=1,GetMerchantNumItems() do
 			local link = GetMerchantItemLink(i)
@@ -142,7 +143,7 @@ do
 		end
 
 
-		self:BuyVendorItems(self.player)
+		self:BuyVendorItems(self.player or UnitName("Player"))
 
 		merchantLocked = nil
 	end
