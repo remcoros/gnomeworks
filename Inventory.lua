@@ -5,6 +5,17 @@ local function DebugSpam(...)
 end
 
 
+local stringIteratorList = {}
+
+local function StringIterator(list)
+	if not stringIteratorList[list] then
+		stringIteratorList[list] = { strsplit(" ",list) }
+	end
+
+	return stringIteratorList[list]
+end
+
+
 local LARGE_NUMBER = 1000000
 
 do
@@ -109,6 +120,7 @@ do
 	function GnomeWorks:InventoryRecipeIterations(recipeID, player, containerList)
 --		local recipe = GnomeWorksDB.recipeDB[recipeID]
 
+
 		local reagents = GnomeWorksDB.reagents[recipeID]
 
 
@@ -165,7 +177,7 @@ do
 			if inventoryData then
 				local count = 0
 
-				for container in string.gmatch(containerList, "%a+") do
+				for k,container in pairs(StringIterator(containerList)) do -- string.gmatch(containerList, "%a+") do
 					if container == "vendor" then
 						if self:VendorSellsItem(itemID) then
 							return LARGE_NUMBER
@@ -193,7 +205,7 @@ do
 			local count = 0
 
 
-			for container in string.gmatch(containerList, "%a+") do
+			for k,container in pairs(StringIterator(containerList)) do -- string.gmatch(containerList, "%a+") do
 				if container == "vendor" then
 					if self:VendorSellsItem(itemID) then
 						return LARGE_NUMBER
@@ -202,14 +214,17 @@ do
 
 
 				for inv, inventoryData in pairs(self.data.inventoryData) do
+					local c = container
+
 					if container == "craftedGuildBank" and self.data.playerData[inv] and not self.data.playerData[inv].guild then
-						container = "craftedBank"
+						c = "craftedBank"
 					end
 
-					if inventoryData[container] then
-						count = count + (inventoryData[container][itemID] or 0)
+					if inventoryData[c] then
+						count = count + (inventoryData[c][itemID] or 0)
 					end
 				end
+
 			end
 
 			return count
@@ -232,7 +247,7 @@ do
 			if inventoryData then
 				local count = 0
 
-				for container in string.gmatch(containerList, "%a+") do
+				for k,container in pairs(StringIterator(containerList)) do  -- string.gmatch(containerList, "%a+") do
 					if container == "vendor" then
 						if self:VendorSellsItem(itemID) then
 							return LARGE_NUMBER
@@ -261,7 +276,7 @@ do
 		else -- faction-wide materials
 			local count = 0
 
-			for container in string.gmatch(containerList, "%a+") do
+			for k,container in pairs(StringIterator(containerList)) do  --string.gmatch(containerList, "%a+") do
 				if container == "vendor" then
 					if self:VendorSellsItem(itemID) then
 						return LARGE_NUMBER

@@ -388,7 +388,9 @@ do
 		end
 
 		scrollFrame:SortData(scrollFrame.data)
+
 		scrollFrame.numData = scrollFrame:FilterData(scrollFrame.data, 0, 1)
+
 		scrollFrame:Draw()
 	end
 

@@ -972,6 +972,7 @@ do
 			local player = GnomeWorks.player
 
 			if not entry.subGroup then
+
 				local onHand = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "bag")
 
 				local bag = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "craftedBag queue")
@@ -1036,6 +1037,8 @@ do
 					end
 				end
 			end
+
+
 		end
 
 

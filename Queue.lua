@@ -496,7 +496,7 @@ do
 	end
 
 
-	local function BuildScrollingTable()
+	local function BuildQueueList()
 
 		local function ResizeQueueFrame(scrollFrame,width,height)
 			if scrollFrame then
@@ -610,14 +610,6 @@ do
 
 		sf:RegisterRowUpdate(UpdateRowData)
 	end
-
-
-	local function QueueCommandIterate(tradeID, recipeID, count, sourcePlayer)
-		local entry = { command = "iterate", count = count, tradeID = tradeID, recipeID = recipeID, sourcePlayer = sourcePlayer }
-
-		return entry
-	end
-
 
 
 
@@ -962,24 +954,10 @@ do
 
 			local queue = self.data.queueData[player]
 
---[[
-			if not self.data.constructionQueue[player] then
-				self.data.constructionQueue[player] = {}
 
-				GnomeWorks.data.inventoryData[player].queue = table.wipe(GnomeWorks.data.inventoryData[player].queue or {})
-
-				CreateConstructionQueue(player, queue, self.data.constructionQueue[player])
-			end
-]]
 			if not sf.data then
 				sf.data = {}
 			end
-
---			UpdateQueue(self.data.constructionQueue[player],queue)
-
---			AdjustConstructionQueueCounts(self.data.constructionQueue[player])
-
-
 
 			self.data.inventoryData[player].queue = table.wipe(self.data.inventoryData[player].queue or {})
 
@@ -995,9 +973,8 @@ do
 
 			sf.data.entries = self.data.queueData[player]
 
-
 			sf:Refresh()
-			sf:Show()
+--			sf:Show()
 			frame:Show()
 
 			frame:SetToplevel(true)
@@ -1080,7 +1057,7 @@ do
 				else
 --				print(entry.recipeID, GnomeWorks:GetRecipeName(entry.recipeID), entry.count, entry.numAvailable)
 					if GetSpellLink((GetSpellInfo(tradeID))) then
-						if GnomeWorks:IsTradeSkillLinked() or GnomeWorks.player ~= UnitName("player") or GnomeWorks.tradeID ~= tradeID then
+						if GnomeWorks:IsTradeSkillLinked() or GnomeWorks.player ~= UnitName("player") or GnomeWorks.tradeID ~= tradeID or GetFirstTradeSkill()==0 then
 							CastSpellByName((GetSpellInfo(tradeID)))
 						end
 
@@ -1306,7 +1283,8 @@ do
 
 		frame:SetMinResize(300,200)
 
-		BuildScrollingTable()
+		BuildQueueList()
+
 
 		local playerName = CreateFrame("Button", nil, frame)
 
@@ -1317,8 +1295,6 @@ do
 
 		playerName:SetNormalFontObject("GameFontNormal")
 		playerName:SetHighlightFontObject("GameFontHighlight")
-
---		playerName:SetNormalTexture("Interface\\PaperDollInfoFrame\\UI-GearManager-LeaveItem-Opaque")
 
 		playerName:EnableMouse(false)
 
@@ -1331,9 +1307,6 @@ do
 
 
 		frame.playerNameFrame = playerName
-
-
---		frame:SetParent(self.MainWindow)
 
 
 		self:RegisterMessageDispatch("GnomeWorksQueueChanged GnomeWorksTradeScanComplete GnomeWorksInventoryScanComplete", function() if frame:IsShown() then GnomeWorks:ShowQueueList() end end)

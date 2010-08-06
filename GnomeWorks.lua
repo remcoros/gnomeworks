@@ -89,6 +89,7 @@ do
 				t = dispatchTable[message]
 
 				for k,func in pairs(t) do
+--collectgarbage("collect")
 					if func ~= "delete" then
 						if type(func) == "function" and func() then					-- message returns true when it's set to fire once
 							t[k] = "delete"
