@@ -175,12 +175,15 @@ do
 	function GnomeWorks:OnLoad()
 		self:print("Initializing (r"..VERSION..")")
 
+		local player = UnitName("player")
+
 		LoadAddOn("Blizzard_TradeSkillUI")
 
 		GnomeWorks.blizzardFrameShow = TradeSkillFrame_Show
 
 		TradeSkillFrame_Show = function()
 		end
+
 
 		local factionServer = GetRealmName().."-"..UnitFactionGroup("player")
 
@@ -253,7 +256,7 @@ do
 			end
 		end
 
-		for k, player in pairs({ UnitName("player"), "All Recipes" } ) do
+		for k, player in pairs({ player, "All Recipes" } ) do
 			InitServerPlayerDBTables(factionServer, player, "playerData", "inventoryData", "queueData", "recipeGroupData", "cooldowns", "vendorQueue","bankQueue","guildBankQueue")
 		end
 
@@ -302,6 +305,20 @@ do
 
 		GnomeWorks.groupLabel = "By Category"
 
+
+
+		GnomeWorks.data.toonList = {}
+		local list = GnomeWorks.data.toonList
+
+		for toon in pairs(GnomeWorks.data.playerData) do
+			if toon ~= player and toon ~= "All Recipes" then
+				table.insert(list,toon)
+			end
+		end
+
+		table.sort(list)
+		table.insert(list,"All Recipes")
+		table.insert(list,1,player)
 
 		GnomeWorks:RegisterEvent("MERCHANT_UPDATE")
 		GnomeWorks:RegisterEvent("MERCHANT_SHOW")

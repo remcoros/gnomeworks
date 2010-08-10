@@ -287,6 +287,7 @@ do
 
 --		frame:SetFrameStrata("DIALOG")
 
+		frame:SetClampedToScreen(true)
 
 		frame:SetResizable(true)
 		frame:SetMovable(true)

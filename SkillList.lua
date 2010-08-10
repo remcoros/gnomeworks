@@ -53,17 +53,31 @@ do
 		51005,			-- milling
 		13262,			-- disenchant
 		31252,			-- prospecting
+
+
+
+		100000,			-- "Common Skills",
+		100001,			-- "Vendor Conversion",
 	}
 
 --	local tradeIDList = { 2259, 2018, 7411, 4036, 45357, 25229, 2108, 3908,  2550, 3273 }
 
 	local unlinkableTrades = {
-		[2656] = true,           -- smelting (from mining)
+		[2656] = true,         -- smelting (from mining)
 		[53428] = true,			-- runeforging
 		[51005] = true,			-- milling
 		[13262] = true,			-- disenchant
 		[31252] = true,			-- prospecting
+
+		[100000] = true,		-- "Common Skills",
+		[100001] = true,		-- "Vendor Conversion",
 	}
+
+	local fakeTrades = {
+		[100000] = "Common",
+		[100001] = "Vendor",
+	}
+
 
 
 	local skillIndexLookup = {}
@@ -222,18 +236,23 @@ DebugSpam("parsing skill list")
 		local playerData = self.data.playerData[playerName]
 
 		for k,id in pairs(tradeIDList) do
-			local link, tradeLink = GetSpellLink((GetSpellInfo(id)))
+			if not fakeTrades[id] then
+				local link, tradeLink = GetSpellLink((GetSpellInfo(id)))
 
-			if link then
+				if link then
 DebugSpam("found ", link, tradeLink)
 
-				if unlinkableTrades[id] then
-					tradeLink = "|cffffd000|Htrade:"..id..":1:1:0:/|h["..GnomeWorks:GetTradeName(id).."]|h|r"			-- fake link for data collection purposes
-				end
+					if unlinkableTrades[id] then
+						tradeLink = "|cffffd000|Htrade:"..id..":1:1:0:/|h["..GnomeWorks:GetTradeName(id).."]|h|r"			-- fake link for data collection purposes
+					end
 
-				playerData.links[id] = tradeLink
+					playerData.links[id] = tradeLink
+				end
+			else
+				playerData.links[id] = "|cffffd000|Htrade:"..id..":1:1:0:/|h["..fakeTrades[id].."]|h|r"
 			end
 		end
+
 
 
 		playerName = "All Recipes"
@@ -242,19 +261,23 @@ DebugSpam("found ", link, tradeLink)
 		local playerData = self.data.playerData[playerName]
 
 		for k,id in pairs(tradeIDList) do
-			local link, tradeLink = GetSpellLink(id)
+			if not fakeTrades[id] then
+				local link, tradeLink = GetSpellLink(id)
 --print(link, tradeLink)
 
-			if tradeLink then
-				local tradeID,ranks,guid,bitMap,tail = string.match(tradeLink,"(|c%x+|Htrade:%d+):(%d+:%d+):([0-9a-fA-F]+:)([A-Za-z0-9+/]+)(|h%[[^]]+%]|h|r)")
+				if tradeLink then
+					local tradeID,ranks,guid,bitMap,tail = string.match(tradeLink,"(|c%x+|Htrade:%d+):(%d+:%d+):([0-9a-fA-F]+:)([A-Za-z0-9+/]+)(|h%[[^]]+%]|h|r)")
 
-				local fullBitMap = string.rep("/",string.len(bitMap or ""))
+					local fullBitMap = string.rep("/",string.len(bitMap or ""))
 
-				playerData.links[id] = string.format("%s:450:450:%s%s%s",tradeID, guid, fullBitMap, tail)
+					playerData.links[id] = string.format("%s:450:450:%s%s%s",tradeID, guid, fullBitMap, tail)
 
---				print(playerData.links[id])
+	--				print(playerData.links[id])
+				else
+					playerData.links[id] = "|cffffd000|Htrade:"..id..":1:1:0:/|h["..GnomeWorks:GetTradeName(id).."]|h|r"			-- fake link for data collection purposes
+				end
 			else
-				playerData.links[id] = "|cffffd000|Htrade:"..id..":1:1:0:/|h["..GnomeWorks:GetTradeName(id).."]|h|r"			-- fake link for data collection purposes
+				playerData.links[id] = "|cffffd000|Htrade:"..id..":1:1:0:/|h["..fakeTrades[id].."]|h|r"
 			end
 		end
 DebugSpam("done parsing skill list")
@@ -283,16 +306,19 @@ DebugSpam("done parsing skill list")
 
 			tradeID = tonumber(tradeID)
 
-			if not unlinkableTrades[tradeID] then
-				SetItemRef(tradeString,tradeLink,"LeftButton")
-			else
+			if unlinkableTrades[tradeID] then
+print("pseudotrades not yet implemented")
 				self.tradeID = tradeID
 				self.player = player
+				self.tradeIsLinked = true
 --				self:SelectSkill(1)
 
+--				self:ScanPseudoTrade()
 
 				self:ScheduleTimer("UpdateMainWindow",.01)
 --				self:UpdateMainWindow()
+			else
+				SetItemRef(tradeString,tradeLink,"LeftButton")
 			end
 		end
 	end
@@ -457,35 +483,37 @@ DebugSpam("done parsing skill list")
 
 
 
-	function GnomeWorks:ScanTrade()
-		if self.scanInProgress == true then
-	DebugSpam("SCAN BUSY!")
-			return
-		end
-
-
-		self.scanInProgress = true
-
+	function GnomeWorks:GetTradeIDFromAPI()
 		local tradeID
-		local localPlayer
-
 
 		local tradeName, rank, maxRank = GetTradeSkillLine()
-	DebugSpam("GetTradeSkill: "..(tradeName or "nil").." "..rank)
-
+DebugSpam("GetTradeSkill: "..(tradeName or "nil").." "..rank)
 
 		-- get the tradeID from the tradeName name (data collected earlier).
 		tradeID = tradeIDByName[tradeName]
-
-		if not tradeID then
-			self.scanInProgress = nil
-			return
-		end
 
 
 		if tradeID == 2656 then				-- stuff the rank info into the fake smelting link for this character
 			self.data.playerData[UnitName("player")].links[tradeID] = "|cffffd000|Htrade:2656:"..rank..":"..maxRank..":0:/|h["..GetSpellInfo(tradeID) .."]|h|r"			-- fake link for data collection purposes
 		end
+
+		self.tradeID = tradeID
+		self.tradeIsLinked = IsTradeSkillLinked()
+	end
+
+	function GnomeWorks:ScanTrade()
+		if self.scanInProgress == true then
+DebugSpam("SCAN BUSY!")
+			return
+		end
+
+		if not self.tradeID then
+			return
+		end
+
+
+		local tradeID = self.tradeID
+		local player
 
 
 		local isLinked, playerLinked = IsTradeSkillLinked()
@@ -502,22 +530,12 @@ DebugSpam("done parsing skill list")
 --			print(player.." "..rank.."/"..maxRank)
 		else
 			player = UnitName("player")
-			localPlayer = true
 		end
 
-
-
-		self.tradeID = tradeID
 		self.player = player
 
---[[
-		if self.selectedSkill == nil or self.selectedSkill > GetNumTradeSkills() then
-			self:SelectSkill(GetFirstTradeSkill())
-		end
+		self.scanInProgress = true
 
-
-		GnomeWorks.skillFrame.scrollFrame.selectedIndex = self.selectedSkill
-]]
 
 		if not recacheRecipe then
 			recacheRecipe = {}
@@ -525,7 +543,7 @@ DebugSpam("done parsing skill list")
 
 
 	-- expand all headers, but turn off update events so we don't end up with recursion
---		self:UnregisterEvent("TRADE_SKILL_UPDATE")
+		self:UnregisterEvent("TRADE_SKILL_UPDATE")
 
 		UnregisterUpdateEvents()
 
@@ -539,13 +557,13 @@ DebugSpam("done parsing skill list")
 
 			end
 		end
---		self:RegisterEvent("TRADE_SKILL_UPDATE")
+		self:RegisterEvent("TRADE_SKILL_UPDATE")
 
 
 		local numSkills = GetNumTradeSkills()
 
 
-	DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." "..numSkills.." recipes")
+DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." "..numSkills.." recipes")
 
 
 		local key = player..":"..tradeID

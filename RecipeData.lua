@@ -845,18 +845,18 @@ do
 	end
 
 	local tradeName = {
-		[100000] = "Common Skills",
-		[100001] = "Vendor Conversion",
+		[100000] = "Common",
+		[100001] = "Vendor",
 	}
 
 	local tradeLink = {
-		[100000] = "[Common Skills]",
-		[100001] = "[Vendor Conversion]",
+		[100000] = "[Common]",
+		[100001] = "[Vendor]",
 	}
 
 	local tradeIcon = {
-		[100000] = "-",
-		[100001] = "-",
+		[100000] = "Interface\\Icons\\Ability_Creature_Cursed_01",
+		[100001] = "Interface\\Icons\\INV_Misc_Bag_10",
 	}
 
 

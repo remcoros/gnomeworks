@@ -4,6 +4,19 @@ do
 	local tradeButtonParent
 	local playerGUID
 
+	local pseudoTradeID = {
+--		[2656] = true,         -- smelting (from mining)
+--		[53428] = true,			-- runeforging
+		[51005] = true,			-- milling
+		[13262] = true,			-- disenchant
+		[31252] = true,			-- prospecting
+
+		[100000] = true,
+		[100001] = true,
+	}
+
+
+
 	function OnLeave(frame)
 		GameTooltip:Hide()
 	end
@@ -124,11 +137,14 @@ do
 				if links[button.tradeID] then
 					button:Show()
 
-					if player ~= (UnitName("player")) then
-						button.tradeLink = links[button.tradeID]
-					else
-						button.tradeLink = nil
+					button.tradeLink = links[button.tradeID]
+
+					if player == (UnitName("player")) then
+						if not GnomeWorks:IsPseudoTrade(button.tradeID) then
+							button.tradeLink = nil
+						end
 					end
+
 
 					button:SetPoint("TOPLEFT", position, 0)
 					position = position + (buttonSize+spacing)

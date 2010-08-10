@@ -94,7 +94,7 @@ do
 		45357,			-- inscription
 		25229,          -- jewelcrafting
 		2108,           -- leatherworking
-	--	2575,			-- mining (or smelting?)
+--		2575,			-- mining (or smelting?)
 		2656,           -- smelting (from mining)
 		3908,           -- tailoring
 		2550,           -- cooking
@@ -103,20 +103,15 @@ do
 		53428,			-- runeforging
 
 
-		13262,			-- disenchant
 		51005,			-- milling
+		13262,			-- disenchant
 		31252,			-- prospecting
+
+
+
+		100000,			-- "Common Skills",
+		100001,			-- "Vendor Conversion",
 	}
-
-
-	local unlinkableTrades = {
-		[2656] = true,           -- smelting (from mining)
-		[53428] = true,			-- runeforging
-		[51005] = true,			-- milling
-		[13262] = true,			-- disenchant
-		[31252] = true,			-- prospecting
-	}
-
 
 
 
@@ -1074,6 +1069,8 @@ do
 	function GnomeWorks:DoTradeSkillUpdate()
 		if frame:IsVisible() then
 			self:ScanTrade()
+
+			CURRENT_TRADESKILL = GetTradeSkillLine() -- to stop blizzard's update code killing our tradeskill repeats
 		end
 	end
 
@@ -1092,11 +1089,17 @@ do
 
 			self.blizzardFrameShow()
 		else
+			self:GetTradeIDFromAPI()
+
 			self:ResetSkillSelect()
 
-			frame:Show()
-			frame.title:Show()
-			sf:Show()
+			if self.hideMainFrame then
+				self.hideMainFrame = nil
+			else
+				frame:Show()
+				frame.title:Show()
+				sf:Show()
+			end
 		end
 	end
 
@@ -1220,7 +1223,9 @@ do
 
 				local index = 1
 
-				for player,data in pairs(GnomeWorks.data.playerData) do
+				for k,player in pairs(GnomeWorks.data.toonList) do
+					data = GnomeWorks.data.playerData[player]
+
 					if data.build == clientBuild then
 						playerMenu.text = player
 						playerMenu.hasArrow = true
@@ -1297,6 +1302,11 @@ do
 
 
 				position = position + config.width
+
+
+				if config.name then
+					buttons[config.name] = newButton
+				end
 			else
 				local newButton = CreateFrame(config.style, nil, controlFrame)
 
@@ -1354,6 +1364,10 @@ do
 
 				buttons[i] = newButton
 
+				if config.name then
+					buttons[config.name] = newButton
+				end
+
 				position = position + config.width
 			end
 		end
@@ -1364,6 +1378,7 @@ do
 
 	local function CreateQueueButtons(frame)
 		local dataTable = {}
+		local buttons = {}
 
 		local function MaterialsOnHand(button)
 			local entry = GnomeWorks.selectedEntry
@@ -1392,46 +1407,25 @@ do
 			button:Disable()
 		end
 
-
 		local function Create(button)
 			local numItems = dataTable[button.setting]
 			local entry = GnomeWorks.selectedEntry
 
+			EditBox_ClearFocus(buttons.queueCountButton)
 
-			if not numItems then
-
-
-				local _, _, _, _, _, _, _, itemStackCount = GetItemInfo(next(GnomeWorksDB.results[entry.recipeID]))
-
-				if entry.alt < 1 then
-					numItems = itemStackCount
-				else
-					if entry.bag > 1 then
-						numItems = entry.bag
-					elseif entry.vendor > 1 then
-						numItems = entry.vendor
-					elseif entry.bank > 1 then
-						numItems = entry.bank
-					else
-						numItems = entry.alt
-					end
-				end
-
-
-
-				if numItems == LARGE_NUMBER then
-					numItems = itemStackCount
-				end
+			if numItems then
+				DoTradeSkill(GnomeWorks.selectedSkill, numItems)
+			else
+				DoTradeSkill(GnomeWorks.selectedSkill, entry.bag)
 			end
-
-
-			DoTradeSkill(GnomeWorks.selectedSkill, numItems)
 		end
 
 
 		local function AddToQueue(button)
 			local numItems = dataTable[button.setting]
 			local entry = GnomeWorks.selectedEntry
+
+			EditBox_ClearFocus(buttons.queueCountButton)
 
 --			local recipeLink = self:GetTradeSkillRecipeLink(GnomeWorks.selectedSkill)
 
@@ -1468,12 +1462,12 @@ do
 		end
 
 
-		local buttons = {}
+
 
 		local buttonConfig = {
 			{ text = "Create", operation = Create, width = 50, setting = "queueCount", validate = MaterialsOnHand },
 			{ text = "Queue", operation = AddToQueue, setting = "queueCount", width = 50 },
-			{ style = "EditBox", setting = "queueCount", width = 50, default = 1},
+			{ style = "EditBox", setting = "queueCount", width = 50, default = 1, name = "queueCountButton"},
 			{ text = "Create All", operation = Create, width = 70, validate = MaterialsOnHand },
 			{ text = "Queue All", operation = AddToQueue, width = 70, validate = MaterialsOnAlt },
 		}
@@ -1489,6 +1483,14 @@ do
 		local position = CreateButtons(buttonConfig, buttons, dataTable)
 
 		controlFrame:SetWidth(position)
+
+		buttons.queueCountButton:RegisterEvent("UPDATE_TRADESKILL_RECAST")
+
+		buttons.queueCountButton:SetScript("OnEvent", function(frame)
+--print("UPDATE RECAST", ...)
+			frame:SetNumber(GetTradeskillRepeatCount())
+		end)
+
 
 		GnomeWorks:RegisterMessageDispatch("GnomeWorksDetailsChanged", function()
 			for i, b in pairs(buttons) do

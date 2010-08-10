@@ -45,9 +45,19 @@ do
 		[51005] = true,			-- milling
 		[13262] = true,			-- disenchant
 		[31252] = true,			-- prospecting
+
+		[100000] = true,
+		[100001] = true,
+	}
+
+	local fakeTrades = {
+		[100000] = true,
+		[100001] = true,
 	}
 
 	local tradeIcon = {
+		[100000] = "Interface\\Icons\\Ability_Creature_Cursed_01",
+		[100001] = "Interface\\Icons\\INV_Misc_Bag_10",
 	}
 
 
@@ -221,7 +231,7 @@ do
 
 
 	function GnomeWorks:IsPseudoTrade(tradeID)
-		if unlinkableTrades[tradeID] and ((tradeID == 2656 or tradeID == 53428) and not GetSpellLink((GetSpellInfo(tradeID)))) then
+		if fakeTrades[tradeID] or (unlinkableTrades[tradeID] and ((tradeID == 2656 or tradeID == 53428) and not GetSpellLink((GetSpellInfo(tradeID))))) then
 			return true
 		end
 
