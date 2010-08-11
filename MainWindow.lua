@@ -1069,8 +1069,6 @@ do
 	function GnomeWorks:DoTradeSkillUpdate()
 		if frame:IsVisible() then
 			self:ScanTrade()
-
-			CURRENT_TRADESKILL = GetTradeSkillLine() -- to stop blizzard's update code killing our tradeskill repeats
 		end
 	end
 
@@ -1091,10 +1089,15 @@ do
 		else
 			self:GetTradeIDFromAPI()
 
+			TradeSkillFrame_Update();
+
+--			self:FixRepeatIssue()			-- calls a bit of blizzard code that seems to fix the issue with repeats failing early.  purely emprical
+
 			self:ResetSkillSelect()
 
 			if self.hideMainWindow then
 				self.hideMainWindow = nil
+				CloseTradeSkill()
 			else
 				frame:Show()
 				frame.title:Show()

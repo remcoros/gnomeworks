@@ -162,6 +162,32 @@ do
 		print("|cffa080f0GnomeWorks:",...)
 	end
 
+	function GnomeWorks:warning(...)
+		print("|cffff2020GnomeWorks:",...)
+	end
+
+-- this section of code is called each time the gw frame is shown.  it comes from the blizzard tradeskill show routine and seems to fix the problem with early termination of the tradeskill repeat
+-- no idea why
+	function GnomeWorks:FixRepeatIssue()
+		TradeSkillCreateButton:Disable();
+		TradeSkillCreateAllButton:Disable();
+		if ( GetTradeSkillSelectionIndex() == 0 ) then
+			TradeSkillFrame_SetSelection(GetFirstTradeSkill());
+		else
+			TradeSkillFrame_SetSelection(GetTradeSkillSelectionIndex());
+		end
+		FauxScrollFrame_SetOffset(TradeSkillListScrollFrame, 0);
+		TradeSkillListScrollFrameScrollBar:SetMinMaxValues(0, 0);
+		TradeSkillListScrollFrameScrollBar:SetValue(0);
+		SetPortraitTexture(TradeSkillFramePortrait, "player");
+		TradeSkillOnlyShowMakeable(TradeSkillFrameAvailableFilterCheckButton:GetChecked());
+		TradeSkillFrame_Update();
+
+		-- Moved to the bottom to prevent addons which hook it from blocking tradeskills
+		CloseDropDownMenus();
+	end
+
+
 
 	function GnomeWorks:PLAYER_GUILD_UPDATE(...)
 		if self.data.playerData[UnitName("player")] then

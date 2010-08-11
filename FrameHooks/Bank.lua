@@ -92,6 +92,8 @@ do
 
 		bankLocked = true
 
+		local bagErr
+
 		for id,cache in pairs(bagCache) do
 			table.wipe(cache)
 		end
@@ -101,7 +103,6 @@ do
 		for k,bag in pairs(bankBags) do
 			for i = 1, GetContainerNumSlots(bag), 1 do
 				local link = GetContainerItemLink(bag, i)
-
 
 				if link then
 					local itemID = tonumber(string.match(link, "item:(%d+)"))
@@ -135,8 +136,11 @@ do
 							self.data.bankQueue[player][itemID] = self.data.bankQueue[player][itemID] - numMoved
 
 
-							self:print("collecting",itemName,"x",numMoved,"from bank")
+							self:print(string.format("collecting %s x %s from bank",itemName,numMoved))
 							itemMoved = true
+						elseif not bagErr then
+							self:warning("cannot collect some items due to lack of bag space")
+							bagErr = true
 						end
 					end
 				end
@@ -159,6 +163,88 @@ do
 		for tab=1,numTabs do
 			QueryGuildBankTab(tab)
 		end
+	end
+
+
+	function GnomeWorks:GuildBankCollectItems()
+		if bankLocked then return end
+
+		bankLocked = true
+
+
+		local itemMoved
+		local bagErr
+
+		local player = self.player or UnitName("player")
+		local playerData = self.data.playerData
+
+		local guild = playerData[player].guild or GetGuildInfo("player")
+
+		local key = "GUILD:"..guild
+
+		local invData = self.data.inventoryData[key].bank
+
+		-- temporarily disable bag update scanning while we're grabbing items from the bank.  we'll do a manual adjustment after each retrieval
+		self:UnregisterEvent("GUILDBANKBAGSLOTS_CHANGED")
+		self:UnregisterEvent("BAG_UPDATE")
+
+
+		local numTabs = GetNumGuildBankTabs()
+
+		for tab=1,numTabs do
+			local name, icon, isViewable, canDeposit, numWithdrawals, remainingWithdrawals = GetGuildBankTabInfo(tab)
+
+			if numWithdrawals > 0 and remainingWithdrawals > 0 then
+				for slot=1,98 do
+
+					local link = GetGuildBankItemLink(tab,slot)
+
+					if link then
+						local _,numAvailable = GetGuildBankItemInfo(tab, slot)
+						local itemID = tonumber(string.match(link, "item:(%d+)"))
+
+						local count = self.data.guildBankQueue[player][itemID]
+
+						if count and count > 0 then
+							ClearCursor()
+
+							local itemName, _, _, _, _, _, _, stackSize = GetItemInfo(link)
+
+							local numMoved
+
+							if numAvailable < count then
+								numMoved = numAvailable
+							else
+								numMoved = count
+							end
+
+							local toBag, toSlot = FindBagSlot(itemID, numMoved)
+
+							if toBag then
+								SplitGuildBankItem(tab, slot, numMoved)
+
+								PickupContainerItem(toBag, toSlot)
+
+								self.data.guildBankQueue[player][itemID] = self.data.guildBankQueue[player][itemID] - numMoved
+
+								self:print(string.format("collecting %s x %s from guild bank",itemName,numMoved))
+								itemMoved = true
+							elseif not bagErr then
+								self:warning("cannot collect some items due to lack of bag space")
+								bagErr = true
+							end
+						end
+					end
+				end
+			end
+		end
+
+		bankLocked = nil
+
+		self:RegisterEvent("GUILDBANKBAGSLOTS_CHANGED")
+		self:RegisterEvent("BAG_UPDATE")
+
+		self:InventoryScan()
 	end
 
 
@@ -200,49 +286,15 @@ do
 		for tab=1,numTabs do
 			local name, icon, isViewable, canDeposit, numWithdrawals, remainingWithdrawals = GetGuildBankTabInfo(tab)
 
-			if numWithdrawals > 0 and remainingWithdrawals > 0 then
-				for slot=1,98 do
-					local link = GetGuildBankItemLink(tab,slot)
+			for slot=1,98 do
+				local link = GetGuildBankItemLink(tab,slot)
 
---					self:GuildBankRecordData(tab,slot,itemID,numAvailable)
+				if link then
+					local _,numAvailable = GetGuildBankItemInfo(tab, slot)
+					local itemID = tonumber(string.match(link, "item:(%d+)"))
 
-					if link then
-						local _,numAvailable = GetGuildBankItemInfo(tab, slot)
-						local itemID = tonumber(string.match(link, "item:(%d+)"))
-
-						if self.data.reagentUsage[itemID] or self.data.itemSource[itemID] then
-							invData[itemID] = (invData[itemID] or 0) + numAvailable
-						end
-
-						local count = self.data.guildBankQueue[player][itemID]
-
-						if count and count > 0 then
-
-							ClearCursor()
-
-							local itemName, _, _, _, _, _, _, stackSize = GetItemInfo(link)
-
-							local numMoved
-
-							if numAvailable < count then
-								numMoved = numAvailable
-							else
-								numMoved = count
-							end
-
-							local toBag, toSlot = FindBagSlot(itemID, numMoved)
-
-							if toBag then
-								SplitGuildBankItem(tab, slot, numMoved)
-
-								PickupContainerItem(toBag, toSlot)
-
-								self.data.guildBankQueue[player][itemID] = self.data.guildBankQueue[player][itemID] - numMoved
-
-								self:print("collecting",itemName,"x",numMoved,"from guild bank")
-								itemMoved = true
-							end
-						end
+					if self.data.reagentUsage[itemID] or self.data.itemSource[itemID] then
+						invData[itemID] = (invData[itemID] or 0) + numAvailable
 					end
 				end
 			end
@@ -253,9 +305,9 @@ do
 		self:RegisterEvent("GUILDBANKBAGSLOTS_CHANGED")
 		self:RegisterEvent("BAG_UPDATE")
 
-		if itemMoved then
-			self:InventoryScan()
-		end
+		self:InventoryScan()
+
+		updateTimer = self:ScheduleTimer("GuildBankCollectItems",.25)
 	end
 
 
@@ -264,7 +316,7 @@ do
 			self:CancelTimer(updateTimer, true)
 		end
 
-		updateTimer = self:ScheduleTimer("GuildBankScan",.01)
+		updateTimer = self:ScheduleTimer("GuildBankScan",.25)
 	end
 end
 
