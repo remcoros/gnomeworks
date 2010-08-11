@@ -1058,8 +1058,8 @@ do
 --				print(entry.recipeID, GnomeWorks:GetRecipeName(entry.recipeID), entry.count, entry.numAvailable)
 					if GetSpellLink((GetSpellInfo(tradeID))) then
 						if GnomeWorks:IsTradeSkillLinked() or GnomeWorks.player ~= UnitName("player") or GnomeWorks.tradeID ~= tradeID or GetFirstTradeSkill()==0 then
-							if not GnomeWorks.MainFrame:IsVisible() then
-								GnomeWorks.hideMainFrame = true
+							if not GnomeWorks.MainWindow:IsVisible() then
+								GnomeWorks.hideMainWindow = true
 							end
 
 							CastSpellByName((GetSpellInfo(tradeID)))

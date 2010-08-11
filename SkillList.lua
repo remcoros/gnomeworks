@@ -473,7 +473,7 @@ print("pseudotrades not yet implemented")
 		end
 	end
 
-	local function ReguisterUpdateEvents()
+	local function RegisterUpdateEvents()
 		for k,f in pairs(updateEventFrames) do
 			f:RegisterEvent("TRADE_SKILL_UPDATE")
 		end
@@ -500,6 +500,8 @@ DebugSpam("GetTradeSkill: "..(tradeName or "nil").." "..rank)
 		self.tradeID = tradeID
 		self.tradeIsLinked = IsTradeSkillLinked()
 	end
+
+
 
 	function GnomeWorks:ScanTrade()
 		if self.scanInProgress == true then
@@ -542,9 +544,7 @@ DebugSpam("SCAN BUSY!")
 		end
 
 
-	-- expand all headers, but turn off update events so we don't end up with recursion
-		self:UnregisterEvent("TRADE_SKILL_UPDATE")
-
+	-- Unregsiter all frames from reacitng to update events since we're likely to generate a number of them in the scan
 		UnregisterUpdateEvents()
 
 		for i = 1, GetNumTradeSkills() do
@@ -557,7 +557,6 @@ DebugSpam("SCAN BUSY!")
 
 			end
 		end
-		self:RegisterEvent("TRADE_SKILL_UPDATE")
 
 
 		local numSkills = GetNumTradeSkills()
@@ -768,8 +767,8 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 		self:ScanSlotGroups(slotGroup)
 
-
-		ReguisterUpdateEvents()
+-- re-regsiter the update events again now that we're done scanning
+		RegisterUpdateEvents()
 
 
 --		self:RecipeGroupConstructDBString(mainGroup)

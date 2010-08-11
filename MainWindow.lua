@@ -1093,8 +1093,8 @@ do
 
 			self:ResetSkillSelect()
 
-			if self.hideMainFrame then
-				self.hideMainFrame = nil
+			if self.hideMainWindow then
+				self.hideMainWindow = nil
 			else
 				frame:Show()
 				frame.title:Show()
