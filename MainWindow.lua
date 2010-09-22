@@ -631,7 +631,7 @@ do
 							local itemLink = GnomeWorks:GetTradeSkillItemLink(entry.index)
 							local spellName = GnomeWorks:GetRecipeName(entry.recipeID)
 
-							cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t %s", GnomeWorks:GetTradeSkillIcon(entry.index) or "", spellName)
+							cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t %s", GnomeWorks:GetTradeSkillIcon(entry.index) or "", spellName or "recipe:"..entry.recipeID)
 
 							cellFrame.button:Hide()
 						end
@@ -1114,7 +1114,24 @@ do
 		if player and tradeID then
 --			local key = player..":"..tradeID
 
-			local group = self:RecipeGroupFind(player, tradeID, self.groupLabel or "By Category", self.group)
+			local player, tradeID, label, groupName = self:RecipeGroupValidate(player, tradeID, self.groupLabel or "By Category", self.group)
+
+			local group = self:RecipeGroupFind(player, tradeID, label, groupName)
+
+			self.group = groupName
+			self.groupLabel = label
+
+			local groupLabel = label
+
+			if groupName then
+				groupLabel = groupLabel.."/"..groupName
+			end
+
+			if groupLabel then
+				UIDropDownMenu_SetText(GnomeWorksGrouping, "Group "..groupLabel)
+			else
+				UIDropDownMenu_SetText(GnomeWorksGrouping, "--")
+			end
 
 			sf.data = group
 			sf:Refresh()

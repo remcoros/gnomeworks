@@ -353,7 +353,8 @@ do
 
 
 	local function UpdateData(scrollFrame, data, depth, firstCall)
-		if scrollFrame:IsVisible() and data and data.entries then
+		if scrollFrame:IsVisible() and data and data.entries and depth < 3 then
+
 			for i=1,#data.entries do
 				local entry = data.entries[i]
 

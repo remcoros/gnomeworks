@@ -61,7 +61,7 @@ do
 		local numCraftable = LARGE_NUMBER
 
 		for reagentID, numNeeded in pairs(reagents) do
-			local numReagentCraftable = GnomeWorks:InventoryReagentCraftability(craftabilityTable, reagentID, player, containerList)
+			local numReagentCraftable = craftabilityTable[reagentID] or GnomeWorks:InventoryReagentCraftability(craftabilityTable, reagentID, player, containerList)
 
 			numCraftable = math.min(numCraftable, math.floor(numReagentCraftable/numNeeded))
 		end
@@ -73,14 +73,13 @@ do
 	-- recursive reagent craftability check
 	-- utilizes all containers passed to it ("bag", "bank", "queue", "guildbank", "mail", etc)
 	function GnomeWorks:InventoryReagentCraftability(craftabilityTable, reagentID, player, containerList)
-		if itemVisited[reagentID] then
-			return 0, 0			-- we've been here before, so bail out to avoid infinite loop
-		end
-
 		if craftabilityTable[reagentID] then
-			return craftabilityTable[reagentID]
+			return craftabilityTable[reagentID]		-- return the cached value
 		end
 
+		if itemVisited[reagentID] then
+			return 0			-- we've been here before, so bail out to avoid infinite loop
+		end
 
 		itemVisited[reagentID] = true
 
@@ -91,20 +90,25 @@ do
 
 		if recipeSource then
 			for childRecipeID, count in pairs(recipeSource) do
-				if count >= .1 then
+				if count >= 1 then
 --print("Child Recipe", reagentID, childRecipeID)
-					numReagentsCraftable = numReagentsCraftable + CalculateRecipeCrafting(craftabilityTable, GnomeWorksDB.reagents[childRecipeID], player, containerList) * count
+					local childResults, childReagents = self:GetRecipeData(childRecipeID)
+
+					numReagentsCraftable = numReagentsCraftable + CalculateRecipeCrafting(craftabilityTable, childReagents, player, containerList) * count
 				end
 			end
 		end
 
 		local inventoryCount = self:GetInventoryCount(reagentID, player, containerList) + numReagentsCraftable
 
+		craftabilityTable[reagentID] = inventoryCount
+--[[
 		if inventoryCount ~= 0 then
 			craftabilityTable[reagentID] = inventoryCount
 		else
 			craftabilityTable[reagentID] = nil
 		end
+]]
 
 		itemVisited[reagentID] = false										-- okay to calculate this reagent again
 
@@ -121,7 +125,7 @@ do
 --		local recipe = GnomeWorksDB.recipeDB[recipeID]
 
 
-		local reagents = GnomeWorksDB.reagents[recipeID]
+		local results, reagents = self:GetRecipeData(recipeID)
 
 
 		if reagents then													-- make sure that recipe is in the database before continuing
@@ -401,7 +405,19 @@ do
 					end
 				end
 			end
+
+
+-- assign nil's to all 0 count items
+			for name, container in pairs(inventory) do
+				for itemID, count in pairs(container) do
+					if count == 0 then
+						craftedBag[itemID] = nil
+					end
+				end
+			end
 		end
+
+
 
 --	DebugSpam("InventoryScan Complete")
 		local elapsed = GetTime()-scanTime

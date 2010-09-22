@@ -621,8 +621,8 @@ do
 
 	local buttonTextureNames = {"Highlight", "Disabled", "Up", "Down"}
 
-	function GnomeWorks:CreateButton(parent, height)
-		local newButton = CreateFrame("Button", nil, parent)
+	function GnomeWorks:CreateButton(parent, height, template)
+		local newButton = CreateFrame("Button", nil, parent, template)
 		newButton:SetHeight(height)
 		newButton:SetWidth(50)
 		newButton:SetPoint("CENTER")

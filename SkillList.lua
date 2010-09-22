@@ -73,10 +73,29 @@ do
 		[100001] = true,		-- "Vendor Conversion",
 	}
 
+	local pseudoTrades = {
+		[51005] = GetSpellInfo(51005),			-- milling
+		[13262] = GetSpellInfo(13262),			-- disenchant
+		[31252] = GetSpellInfo(31252),			-- prospecting
+
+		[100000] = "Common",
+		[100001] = "Vendor",
+	}
+
+
 	local fakeTrades = {
 		[100000] = "Common",
 		[100001] = "Vendor",
 	}
+
+	-- only tailoring for now
+	local tradeSpecializations = {
+		[26798] = 3908,		-- mooncloth tailoring
+		[26801] = 3908,		-- shadowweave tailoring
+		[26797] = 3908,		-- spellfire tailoring
+	}
+
+
 
 
 
@@ -231,7 +250,8 @@ do
 DebugSpam("parsing skill list")
 		local playerName = UnitName("player")
 
-		self.data.playerData[playerName] = { links = {}, build = clientBuild, guild = GetGuildInfo("player") }
+		self.data.playerData[playerName] = { links = {}, build = clientBuild, guild = GetGuildInfo("player"), specializations = {} }
+
 
 		local playerData = self.data.playerData[playerName]
 
@@ -253,10 +273,16 @@ DebugSpam("found ", link, tradeLink)
 			end
 		end
 
+		for spellID,tradeID in pairs(tradeSpecializations) do
+			local spellName = GetSpellInfo(spellID)
 
+			if GetSpellInfo(spellName) then
+				playerData.specializations[spellID] = tradeID
+			end
+		end
 
 		playerName = "All Recipes"
-		self.data.playerData[playerName] = { links = {}, build = clientBuild }
+		self.data.playerData[playerName] = { links = {}, build = clientBuild, specializations = {} }
 
 		local playerData = self.data.playerData[playerName]
 
@@ -307,13 +333,17 @@ DebugSpam("done parsing skill list")
 			tradeID = tonumber(tradeID)
 
 			if unlinkableTrades[tradeID] then
-print("pseudotrades not yet implemented")
+				self:UnregisterEvent("TRADE_SKILL_CLOSE")
+				CloseTradeSkill()
+				self:RegisterEvent("TRADE_SKILL_CLOSE")
+
+--print("pseudotrades not yet implemented")
 				self.tradeID = tradeID
 				self.player = player
 				self.tradeIsLinked = true
 --				self:SelectSkill(1)
 
---				self:ScanPseudoTrade()
+				self:ScanPseudoTrade(tradeID)
 
 				self:ScheduleTimer("UpdateMainWindow",.01)
 --				self:UpdateMainWindow()
@@ -375,33 +405,25 @@ print("pseudotrades not yet implemented")
 
 
 	local function DoRecipeSelection(recipeID)
---		local player = GnomeWorks.player
+		local skillIndex
 
---		if recipeID and GnomeWorksDB.results[recipeID] and GnomeWorks.data.skillIndexLookup[player] then
---			local tradeID = GnomeWorksDB.tradeIDs[recipeID]
---			local skillIndex = GnomeWorks.data.skillIndexLookup[player][recipeID]
+		local enchantString = "enchant:"..recipeID.."|h"
+		local spellString = "spell:"..recipeID.."|h"
 
-			local skillIndex
+		for i=1,GnomeWorks:GetNumTradeSkills() do
 
-			local enchantString = "enchant:"..recipeID.."|h"
+			local link = GnomeWorks:GetTradeSkillRecipeLink(i)
 
-			for i=1,GetNumTradeSkills() do
-				local link = GetTradeSkillRecipeLink(i)
+			if link and (string.find(link, enchantString) or string.find(link, spellString)) then
 
-				if link and string.find(link, enchantString) then
-
-					skillIndex = i
-					break
-				end
+				skillIndex = i
+				break
 			end
+		end
 
-			if skillIndex then
-				GnomeWorks:SelectSkill(skillIndex)
-			end
-
-
---			GnomeWorks:UnregisterMessage("GnomeWorksScanComplete")
---		end
+		if skillIndex then
+			GnomeWorks:SelectSkill(skillIndex)
+		end
 
 		return true
 	end
@@ -418,7 +440,7 @@ print("pseudotrades not yet implemented")
 		local tradeID = GnomeWorksDB.tradeIDs[recipeID]
 
 		if tradeID ~= self.tradeID then
-			if player == (UnitName("player")) then
+			if player == (UnitName("player")) and not pseudoTrades[tradeID] then
 				CastSpellByName((GetSpellInfo(tradeID)))
 			else
 				self:OpenTradeLink(self:GetTradeLink(tradeID, player), player)
@@ -631,7 +653,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 			repeat
 				local subSpell, extra
 
-				local skillName, skillType = GetTradeSkillInfo(i)
+				local skillName, skillType, numAvailable, isExpanded, altVerb, numSkillUps = GetTradeSkillInfo(i)
 
 				gotNil = false
 
@@ -900,7 +922,7 @@ DebugSpam("adding "..(recipeLink or "nil").." to "..groupName)
 
 	function GnomeWorks:GetTradeSkillRank(player, tradeID)
 		if not IsTradeSkillLinked() then
-			local skill, rank, maxRank = GetTradeSkillLine()
+			local skill, rank, maxRank = self:GetTradeSkillLine()
 
 			return rank, maxRank
 		end

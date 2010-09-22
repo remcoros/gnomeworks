@@ -61,30 +61,39 @@ do
 	}
 
 
-
-	function GnomeWorks:ConstructPseudoTrades(player)
-		self.data.pseudoTrade = {}
-
-		for k,v in pairs(unlinkableTrades) do
-			local list = {}
-
-			local mainGroup = self:RecipeGroupNew(player,k,"Blizzard")
-
-			for recipeID,tradeID in pairs(GnomeWorksDB.tradeIDs) do
-				local index = #list + 1
-
-				if tradeID == k then
-					list[index] = recipeID
-
-					GnomeWorks:RecipeGroupAddRecipe(mainGroup, recipeID, index)
-				end
-			end
-
-			self.data.pseudoTrade[k] = list
+	function GnomeWorks:AddPseudoTrade(tradeID, api)
+		if not self.data.pseudoTradeData then
+			self.data.pseudoTradeData = {}
 		end
+
+		if not self.data.pseudoTradeRecipes then
+			self.data.pseudoTradeRecipes = {}
+		end
+
+		local data = self.data.pseudoTradeData
+
+		data[tradeID] = {}
+
+		data[tradeID].tradeID = tradeID
+
+		if api then
+			for xface, func in pairs(api) do
+				data[tradeID][xface] = func
+			end
+		end
+
+		return data[tradeID], self.data.pseudoTradeRecipes
 	end
 
 
+
+	function GnomeWorks:ScanPseudoTrade(tradeID)
+		if self.data.pseudoTradeData[tradeID] then
+			self.data.pseudoTradeData[tradeID].Scan()
+		end
+	end
+
+--[[
 	local PseudoTrade = {}
 
 	function PseudoTrade:GetNumTradeSkills()
@@ -151,7 +160,7 @@ do
 	function PseudoTrade:GetTradeSkillCooldown()
 		return
 	end
-
+]]
 --[[
 	function PseudoTrade:GetTradeSkillNumMade(index)
 		local recipeID = self.data.pseudoTrade[self.tradeID][index]
@@ -202,11 +211,12 @@ do
 
 
 	for k,api in pairs(tradeSkillAPIs) do
-		if PseudoTrade[api] then
+--		if PseudoTrade[api] then
 			GnomeWorks[api] = function(self, ...)
-				if self.data.pseudoTrade[self.tradeID] then
-					if self.player ~= UnitName("player") then
-						return PseudoTrade[api](self, ...)
+				local trade = self.data.pseudoTradeData[self.tradeID]
+				if trade then
+					if self.player ~= UnitName("player") and trade[api] then
+						return trade[api](...)
 					end
 					local currentTradeSkill = GetTradeSkillLine()
 
@@ -214,18 +224,20 @@ do
 						currentTradeSkill = GetSpellInfo(2656)
 					end
 
-					if currentTradeSkill ~= GetSpellInfo(self.tradeID) then
-						return PseudoTrade[api](self, ...)
+					if currentTradeSkill ~= GetSpellInfo(self.tradeID) and trade[api] then
+						return trade[api](...)
 					end
+
+					return
 				end
 
 				return _G[api](...)
 			end
-		else
-			GnomeWorks[api] = function(self,...)
-				return _G[api](...)
-			end
-		end
+--		else
+--			GnomeWorks[api] = function(self,...)
+--				return _G[api](...)
+--			end
+--		end
 	end
 
 

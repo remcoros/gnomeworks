@@ -3,6 +3,8 @@
 do
 	local bankLocked
 	local bankBags = { -1, 5,6,7,8,9,10,11 }
+	local bankScanComplete
+	local bankCollectLocked
 
 	local bagCache = { {}, {}, {}, {}, {}}
 
@@ -82,15 +84,19 @@ do
 	end
 
 
-	function GnomeWorks:BANKFRAME_OPENED(...)
-		if bankLocked then return end
-		local itemMoved
 
+	function GnomeWorks:BankCollectItems()
+print("BankCollectItems")
+		if bankCollectLocked then return end
+print("not-locked out")
+
+		bankCollectLocked = true
+
+		local itemMoved
+		bankScanComplete = true
 		-- temporarily disable bag update scanning while we're grabbing items from the bank.  we'll do a manual adjustment after each retrieval
-		-- (if only -- i don't think unregisters happen until after the current event cycle)
 		self:UnregisterEvent("BAG_UPDATE")
 
-		bankLocked = true
 
 		local bagErr
 
@@ -102,52 +108,54 @@ do
 
 		for k,bag in pairs(bankBags) do
 			for i = 1, GetContainerNumSlots(bag), 1 do
-				local link = GetContainerItemLink(bag, i)
+				if GetContainerItemInfo(bag, i) then
+					local link = GetContainerItemLink(bag, i)
 
-				if link then
-					local itemID = tonumber(string.match(link, "item:(%d+)"))
+					if link then
+						local itemID = tonumber(string.match(link, "item:(%d+)"))
 
-					local count = self.data.bankQueue[player][itemID]
+						local count = self.data.bankQueue[player][itemID]
 
-					if count and count > 0 then
-						local _,numAvailable = GetContainerItemInfo(bag, i)
+						if count and count > 0 then
+							local _,numAvailable = GetContainerItemInfo(bag, i)
 
-						ClearCursor()
+							ClearCursor()
 
-						local itemName, _, _, _, _, _, _, stackSize = GetItemInfo(link)
+							local itemName, _, _, _, _, _, _, stackSize = GetItemInfo(link)
 
-						local numMoved
+							local numMoved
 
-						if numAvailable < count then
-							numMoved = numAvailable
-						else
-							numMoved = count
-						end
+							if numAvailable < count then
+								numMoved = numAvailable
+							else
+								numMoved = count
+							end
 
-						local toBag, toSlot = FindBagSlot(itemID, numMoved)
+							local toBag, toSlot = FindBagSlot(itemID, numMoved)
 
-						if toBag then
-	--						PickupContainerItem(bag, i)
-							SplitContainerItem(bag, i, numMoved)
+							if toBag then
+		--						PickupContainerItem(bag, i)
+								SplitContainerItem(bag, i, numMoved)
 
-							PickupContainerItem(toBag, toSlot)
-
-
-							self.data.bankQueue[player][itemID] = self.data.bankQueue[player][itemID] - numMoved
+								PickupContainerItem(toBag, toSlot)
 
 
-							self:print(string.format("collecting %s x %s from bank",itemName,numMoved))
-							itemMoved = true
-						elseif not bagErr then
-							self:warning("cannot collect some items due to lack of bag space")
-							bagErr = true
+								self.data.bankQueue[player][itemID] = self.data.bankQueue[player][itemID] - numMoved
+
+
+								self:print(string.format("collecting %s x %s from bank",itemName,numMoved))
+								itemMoved = true
+							elseif not bagErr then
+								self:warning("cannot collect some items due to lack of bag space")
+								bagErr = true
+							end
 						end
 					end
 				end
 			end
 		end
 
-		bankLocked = nil
+		bankCollectLocked = nil
 
 		self:RegisterEvent("BAG_UPDATE")
 
@@ -157,19 +165,55 @@ do
 	end
 
 
+	function GnomeWorks:BANKFRAME_OPENED(...)
+		if bankLocked then return end
+
+		bankScanComplete = true
+
+
+		bankLocked = true
+
+		local bagErr
+
+		local player = self.player or UnitName("player")
+
+		for k,bag in pairs(bankBags) do
+			for i = 1, GetContainerNumSlots(bag), 1 do
+				if GetContainerItemInfo(bag, i) then
+					local link = GetContainerItemLink(bag, i)
+
+					if not link then
+						bankScanComplete = false
+					end
+				end
+			end
+		end
+
+		if bankScanComplete then
+--			self:BankCollectItems()
+		end
+
+		self:ShoppingListShow((UnitName("player")), "bankQueue")
+
+		bankLocked = nil
+	end
+
+
 	function GnomeWorks:GUILDBANKFRAME_OPENED(...)
 		local numTabs = GetNumGuildBankTabs()
 
 		for tab=1,numTabs do
 			QueryGuildBankTab(tab)
 		end
+
+		self:ShoppingListShow((UnitName("player")), "guildBankQueue")
 	end
 
 
 	function GnomeWorks:GuildBankCollectItems()
-		if bankLocked then return end
+		if bankCollectLocked then return end
 
-		bankLocked = true
+		bankCollectLocked = true
 
 
 		local itemMoved
@@ -239,7 +283,7 @@ do
 			end
 		end
 
-		bankLocked = nil
+		bankCollectLocked = nil
 
 		self:RegisterEvent("GUILDBANKBAGSLOTS_CHANGED")
 		self:RegisterEvent("BAG_UPDATE")
@@ -252,7 +296,7 @@ do
 		if bankLocked then return end
 
 		bankLocked = true
-
+		bankScanComplete = true
 
 		local itemMoved
 
@@ -287,14 +331,18 @@ do
 			local name, icon, isViewable, canDeposit, numWithdrawals, remainingWithdrawals = GetGuildBankTabInfo(tab)
 
 			for slot=1,98 do
-				local link = GetGuildBankItemLink(tab,slot)
+				if GetGuildBankItemInfo(tab,slot) then
+					local link = GetGuildBankItemLink(tab,slot)
 
-				if link then
-					local _,numAvailable = GetGuildBankItemInfo(tab, slot)
-					local itemID = tonumber(string.match(link, "item:(%d+)"))
+					if link then
+						local _,numAvailable = GetGuildBankItemInfo(tab, slot)
+						local itemID = tonumber(string.match(link, "item:(%d+)"))
 
-					if self.data.reagentUsage[itemID] or self.data.itemSource[itemID] then
-						invData[itemID] = (invData[itemID] or 0) + numAvailable
+						if self.data.reagentUsage[itemID] or self.data.itemSource[itemID] then
+							invData[itemID] = (invData[itemID] or 0) + numAvailable
+						end
+					else
+						bankScanComplete = false
 					end
 				end
 			end
@@ -307,7 +355,9 @@ do
 
 		self:InventoryScan()
 
-		updateTimer = self:ScheduleTimer("GuildBankCollectItems",.25)
+		if bankScanComplete then
+--			self:GuildBankCollectItems()
+		end
 	end
 
 

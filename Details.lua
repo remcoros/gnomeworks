@@ -334,16 +334,15 @@ do
 		function GnomeWorks:ShowReagents(index)
 			if not index or not self.tradeID then return end
 
-			local recipeID = self.data.skillDB[self.player..":"..self.tradeID] and self.data.skillDB[self.player..":"..self.tradeID].recipeID[index]
+			local recipeID
 
-			if not recipeID then
-				if not self.data.pseudoTrade[self.tradeID] then
-					return
-				end
+			if self.data.pseudoTradeData[self.tradeID] then
+				local trade = self.data.pseudoTradeData[self.tradeID]
 
-				recipeID = self.data.pseudoTrade[self.tradeID][index]
+				recipeID = trade.skillList[index]
+			else
+				recipeID = self.data.skillDB[self.player..":"..self.tradeID] and self.data.skillDB[self.player..":"..self.tradeID].recipeID[index]
 			end
-
 
 			reagentFrame:Show()
 
@@ -360,11 +359,15 @@ do
 
 				local i = 0
 
-				for reagentID, numNeeded in pairs(GnomeWorksDB.reagents[recipeID]) do
-					i = i + 1
-					sf.data.entries[i].id = reagentID
-					sf.data.entries[i].numNeeded = numNeeded
-					sf.data.entries[i].index = i
+				local results, reagents = self:GetRecipeData(recipeID)
+
+				if reagents then
+					for reagentID, numNeeded in pairs(reagents) do
+						i = i + 1
+						sf.data.entries[i].id = reagentID
+						sf.data.entries[i].numNeeded = numNeeded
+						sf.data.entries[i].index = i
+					end
 				end
 
 				sf.data.numEntries = i
@@ -494,48 +497,66 @@ do
 		local parentFrame = detailFrame.scrollChild
 
 
-		local detailIcon = CreateFrame("Button",nil,detailFrame)
-
-		detailIcon:SetScript("OnClick", function(frame,...)
-			HandleModifiedItemClick(GnomeWorks:GetTradeSkillRecipeLink(GnomeWorks.selectedSkill))
-		end)
+		local detailIconList = {}
+		local detailNumMadeLabelList = {}
 
 
-		local detailIcon = CreateFrame("Button",nil,detailFrame)
+		local iconRow, iconColumn = 0,0
 
-		detailIcon:EnableMouse(true)
+		for i=1,32 do
+			local detailIcon = CreateFrame("Button",nil,detailFrame)
 
-		detailIcon:SetWidth(30)
-		detailIcon:SetHeight(30)
+			detailIcon:EnableMouse(true)
 
-		detailIcon:SetPoint("TOPLEFT", 3,-3)
+			detailIcon:SetWidth(30)
+			detailIcon:SetHeight(30)
 
-		detailIcon:SetScript("OnClick", function(frame,...)
-			HandleModifiedItemClick(GnomeWorks:GetTradeSkillItemLink(GnomeWorks.selectedSkill))
-		end)
+			detailIcon:SetPoint("TOPLEFT", 3 + 33 * iconColumn, -3 - 33 * iconRow)
 
-		detailIcon:SetScript("OnEnter", function(frame,...)
-			if GnomeWorks.selectedSkill then
-				GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
-				GameTooltip:SetHyperlink(GnomeWorks:GetTradeSkillItemLink(GnomeWorks.selectedSkill))
-				GameTooltip:AddLine("Shift-Click to Link Item")
-				GameTooltip:Show()
+			iconColumn = iconColumn + 1
+
+			if iconRow == 0 then
+				if iconColumn == 3 then
+					iconColumn = 0
+					iconRow = 1
+				end
+			elseif iconColumn == 7 then
+				iconColumn = 0
+				iconRow = iconRow + 1
 			end
-			CursorUpdate(self)
-		end)
 
-		detailIcon:SetScript("OnLeave", GameTooltip_HideResetCursor)
+			detailIcon:SetScript("OnClick", function(frame,...)
+				HandleModifiedItemClick("item:"..frame.itemID)
+			end)
+
+			detailIcon:SetScript("OnEnter", function(frame,...)
+				if frame.itemID then
+					GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
+					GameTooltip:SetHyperlink("item:"..frame.itemID)
+					GameTooltip:AddLine("Shift-Click to Link Item")
+					GameTooltip:Show()
+				end
+				CursorUpdate(self)
+			end)
+
+			detailIcon:SetScript("OnLeave", GameTooltip_HideResetCursor)
 
 
 
-		local detailNumMadeLabel = detailIcon:CreateFontString(nil,"OVERLAY", "GameFontGreenSmall")
-		detailNumMadeLabel:SetPoint("BOTTOMRIGHT",-2,2)
-		detailNumMadeLabel:SetPoint("TOPLEFT",0,0)
-		detailNumMadeLabel:SetJustifyH("RIGHT")
-		detailNumMadeLabel:SetJustifyV("BOTTOM")
+			local detailNumMadeLabel = detailIcon:CreateFontString(nil,"OVERLAY", "GameFontGreenSmall")
+			detailNumMadeLabel:SetPoint("BOTTOMRIGHT",-2,2)
+			detailNumMadeLabel:SetPoint("TOPLEFT",0,0)
+			detailNumMadeLabel:SetJustifyH("RIGHT")
+			detailNumMadeLabel:SetJustifyV("BOTTOM")
+
+			detailIconList[i] = detailIcon
+			detailNumMadeLabelList[i] = detailNumMadeLabel
+		end
+
+
 
 		local detailNameButton = CreateFrame("Button",nil,detailFrame)
-		detailNameButton:SetPoint("TOPLEFT", detailIcon, "TOPRIGHT", 5,0)
+		detailNameButton:SetPoint("TOPLEFT", detailIconList[1], "TOPRIGHT", 5,0)
 		detailNameButton:SetPoint("RIGHT", -5,0)
 		detailNameButton:SetHeight(30)
 
@@ -621,44 +642,46 @@ do
 		end)
 
 		detailFrame:RegisterInfoFunction(function(index,recipeID,left,right)
-			local link = self:GetTradeSkillItemLink(index)
+			if GnomeWorks:IsPseudoTrade(GnomeWorks.tradeID) then
+			else
+				local link = self:GetTradeSkillItemLink(index)
 
-			if link and strfind(link,"item:") then -- or strfind(link,"spell:") or strfind(link,"enchant:") then
-				local firstLine = 2
+				if link and strfind(link,"item:") then -- or strfind(link,"spell:") or strfind(link,"enchant:") then
+					local firstLine = 2
 
-				if strfind(link,"spell:") or strfind(link,"enchant:") then
-					firstLine = 4
-				end
+					if strfind(link,"spell:") or strfind(link,"enchant:") then
+						firstLine = 4
+					end
 
-				tooltipScanner:SetOwner(frame, "ANCHOR_NONE")
-				tooltipScanner:SetHyperlink(link)
+					tooltipScanner:SetOwner(frame, "ANCHOR_NONE")
+					tooltipScanner:SetHyperlink(link)
 
-				local tiplines = tooltipScanner:NumLines()
+					local tiplines = tooltipScanner:NumLines()
 
-				if firstLine < tiplines then
-					for i=firstLine, tiplines do
-						local fs = getglobal("GWParsingTooltipTextLeft"..i)
+					if firstLine < tiplines then
+						for i=firstLine, tiplines do
+							local fs = getglobal("GWParsingTooltipTextLeft"..i)
 
-						local r,g,b,a = fs:GetTextColor()
+							local r,g,b,a = fs:GetTextColor()
 
-						left = string.format("%s|c%2x%2x%2x%2x%s|r\n",left,a*255,r*255,g*255,b*255,fs:GetText())
+							left = string.format("%s|c%2x%2x%2x%2x%s|r\n",left,a*255,r*255,g*255,b*255,fs:GetText())
 
 
-						local fs = getglobal("GWParsingTooltipTextRight"..i)
+							local fs = getglobal("GWParsingTooltipTextRight"..i)
 
-						local r,g,b,a = fs:GetTextColor()
+							local r,g,b,a = fs:GetTextColor()
 
-						right = string.format("%s|c%2x%2x%2x%2x%s|r\n",right,a*255,r*255,g*255,b*255,fs:GetText() or "")
+							right = string.format("%s|c%2x%2x%2x%2x%s|r\n",right,a*255,r*255,g*255,b*255,fs:GetText() or "")
+						end
+					else
+						left = left..(self:GetTradeSkillDescription(index) or "").."\n"
+						right = right .. "\n"
 					end
 				else
 					left = left..(self:GetTradeSkillDescription(index) or "").."\n"
 					right = right .. "\n"
 				end
-			else
-				left = left..(self:GetTradeSkillDescription(index) or "").."\n"
-				right = right .. "\n"
 			end
-
 
 			return left,right
 		end)
@@ -673,36 +696,59 @@ do
 		function GnomeWorks:ShowDetails(index)
 			if not index or not self.tradeID then return end
 
-			local recipeID = self.data.skillDB[self.player..":"..self.tradeID] and self.data.skillDB[self.player..":"..self.tradeID].recipeID[index]
+			local recipeID
 
-			if not recipeID then
-				if not self.data.pseudoTrade[self.tradeID] then
-					return
-				end
+			if self.data.pseudoTradeData[self.tradeID] then
+				local trade = self.data.pseudoTradeData[self.tradeID]
 
-				recipeID = self.data.pseudoTrade[self.tradeID][index]
+				recipeID = trade.skillList[index]
+			else
+				recipeID = self.data.skillDB[self.player..":"..self.tradeID] and self.data.skillDB[self.player..":"..self.tradeID].recipeID[index]
 			end
 
 			detailFrame:Show()
 
 			local skillName = self:GetRecipeName(recipeID)
 
-			detailIcon:SetNormalTexture(self:GetTradeSkillIcon(index))
-
---			local numMade = next(GnomeWorksDB.results[recipeID])
-
-			local minMade, maxMade = GnomeWorks:GetTradeSkillNumMade(index)
-
-			local numMade = (minMade + maxMade)/2
-
-			if numMade ~= 1 then
-				detailNumMadeLabel:SetText(numMade)
-				detailNumMadeLabel:Show()
-			else
-				detailNumMadeLabel:Hide()
+			for i=1,32 do
+				detailIconList[i]:Hide()
 			end
 
---print("vertical scroll range ", detailFrame.textScroll:GetVerticalScrollRange())
+
+--			detailIconList[1]:SetNormalTexture(self:GetTradeSkillIcon(index))
+
+			local results = self:GetRecipeData(recipeID, self.player)
+
+			local resultCount = 1
+
+			if results then
+				for itemID, numMade in pairs(results) do
+					local itemIcon = GetItemIcon(itemID)
+
+					detailIconList[resultCount]:SetNormalTexture(itemIcon)
+					detailIconList[resultCount].itemID = itemID
+					detailIconList[resultCount].count = numMade
+
+					detailIconList[resultCount]:Show()
+
+					if numMade ~= 1 then
+						detailNumMadeLabelList[resultCount]:SetText(math.floor(numMade*100+.5)/100)
+						detailNumMadeLabelList[resultCount]:Show()
+					else
+						detailNumMadeLabelList[resultCount]:Hide()
+					end
+
+					resultCount = resultCount + 1
+				end
+			end
+
+			if resultCount >= 4 then
+				detailFrame.textScroll:Hide()
+			else
+				detailFrame.textScroll:Show()
+			end
+
+			detailNameButton:SetPoint("TOPLEFT", detailIconList[1], "TOPRIGHT", 5 + 33 * math.min(2,(resultCount-2)),0)
 
 			detailNameLabel:SetText(skillName)
 

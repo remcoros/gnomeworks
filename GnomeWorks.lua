@@ -1,5 +1,5 @@
 
-
+local modName, modTable = ...
 
 
 local VERSION = ("$Revision$"):match("%d+")
@@ -216,7 +216,7 @@ do
 
 		if LibStub then
 			self.libPT = LibStub:GetLibrary("LibPeriodicTable-3.1", true)
-			self.libTS = LibStub:GetLibrary("LibTradeSkill", true)
+--			self.libTS = LibStub:GetLibrary("LibTradeSkill", true)
 		end
 
 
@@ -324,7 +324,10 @@ do
 --		GnomeWorks.data.constructionQueue = {}
 		GnomeWorks.data.selectionStack = {}
 
-		GnomeWorks:ConstructPseudoTrades("All Recipes")
+		GnomeWorks:SendMessageDispatch("AddSpoofedRecipes")
+
+--		GnomeWorks:ConstructPseudoTrades("All Recipes")
+--		GnomeWorks:ConstructPseudoTrades(player)
 
 --		GnomeWorks:PopulateQueues()
 
@@ -422,7 +425,7 @@ do
 
 	if not IsAddOnLoaded("AddOnLoader") then
 		GnomeWorks:RegisterEvent("ADDON_LOADED", function(event, name)
-			if name == "GnomeWorks" then
+			if string.lower(name) == string.lower(modName) then
 				GnomeWorks:UnregisterEvent(event)
 --				GnomeWorks:ScheduleTimer("OnLoad",.01)
 				GnomeWorks:OnLoad()
@@ -442,7 +445,7 @@ do
 	else
 		GnomeWorks:RegisterEvent("ADDON_LOADED", function(event, name)
 --			print("gnomeworks detected the loading of "..tostring(name))
-			if name == "GnomeWorks" then
+			if string.lower(name) == string.lower(modName) then
 --				GnomeWorks:ScheduleTimer("OnLoad",1)
 				GnomeWorks:OnLoad()
 				GnomeWorks:Initialize()

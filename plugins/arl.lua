@@ -132,6 +132,7 @@ do
 --function ARL:DisplayAcquireData(recipe_id, acquire_id, location, quality_color, addline_func)
 
 			local leftInfoText, rightInfoText
+			local arlAddedData
 
 --[[
 local function ttAdd(
@@ -145,6 +146,7 @@ local function ttAdd(
 ]]
 
 			local function constructInfoText(leftPad, textSize, narrow, leftText, leftColor, rightText, rightColor)
+				arlAddedData = true
 				leftInfoText = string.format("%s|cff%s%s|r\n",leftInfoText, leftColor or "ffffff", leftText or "")
 				rightInfoText = string.format("%s|cff%s%s|r\n",rightInfoText, rightColor or "ffffff", rightText or "")
 			end
@@ -153,12 +155,18 @@ local function ttAdd(
 			GWDetailFrame:RegisterInfoFunction(function(index,recipeID,left,right)
 				if ARL.DisplayAcquireData then
 
+					arlAddedData = nil
+
 					leftInfoText = left .. "ARL Recipe Source:\n"
 					rightInfoText = right .. "\n"
 
 					ARL:DisplayAcquireData(recipeID, nil, nil, constructInfoText)
 
-					return leftInfoText, rightInfoText
+					if arlAddedData then
+						return leftInfoText, rightInfoText
+					else
+						return left, right
+					end
 				end
 			end)
 

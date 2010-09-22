@@ -4,7 +4,8 @@ do
 	local tradeButtonParent
 	local playerGUID
 
-	local pseudoTradeID = {
+
+	local pseudoTrades = {
 --		[2656] = true,         -- smelting (from mining)
 --		[53428] = true,			-- runeforging
 		[51005] = true,			-- milling
@@ -46,10 +47,13 @@ do
 			end
 		else
 			if IsShiftKeyDown() then
+				local spellName = GetSpellInfo(frame.tradeID)
 				local _,link = GetSpellLink(frame.tradeID)
 
+--				link = string.gsub(link,spellName,string.format("%s's Ultimate %s Service",(UnitName("player")),spellName))
+
 				if (not ChatEdit_InsertLink(link) ) then
-					ChatFrameEditBox:Show()
+					ChatEdit_GetLastActiveWindow():Show()
 					ChatEdit_InsertLink(link)
 				end
 			elseif ((GetTradeSkillLine() == "Mining" and "Smelting") or GetTradeSkillLine()) ~= frame.tradeName or IsTradeSkillLinked() then
@@ -140,10 +144,12 @@ do
 					button.tradeLink = links[button.tradeID]
 
 					if player == (UnitName("player")) then
-						if not GnomeWorks:IsPseudoTrade(button.tradeID) then
+--						if not GnomeWorks:IsPseudoTrade(button.tradeID) then
+						if not pseudoTrades[button.tradeID] then
 							button.tradeLink = nil
 						end
 					end
+--print(button.tradeID, links[button.tradeID], button.tradeLink)
 
 
 					button:SetPoint("TOPLEFT", position, 0)

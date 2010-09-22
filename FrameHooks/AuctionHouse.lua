@@ -107,6 +107,8 @@ print("query", reagentName, reagentID)
 	function GnomeWorks:AUCTION_HOUSE_SHOW(...)
 		self.IsAtAuctionHouse = true
 --		self:BeginReagentScan(GnomeWorks.data.inventoryData[(UnitName("player"))].queue, function() print("DONE WITH SCAN") end)
+
+		self:ShoppingListShow((UnitName("player")), "vendorQueue")
 	end
 
 

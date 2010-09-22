@@ -71,8 +71,15 @@ do
 	end
 
 
-	local merchantLocked
+	local purchaseLockout
+
 	function GnomeWorks:BuyVendorItems(player)
+		if purchaseLockout then
+			return
+		end
+
+		purchaseLockout = true
+
 		local vendorQueue = self.data.vendorQueue[player]
 		local totalSpent = 0
 
@@ -120,46 +127,72 @@ do
 		if totalSpent>0 then
 			self:print("spent on reagents: ",QuickMoneyFormat(totalSpent))
 		end
+
+		purchaseLockout = nil
 	end
 
 
 
 	local merchantLocked
+	local merchantIncomplete
+
 	function GnomeWorks:VendorScan(...)
 		if merchantLocked then return end
 
+		merchantIncomplete = false
 		merchantLocked = true
 
 		local totalSpent = 0
 
 		for i=1,GetMerchantNumItems() do
-			local link = GetMerchantItemLink(i)
+			if GetMerchantItemInfo(i) then
+				local link = GetMerchantItemLink(i)
 
-			if link then
-				local itemID = tonumber(string.match(link, "item:(%d+)"))
+				if link then
+					local itemID = tonumber(string.match(link, "item:(%d+)"))
 
-				RecordMerchantItem(itemID, i)
+					RecordMerchantItem(itemID, i)
+				else
+					merchantIncomplete = true
+				end
+			else
+				merchantIncomplete = true
 			end
 		end
 
 
-		self:BuyVendorItems(self.player or UnitName("Player"))
+		if not merchantIncomplete then
+--			self:BuyVendorItems(self.player or UnitName("Player"))
+		end
 
 		merchantLocked = nil
 	end
 
 
 	function GnomeWorks:MERCHANT_SHOW(...)
+		local player = UnitName("player")
+		local vendorQueue = self.data.vendorQueue[player]
+
+		if vendorQueue then
+--[[
+			if not self.MainWindow:IsVisible() then
+				self.player = player
+				self:ShowQueueList(player)
+			end
+]]
+			self:ShoppingListShow((UnitName("player")), "vendorQueue")
+		end
+
+		self:MERCHANT_UPDATE(...)
+	end
+
+
+	function GnomeWorks:MERCHANT_UPDATE(...)
 		if vendorThrottle then
 			self:CancelTimer(vendorThrottle, true)
 		end
 
 		vendorThrottle = self:ScheduleTimer("VendorScan",.25)
-	end
-
-
-	function GnomeWorks:MERCHANT_UPDATE(...)
-		self:MERCHANT_SHOW(...)
 	end
 end
 

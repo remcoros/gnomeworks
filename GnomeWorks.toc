@@ -53,6 +53,10 @@ ShoppingList.lua
 Inventory.lua
 GetTradeSkill.lua
 
+PseudoTrades\CommonSkills.lua
+PseudoTrades\Disenchanting.lua
+PseudoTrades\Milling.lua
+PseudoTrades\Prospecting.lua
 
 #### API
 API.lua

@@ -39,13 +39,35 @@ function GnomeWorks:RecipeGroupRename(oldName, newName)
 end
 
 
+function GnomeWorks:RecipeGroupValidate(player, tradeID, label, name)
+	if player and tradeID and label then
+		local key = player..":"..tradeID..":"..label
+		local groupList = self.data.groupList
+
+		if groupList[key] then
+			return player, tradeID, label, name
+		end
+
+		local labelKey = player..":"..tradeID
+
+		if groupLabels[labelKey] then
+			local label = groupLabels[labelKey][1]
+
+			key = labelKey..":"..label.name
+
+			return player, tradeID, label.name, label.subGroup.name and label.subGroup.name ~= OVERALL_PARENT_GROUP_NAME or nil
+		end
+	end
+end
+
+
 function GnomeWorks:RecipeGroupFind(player, tradeID, label, name)
 	if player and tradeID and label then
 		local key = player..":"..tradeID..":"..label
 		local groupList = self.data.groupList
 
-		if groupList and groupList[key] then
-			return self.data.groupList[key][name or OVERALL_PARENT_GROUP_NAME]
+		if groupList and groupList[key] and groupList[key][name or OVERALL_PARENT_GROUP_NAME] then
+			return groupList[key][name or OVERALL_PARENT_GROUP_NAME]
 		end
 	end
 end
