@@ -118,13 +118,8 @@ do
 	}
 
 
-
-	function GnomeWorks:ShoppingListShow(player)
-		if sf then												-- it's possible that this might get called prior to full initialization
-			local parentFrame = sf:GetParent():GetParent()
-
-			parentFrame:Show()
-
+	function GnomeWorks:ShoppingListUpdate(player)
+		if sf then
 			player = player or self.player
 
 			for k,queue in pairs(queueList) do
@@ -147,7 +142,7 @@ do
 						if count then
 							itemCount = itemCount + 1
 
---print((GetItemInfo(itemID)),"x",count)
+	--print((GetItemInfo(itemID)),"x",count)
 
 							if data[itemCount] then
 								data[itemCount].itemID = itemID
@@ -164,6 +159,17 @@ do
 			end
 
 			sf:Refresh()
+		end
+	end
+
+
+	function GnomeWorks:ShoppingListShow(player)
+		if sf then												-- it's possible that this might get called prior to full initialization
+			local parentFrame = sf:GetParent():GetParent()
+
+			parentFrame:Show()
+
+			self:ShoppingListUpdate(player)
 		end
 	end
 
@@ -205,7 +211,7 @@ do
 
 		sf.data = { entries = {} }
 
-		self:RegisterMessageDispatch("GnomeWorksQueueCountsChanged GnomeWorksInventoryScanComplete", function() GnomeWorks:ShoppingListShow() end)
+		self:RegisterMessageDispatch("GnomeWorksQueueCountsChanged GnomeWorksInventoryScanComplete", function() GnomeWorks:ShoppingListUpdate() end)
 
 --[[
 		sf.IsEntryFiltered = function(self, entry)
