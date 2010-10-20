@@ -34,7 +34,7 @@ do
 	local function SendQuery()
 		if not reagentScanAbort then
 			QueryAuctionItems(reagentName, nil, nil, 0, 0, 0, page, 0, nil, nil)
-print("query", reagentName, reagentID)
+--print("query", reagentName, reagentID)
 
 			GnomeWorks:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
 		end
@@ -68,14 +68,15 @@ print("query", reagentName, reagentID)
 
 				self:ScheduleTimer(SendQuery, .5)
 			else
-				callBack()
+				if callBack then
+					callBack()
+				end
 			end
 		end
 	end
 
 
 	function GnomeWorks:BeginReagentScan(reagents, func)
-
 		auctionData = self.data.auctionData
 
 		reagentList = reagents
@@ -98,6 +99,27 @@ print("query", reagentName, reagentID)
 	end
 
 
+	function GnomeWorks:BeginSingleReagentScan(itemID)
+		auctionData = self.data.auctionData
+
+		callback = nil
+
+		reagentList = { [itemID] = 1 }
+
+		if auctionData[itemID] then
+			table.wipe(auctionData[itemID])
+		end
+
+		page = 0
+		reagentID = next(reagentList)
+		if reagentID then
+			reagentName = GetItemInfo(reagentID)
+
+			SendQuery()
+		end
+	end
+
+
 	function GnomeWorks:StopReagentScan()
 		reagentScanAbort = true
 	end
@@ -105,15 +127,15 @@ print("query", reagentName, reagentID)
 
 
 	function GnomeWorks:AUCTION_HOUSE_SHOW(...)
-		self.IsAtAuctionHouse = true
+		self.atAuctionHouse = true
 --		self:BeginReagentScan(GnomeWorks.data.inventoryData[(UnitName("player"))].queue, function() print("DONE WITH SCAN") end)
 
-		self:ShoppingListShow((UnitName("player")), "vendorQueue")
+		self:ShoppingListShow((UnitName("player")))
 	end
 
 
 	function GnomeWorks:AUCTION_HOUSE_CLOSE(...)
-		self.IsAtAuctionHouse = false
+		self.atAuctionHouse = false
 		self:StopReagentScan()
 	end
 

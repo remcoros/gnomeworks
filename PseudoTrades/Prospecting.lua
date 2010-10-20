@@ -129,6 +129,17 @@ do
 
 	local prospectingReagents = {}
 
+	local prospectingLevels = {
+		[36912] = 400, --Saronite Ore
+		[36909] = 350, --Cobalt Ore
+		[23425] = 325, --Adamantite Ore
+		[23424] = 275, --Fel Iron Ore
+		[10620] = 250, --Thorium Ore
+		[3858] = 175, --Mithril Ore
+		[2772] = 125, -- Iron Ore
+		[2771] = 50, --Tin Ore
+		[2770] = 20, --Copper Ore
+	}
 
 
 	local skillList = {}
@@ -261,6 +272,28 @@ do
 
 	api.ConfigureMacroText = function(recipeID)
 		return "/cast "..GetSpellInfo(31252).."\r/use "..GetItemInfo(-recipeID)
+	end
+
+
+
+	api.RecordKnownSpells = function(player)
+		local jewelcraftingRank = GnomeWorks:GetTradeSkillRank(player, 25229)
+
+		if jewelcraftingRank > 0 then
+			local knownSpells = GnomeWorks.data.knownSpells[player]
+
+
+			for i = 1, #skillList, 1 do
+				if type(skillList[i]) ~= "string" then
+
+					local recipeID = skillList[i]
+
+					if (prospectingLevels[-recipeID] or 0) <= jewelcraftingRank then
+						knownSpells[recipeID] = i
+					end
+				end
+			end
+		end
 	end
 
 

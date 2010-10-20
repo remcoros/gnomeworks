@@ -1,4 +1,4 @@
-## Interface: 30300
+## Interface: 40000
 ## Title: GnomeWorks
 ## Notes: A replacement tradeskill window
 ## Author: lilsparky
@@ -36,6 +36,8 @@ Libs\AceTimer-3.0\AceTimer-3.0.lua
 #Locale\Locale-ruRU.lua
 
 
+Libs\LibStagedExecution.lua
+
 
 
 #### Main files
@@ -52,6 +54,8 @@ Queue.lua
 ShoppingList.lua
 Inventory.lua
 GetTradeSkill.lua
+LinkDecode.lua
+ShoppingList.lua
 
 PseudoTrades\CommonSkills.lua
 PseudoTrades\Disenchanting.lua

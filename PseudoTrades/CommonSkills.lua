@@ -397,6 +397,22 @@ do
 	end
 
 
+
+	api.RecordKnownSpells = function(player)
+		local knownSpells = GnomeWorks.data.knownSpells[player]
+
+		if knownSpells then
+			for i = 1, #skillList, 1 do
+				local recipeID = skillList[i]
+
+				knownSpells[recipeID] = i
+			end
+		else
+			print("no known spells for",player)
+		end
+	end
+
+
 	api.Scan = function()
 		if not GnomeWorks.tradeID then
 			return

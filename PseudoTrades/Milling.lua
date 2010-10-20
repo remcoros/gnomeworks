@@ -409,6 +409,27 @@ do
 	end
 
 
+	api.RecordKnownSpells = function(player)
+		local inscriptionRank = GnomeWorks:GetTradeSkillRank(player, 45357)
+
+		if inscriptionRank > 0 then
+			local knownSpells = GnomeWorks.data.knownSpells[player]
+
+
+			for i = 1, #skillList, 1 do
+				if type(skillList[i]) ~= "string" then
+
+					local recipeID = skillList[i]
+
+					if millBrackets[-recipeID] <= inscriptionRank then
+						knownSpells[recipeID] = i
+					end
+				end
+			end
+		end
+	end
+
+
 	api.Scan = function()
 		if not GnomeWorks.tradeID then
 			return

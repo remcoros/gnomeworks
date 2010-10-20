@@ -266,7 +266,7 @@ do
 		if data and data.entries then
 			local count = 0
 
-			for i=1,#data.entries do
+			for i=1,data.numEntries or #data.entries do
 				local entry = data.entries[i]
 
 

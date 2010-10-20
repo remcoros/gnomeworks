@@ -96,6 +96,13 @@ do
 	}
 
 
+	local levelBasis = {
+		[51005] = 45357,		-- milling/inscription
+		[13262] = 7411,			-- disenchant/enchanting
+		[31252] = 25229,		-- prospecting/jewelcrafting
+	}
+
+
 
 
 
@@ -145,70 +152,6 @@ do
 
 
 	function GnomeWorks:AddToItemCache(itemID, recipeID, numMade)
-
-		if false and not GnomeWorksDB.results[-itemID] then
-
-			local deTable = LSW.getDisenchantResults(itemID)
-
-				if deTable then
-	--			itemCache[itemID].deTable = deTable
-
-
-				GnomeWorksDB.tradeIDs[-itemID] = 13262			-- Disenchant
-				GnomeWorksDB.names[-itemID] = "Disenchant "..(GetItemInfo(itemID)) or "item:"..itemID
-				GnomeWorksDB.results[-itemID] = deTable
-
-				for resultID, count in pairs(deTable) do
-					self:AddToItemCache(resultID, -itemID, count)
-
-					GnomeWorksDB.reagents[-itemID] = GnomeWorksDB.reagents[recipeID] or { [itemID] = 1 }
-				end
-
-			end
---[[
-			local itemName, itemLink, itemRarity, itemLevel  = GetItemInfo(itemID)
-			local reqLevel = 1
-
-			if itemLevel >= 21 and itemLevel <= 60 then
-				reqLevel = (math.ceil(itemLevel/5)-4) * 25
-			else
-				if itemRarity < 5 then
-					if itemLevel < 100 then
-						reqLevel = 225
-					elseif itemLevel < 130 then
-						reqLevel = 275
-					elseif itemLevel < 154 then
-						reqLevel = 325
-					else
-						reqLevel = 350
-					end
-				else
-					if itemLevel < 90 then
-						reqLevel = 225
-					elseif itemLevel < 130 then
-						reqLevel = 300
-					elseif itemLevel < 154 then
-						reqLevel = 325
-					elseif itemLevel < 200 then
-						reqLevel = 350
-					end
-				end
-			end
-
-			recipeCache[-itemID].canCraft = { "playerDisenchantLevel", reqLevel }
-
-			if recipeID then
-				if not itemCache[itemID].craftSource then
-					itemCache[itemID].craftSource = {}
-				end
-
-				itemCache[itemID].craftSource[recipeID] = numMade or 1
-			end
-]]
-		end
-
---		itemCache[itemID].BOP = itemBOPCheck(itemID)
-
 		return AddToDataTable(GnomeWorks.data.itemSource, itemID, recipeID, numMade)
 	end
 
@@ -245,7 +188,6 @@ do
 	end
 
 
-
 	function GnomeWorks:ParseSkillList()
 DebugSpam("parsing skill list")
 		local playerName = UnitName("player")
@@ -259,11 +201,22 @@ DebugSpam("parsing skill list")
 			if not fakeTrades[id] then
 				local link, tradeLink = GetSpellLink((GetSpellInfo(id)))
 
+
 				if link then
 DebugSpam("found ", link, tradeLink)
 
 					if unlinkableTrades[id] then
-						tradeLink = "|cffffd000|Htrade:"..id..":1:1:0:/|h["..GnomeWorks:GetTradeName(id).."]|h|r"			-- fake link for data collection purposes
+						local level = "1:1"
+
+						if levelBasis[id] then
+							local _,link = GetSpellLink(levelBasis[id])
+
+							level = string.match(link,"Htrade:%d+:(%d+:%d+)")
+						end
+
+						tradeLink = "|cffffd000|Htrade:"..id..":"..level..":0:/|h["..GnomeWorks:GetTradeName(id).."]|h|r"			-- fake link for data collection purposes
+					elseif not tradeLink then
+						return false
 					end
 
 					playerData.links[id] = tradeLink
@@ -289,7 +242,6 @@ DebugSpam("found ", link, tradeLink)
 		for k,id in pairs(tradeIDList) do
 			if not fakeTrades[id] then
 				local link, tradeLink = GetSpellLink(id)
---print(link, tradeLink)
 
 				if tradeLink then
 					local tradeID,ranks,guid,bitMap,tail = string.match(tradeLink,"(|c%x+|Htrade:%d+):(%d+:%d+):([0-9a-fA-F]+:)([A-Za-z0-9+/]+)(|h%[[^]]+%]|h|r)")
@@ -322,6 +274,8 @@ DebugSpam("done parsing skill list")
 			end
 		end
 ]]
+
+		return true
 	end
 
 	function GnomeWorks:OpenTradeLink(tradeLink, player)
@@ -987,7 +941,7 @@ DebugSpam("adding "..(recipeLink or "nil").." to "..groupName)
 
 	function GnomeWorks:IsSpellKnown(recipeID, player)
 		player = player or self.player
-
+--[[
 		local tradeID = GnomeWorksDB.tradeIDs[recipeID]
 
 		local tradeLink = self.data.playerData[player].links[tradeID]
@@ -999,5 +953,14 @@ DebugSpam("adding "..(recipeLink or "nil").." to "..groupName)
 		end
 
 		return false
+]]
+--print("isSpellKnown",recipeID,player,self:GetRecipeName(recipeID))
+		if self.data.knownSpells[player][recipeID] then
+--print("**** yes ****")
+			return true
+		else
+--print("no")
+			return false
+		end
 	end
 end

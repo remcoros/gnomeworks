@@ -8,6 +8,7 @@ do
 	local WeaponID
 	local ArmorID
 
+	GameTooltip:Hide()
 	GameTooltip:SetHyperlink("item:1512")
 	GameTooltip:SetHyperlink("item:1376")
 
@@ -425,11 +426,65 @@ do
 	end
 
 
+	api.RecordKnownSpells = function(player)
+		local enchantingRank = GnomeWorks:GetTradeSkillRank(player, 7411)
+
+
+		if enchantingRank > 0 then
+			local knownItems = GnomeWorks.data.knownItems[player]
+			local knownSpells = GnomeWorks.data.knownSpells[player]
+
+
+			for i = 1, #skillList, 1 do
+				local recipeID = skillList[i]
+
+				if knownItems[-recipeID] then
+
+					local itemID = -recipeID
+					local itemName, itemLink, itemRarity, itemLevel  = GetItemInfo(itemID)
+					local reqLevel = 1
+
+					if itemLevel >= 21 and itemLevel <= 60 then
+						reqLevel = (math.ceil(itemLevel/5)-4) * 25
+					else
+						if itemRarity < 5 then
+							if itemLevel < 100 then
+								reqLevel = 225
+							elseif itemLevel < 130 then
+								reqLevel = 275
+							elseif itemLevel < 154 then
+								reqLevel = 325
+							else
+								reqLevel = 350
+							end
+						else
+							if itemLevel < 90 then
+								reqLevel = 225
+							elseif itemLevel < 130 then
+								reqLevel = 300
+							elseif itemLevel < 154 then
+								reqLevel = 325
+							elseif itemLevel < 200 then
+								reqLevel = 350
+							end
+						end
+					end
+
+					if reqLevel <= enchantingRank then
+						knownSpells[recipeID] = i
+					end
+				end
+			end
+		end
+	end
+
+
 
 	api.Scan = function()
 		if not GnomeWorks.tradeID then
 			return
 		end
+
 
 		local tradeID = GnomeWorks.tradeID
 		local player = GnomeWorks.player
@@ -442,6 +497,10 @@ do
 		local currentGroup = nil
 
 		local mainGroup = GnomeWorks:RecipeGroupNew(player,tradeID,"By Bracket")
+
+
+		local knownItems = GnomeWorks.data.knownItems[player]
+
 
 		mainGroup.locked = true
 		mainGroup.autoGroup = true
@@ -476,11 +535,13 @@ do
 
 			local recipeID = skillList[i]
 
-			GnomeWorks:RecipeGroupAddRecipe(flatGroup, recipeID, i, true)
+			if knownItems[-recipeID] then
+				GnomeWorks:RecipeGroupAddRecipe(flatGroup, recipeID, i, true)
 
-			local bracketName = GetRecipeBracket(recipeID)
+				local bracketName = GetRecipeBracket(recipeID)
 
-			GnomeWorks:RecipeGroupAddRecipe(bracketGroup[bracketName], recipeID, i, true)
+				GnomeWorks:RecipeGroupAddRecipe(bracketGroup[bracketName], recipeID, i, true)
+			end
 		end
 
 		GnomeWorks:InventoryScan()
@@ -551,6 +612,7 @@ do
 
 	GnomeWorks:RegisterMessageDispatch("AddSpoofedRecipes", function ()
 		SetUpRecipeTimer = GnomeWorks:ScheduleRepeatingTimer(SetUpRecipes, 1)
+--		SetUpRecipes()
 		return true
 	end)
 end

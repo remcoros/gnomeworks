@@ -73,7 +73,7 @@ do
 
 	local purchaseLockout
 
-	function GnomeWorks:BuyVendorItems(player)
+	function GnomeWorks:BuyVendorItems(player, singleItemID, singleItemCount)
 		if purchaseLockout then
 			return
 		end
@@ -89,40 +89,45 @@ do
 			if link then
 				local itemID = tonumber(string.match(link, "item:(%d+)"))
 
-				local count = vendorQueue[itemID]
+				if (singleItemID and itemID == singleItemID) or (not singleItemID and itemID) then
+					local count = singleItemCount or vendorQueue[itemID]
 
-				if count and count > 0 then
-					local name, texture, price, quantity, numAvailable, isUsable, extendedCost = GetMerchantItemInfo(i)
-					local _, _, _, _, _, _, _, stackSize = GetItemInfo(link)
+					if count and count > 0 then
+						local name, texture, price, quantity, numAvailable, isUsable, extendedCost = GetMerchantItemInfo(i)
+						local _, _, _, _, _, _, _, stackSize = GetItemInfo(link)
 
-					local numPurchase = math.ceil(count/quantity)
---print(numAvailable)
-					if numAvailable ~= 0 then
-						local numStacksNeeded    		= math.floor(count/stackSize);
-						local numVendorStacksPerStack 	= math.floor(stackSize/quantity);
-						local subStackCount        		= math.ceil((count-(numStacksNeeded*stackSize))/quantity);
-						if numStacksNeeded > 0 then
-							for l=1,numStacksNeeded do
-								BuyMerchantItem(i,numVendorStacksPerStack)
+						local numPurchase = math.ceil(count/quantity)
+	--print(numAvailable)
+						if numAvailable ~= 0 then
+							local numStacksNeeded    		= math.floor(count/stackSize);
+							local numVendorStacksPerStack 	= math.floor(stackSize/quantity);
+							local subStackCount        		= math.ceil((count-(numStacksNeeded*stackSize))/quantity);
+							if numStacksNeeded > 0 then
+								for l=1,numStacksNeeded do
+									BuyMerchantItem(i,numVendorStacksPerStack)
+								end
 							end
+							if subStackCount > 0 then
+								BuyMerchantItem(i,subStackCount)
+							end
+
+							if singleItemCount then
+								singleItemCount = singleItemCount - numPurchase*quantity
+							else
+								vendorQueue[itemID] = vendorQueue[itemID] - numPurchase * quantity
+							end
+
+							self:print("auto-purchased",name,"x",numPurchase * quantity)
+
+							totalSpent = totalSpent + price * numPurchase
 						end
-						if subStackCount > 0 then
-							BuyMerchantItem(i,subStackCount)
-						end
 
-						vendorQueue[itemID] = vendorQueue[itemID] - numPurchase * quantity
-
-
-						self:print("auto-purchased",name,"x",numPurchase * quantity)
-
-						totalSpent = totalSpent + price * numPurchase
 					end
-
 				end
 			end
 		end
 
-		GnomeWorks:InventoryScan()
+		self:ScheduleTimer("InventoryScan",.25)
 
 		if totalSpent>0 then
 			self:print("spent on reagents: ",QuickMoneyFormat(totalSpent))
@@ -170,6 +175,8 @@ do
 
 
 	function GnomeWorks:MERCHANT_SHOW(...)
+		self.atVendor = true
+
 		local player = UnitName("player")
 		local vendorQueue = self.data.vendorQueue[player]
 
@@ -180,7 +187,7 @@ do
 				self:ShowQueueList(player)
 			end
 ]]
-			self:ShoppingListShow((UnitName("player")), "vendorQueue")
+			self:ShoppingListShow((UnitName("player")))
 		end
 
 		self:MERCHANT_UPDATE(...)
@@ -193,6 +200,10 @@ do
 		end
 
 		vendorThrottle = self:ScheduleTimer("VendorScan",.25)
+	end
+
+	function GnomeWorks:MERCHANT_CLOSE(...)
+		self.atVendor = false
 	end
 end
 

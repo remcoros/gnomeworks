@@ -73,7 +73,7 @@ do
 		local buttonSize = 64
 		local position = 0 -- pixel
 		local spacing = 5
-		local scale = parentFrame:GetHeight()/64
+		local scale = parentFrame:GetHeight()/buttonSize
 
 		local frame = CreateFrame("Frame", nil, parentFrame)
 
@@ -98,7 +98,7 @@ do
 --			local spellName, _, spellIcon = GetSpellInfo(tradeID)
 			local spellIcon = GnomeWorks:GetTradeIcon(tradeID)
 
-			local button = CreateFrame("CheckButton", nil, frame, "ActionButtonTemplate")
+			local button = CreateFrame("CheckButton", "GWTSButton"..i, frame, "ActionButtonTemplate")
 
 			button:SetAlpha(0.8)
 
@@ -106,6 +106,7 @@ do
 			button:SetWidth(buttonSize)
 			button:SetHeight(buttonSize)
 
+			_G["GWTSButton"..i.."NormalTexture"]:SetAllPoints(button)			-- for some reason they added an offset in the template in 4.0.1
 
 			button:SetNormalTexture(spellIcon)
 			button:SetPushedTexture(spellIcon)

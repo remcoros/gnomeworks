@@ -369,6 +369,9 @@ do
 						if entry.command == "create" then
 							local name, rank, icon = GnomeWorks:GetTradeInfo(entry.recipeID)
 
+
+
+
 							if entry.manualEntry then
 								if entry.sourcePlayer then
 									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t %s (%s)",icon or "",GnomeWorks:GetRecipeName(entry.recipeID), entry.sourcePlayer)
@@ -376,6 +379,10 @@ do
 									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t %s",icon or "",GnomeWorks:GetRecipeName(entry.recipeID))
 								end
 							else
+
+								if entry.itemID then
+									icon = GetItemIcon(entry.itemID)
+								end
 --[[
 								if entry.command == "create" then
 									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t |cffd0d090%s: %s (x%d)",icon or "",GnomeWorks:GetTradeName(entry.tradeID),GnomeWorks:GetRecipeName(entry.recipeID),entry.results[entry.itemID])
@@ -403,6 +410,10 @@ do
 ]]
 
 						elseif entry.command == "collect" then
+
+							if not GetItemInfo(entry.itemID) then
+								GameTooltip:SetHyperlink("item:"..entry.itemID)
+							end
 
 							local itemName = GetItemInfo(entry.itemID) or "item:"..entry.itemID
 
@@ -572,7 +583,7 @@ end
 	end
 
 
-	local function BuildQueueList()
+	local function BuildQueueScrollingFrame()
 
 		local function ResizeQueueFrame(scrollFrame,width,height)
 			if scrollFrame then
@@ -597,14 +608,18 @@ end
 				insets = { left = 9.5, right = 9.5, top = 9.5, bottom = 11.5 }
 			}
 
+
 		queueFrame = CreateFrame("Frame",nil,frame)
-		queueFrame:SetPoint("BOTTOMLEFT",20,60)
+		queueFrame:SetPoint("LEFT",20,0)
+		queueFrame:SetPoint("BOTTOM",frame,"CENTER",0,-25)
 		queueFrame:SetPoint("TOP", frame, 0, -45)
 		queueFrame:SetPoint("RIGHT", frame, -20,0)
+
 
 --		GnomeWorks.queueFrame = queueFrame
 
 		sf = GnomeWorks:CreateScrollingTable(queueFrame, ScrollPaneBackdrop, columnHeaders, ResizeQueueFrame)
+
 
 --		sf.childrenFirst = true
 
@@ -986,8 +1001,10 @@ end
 
 	function BuildSourceQueues(player, queue)
 		local vendorQueue = GnomeWorks.data.vendorQueue[player]
+		local auctionQueue = GnomeWorks.data.auctionQueue[player]
 		local bankQueue = GnomeWorks.data.bankQueue[player]
 		local guildBankQueue = GnomeWorks.data.guildBankQueue[player]
+		local altQueue = GnomeWorks.data.altQueue[player]
 
 		if queue then
 			for k,entry in ipairs(queue) do
@@ -995,15 +1012,25 @@ end
 					local sourceQueue
 
 					if not entry.source then
-						sourceQueue = vendorQueue
+						if GnomeWorks:VendorSellsItem(entry.itemID) then
+							sourceQueue = vendorQueue
+						else
+							sourceQueue = auctionQueue
+						end
 					elseif entry.source == "bank" then
 						sourceQueue = bankQueue
 					elseif entry.source == "guildBank" then
 						sourceQueue = guildBankQueue
+					elseif entry.source == "alt" then
+						sourceQueue = altQueue
 					end
 
 					if sourceQueue then
 						sourceQueue[entry.itemID] = (sourceQueue[entry.itemID] or 0) + entry.count
+
+						if sourceQueue[entry.itemID] == 0 then
+							sourceQueue[entry.itemID] = nil
+						end
 					end
 				end
 
@@ -1038,14 +1065,17 @@ end
 			ReserveReagentsIntoQueue(player, self.data.queueData[player])
 
 			self.data.vendorQueue[player] = table.wipe(self.data.vendorQueue[player] or {})
+			self.data.auctionQueue[player] = table.wipe(self.data.auctionQueue[player] or {})
 			self.data.bankQueue[player] = table.wipe(self.data.bankQueue[player] or {})
 			self.data.guildBankQueue[player] = table.wipe(self.data.guildBankQueue[player] or {})
+			self.data.altQueue[player] = table.wipe(self.data.altQueue[player] or {})
 
 			BuildSourceQueues(player, self.data.queueData[player])
 
 			self:SendMessageDispatch("GnomeWorksQueueCountsChanged")
 
 			sf.data.entries = self.data.queueData[player]
+
 
 			sf:Refresh()
 --			sf:Show()
@@ -1214,7 +1244,18 @@ end
 				if pseudoTrade and pseudoTrade.ConfigureMacroText then
 					macroText = pseudoTrade.ConfigureMacroText(entry.recipeID)
 					doTradeEntry = entry
+
+					button.secure:Show()
+					button.secure:SetAttribute("type", "macro")
+					button.secure:SetAttribute("macrotext", macroText)
+
+					EditMacro("GWProcess", "GWProcess", 977, macroText, false, false)				-- 97, 7
 				elseif tradeID then
+					button:SetScript("OnClick", ProcessQueue)
+					button.secure:Hide()
+
+					EditMacro("GWProcess", "GWProcess", 977, "/click GWProcess", false, false)
+--[[
 					local spellName = GetSpellInfo(entry.recipeID)
 
 					local openTrade = ""
@@ -1236,12 +1277,12 @@ end
 					if tradeID == 2550 then -- cooking
 --						macroText = macroText.."\r/cast "..(GetSpellInfo(818))
 					end
+]]
 				else
 					print("tradeID is nil for entry", entry, entry.recipeID)
 				end
 
-				button:SetAttribute("type", "macro")
-				button:SetAttribute("macrotext", macroText)
+
 
 --				print(macroText)
 			else
@@ -1253,7 +1294,7 @@ end
 
 		local buttonConfig = {
 --			{ text = "Process", operation = ProcessQueue, width = 250, validate = SetProcessLabel, lineBreak = true, template = "SecureActionButtonTemplate" },
-			{ text = "Process", width = 250, validate = ConfigureButton, lineBreak = true, template = "SecureActionButtonTemplate" },
+			{ text = "Process", name = "GWProcess", width = 250, validate = ConfigureButton, lineBreak = true, addSecure=true, template = "SecureActionButtonTemplate" },
 			{ text = "Stop", operation = StopProcessing, width = 125 },
 			{ text = "Clear", operation = ClearQueue, width = 125 },
 		}
@@ -1274,7 +1315,20 @@ end
 			if not config.style or config.style == "Button" then
 --				local newButton = CreateFrame("Button", nil, controlFrame, "UIPanelButtonTemplate")
 
-				local newButton = GnomeWorks:CreateButton(controlFrame, 18, config.template)
+				local newButton = GnomeWorks:CreateButton(controlFrame, 18, nil, config.name)
+
+				if config.addSecure then
+					newButton.secure = CreateFrame("Button",nil, newButton, config.template, (config.name or config.text).."Secure")
+
+					newButton.secure:SetAllPoints(newButton)
+
+					newButton.secure:HookScript("OnEnter", function(b) newButton.state.Highlight:Show() end)
+					newButton.secure:HookScript("OnLeave", function(b) newButton.state.Highlight:Hide() end)
+
+					newButton.secure:HookScript("OnMouseDown", function(b) if newButton:IsEnabled()>0 then newButton.state.Down:Show() newButton.state.Up:Hide() end end)
+					newButton.secure:HookScript("OnMouseUp", function(b) if newButton:IsEnabled()>0 then newButton.state.Down:Hide() newButton.state.Up:Show() end end)
+				end
+
 
 				newButton:SetPoint("LEFT", position,-line*20)
 				if config.width then
@@ -1408,7 +1462,10 @@ end
 
 		frame:SetMinResize(300,200)
 
-		BuildQueueList()
+		BuildQueueScrollingFrame()
+
+		shoppingListSF = GnomeWorks:BuildShoppingListScrollFrame(frame)
+
 
 
 		local playerName = CreateFrame("Button", nil, frame)
@@ -1439,7 +1496,7 @@ end
 
 		local control = CreateControlButtons(frame)
 
-		control:SetPoint("TOP", sf, "BOTTOM", 0,0)
+		control:SetPoint("TOP", sf, "BOTTOM", 0,5)
 
 
 		table.insert(UISpecialFrames, "GnomeWorksQueueFrame")

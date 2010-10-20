@@ -30,11 +30,11 @@ do
 	function GnomeWorks:VendorSellsItem(itemID)
 
 		if itemID>0 then
-			if self.libPT then
-				if GnomeWorksDB.vendorItems[itemID] then
-					return true
-				end
+			if GnomeWorksDB.vendorItems[itemID] then
+				return true
+			end
 
+			if self.libPT then
 				if self.libPT:ItemInSet(itemID,"Tradeskill.Mat.BySource.Vendor") then
 					return true
 				end
@@ -48,7 +48,7 @@ do
 			self:CancelTimer(bagThrottleTimer, true)
 		end
 
-		bagThrottleTimer = self:ScheduleTimer("InventoryScan",.01)
+		bagThrottleTimer = self:ScheduleTimer("InventoryScan",.1)
 	end
 
 
@@ -426,7 +426,8 @@ do
 			DebugSpam("|cffff0000WARNING: GnomeWorks Inventory Scan took ",math.floor(elapsed*100)/100," seconds")
 		end
 
-		GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
+		GnomeWorks:SendMessageDispatch("GnomeWorksInventoryScanComplete")
+--		GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
 		GnomeWorks:SendMessageDispatch("GnomeWorksSkillListChanged")
 		GnomeWorks:SendMessageDispatch("GnomeWorksDetailsChanged")
 	end

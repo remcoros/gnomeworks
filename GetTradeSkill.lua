@@ -78,6 +78,7 @@ do
 
 		if api then
 			for xface, func in pairs(api) do
+
 				data[tradeID][xface] = func
 			end
 		end
@@ -85,6 +86,13 @@ do
 		return data[tradeID], self.data.pseudoTradeRecipes
 	end
 
+
+	function GnomeWorks:RecordKnownSpells(tradeID, player)
+--print("wants to record spells for",tradeID, player)
+		if self.data.pseudoTradeData[tradeID] and self.data.pseudoTradeData[tradeID].RecordKnownSpells then
+			self.data.pseudoTradeData[tradeID].RecordKnownSpells(player)
+		end
+	end
 
 
 	function GnomeWorks:ScanPseudoTrade(tradeID)

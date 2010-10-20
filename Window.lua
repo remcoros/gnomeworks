@@ -261,7 +261,7 @@ do
 			bg:SetAllPoints()
 
 
-			local t = tab:CreateTexture(nil,"ARTWORK")
+			local t = tab:CreateTexture(nil,"OVERLAY")
 
 			t:SetTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_closed.tga")
 
@@ -621,8 +621,8 @@ do
 
 	local buttonTextureNames = {"Highlight", "Disabled", "Up", "Down"}
 
-	function GnomeWorks:CreateButton(parent, height, template)
-		local newButton = CreateFrame("Button", nil, parent, template)
+	function GnomeWorks:CreateButton(parent, height, template, name)
+		local newButton = CreateFrame("Button", name, parent, template)
 		newButton:SetHeight(height)
 		newButton:SetWidth(50)
 		newButton:SetPoint("CENTER")

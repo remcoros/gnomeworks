@@ -128,49 +128,82 @@ do
 			if entry.recipeID then
 				local recipeID = entry.recipeID
 
-				if not tooltipRecipeCache[recipeID] then
-					local tipLines = tooltipScanner:NumLines()
+				if recipeID > 0 then
+					if not tooltipRecipeCache[recipeID] then
+						local tipLines = tooltipScanner:NumLines()
 
-					tooltipRecipeCache[recipeID] = tipLines
+						tooltipRecipeCache[recipeID] = tipLines
 
-					tooltipScanner:SetOwner(frame, "ANCHOR_NONE")
-					tooltipScanner:SetHyperlink("spell:"..entry.recipeID)
+						tooltipScanner:SetOwner(frame, "ANCHOR_NONE")
+						tooltipScanner:SetHyperlink("spell:"..entry.recipeID)
 
-					for i=#tooltipRecipeCacheLeft,tipLines do
-						tooltipRecipeCacheLeft[i] = {}
-						tooltipRecipeCacheRight[i] = {}
-					end
-
-					for i=1, tipLines do
-						if _G["GWParsingTooltipTextLeft"..i]:GetText() then
-							tooltipRecipeCacheLeft[i][recipeID] = string.lower(_G["GWParsingTooltipTextLeft"..i]:GetText())
+						for i=#tooltipRecipeCacheLeft,tipLines do
+							tooltipRecipeCacheLeft[i] = {}
+							tooltipRecipeCacheRight[i] = {}
 						end
 
-						if _G["GWParsingTooltipTextRight"..i]:GetText() then
-							tooltipRecipeCacheRight[i][recipeID] = string.lower(_G["GWParsingTooltipTextRight"..i]:GetText())
+						for i=1, tipLines do
+							if _G["GWParsingTooltipTextLeft"..i]:GetText() then
+								tooltipRecipeCacheLeft[i][recipeID] = string.lower(_G["GWParsingTooltipTextLeft"..i]:GetText())
+							end
+
+							if _G["GWParsingTooltipTextRight"..i]:GetText() then
+								tooltipRecipeCacheRight[i][recipeID] = string.lower(_G["GWParsingTooltipTextRight"..i]:GetText())
+							end
 						end
 					end
-				end
 
-				local tipLines = tooltipRecipeCache[recipeID]
+					local tipLines = tooltipRecipeCache[recipeID]
 
-				for w in string.gmatch(textFilter, "%a+") do
-					local found
+					for w in string.gmatch(textFilter, "%a+") do
+						local found
 
-					for i=1, tipLines do
-						if tooltipRecipeCacheLeft[i][recipeID] and string.match(tooltipRecipeCacheLeft[i][recipeID], w, 1, true) then
+						for i=1, tipLines do
+							if tooltipRecipeCacheLeft[i][recipeID] and string.find(tooltipRecipeCacheLeft[i][recipeID], w, 1, true) then
+								found = true
+								break
+							end
+
+							if tooltipRecipeCacheRight[i][recipeID] and string.find(tooltipRecipeCacheRight[i][recipeID], w, 1, true) then
+								found = true
+								break
+							end
+						end
+
+						if not found then
+							return true
+						end
+					end
+				else
+					for w in string.gmatch(textFilter, "%a+") do
+						local found
+						local recipeName = string.lower(GnomeWorks:GetRecipeName(recipeID))
+
+						if string.find(recipeName, w) then
 							found = true
-							break
+						else
+							local results, reagents = GnomeWorks:GetRecipeData(recipeID)
+
+							for id in pairs(results) do
+								if string.find(string.lower(GetItemInfo(id)),w) then
+									found = true
+									break
+								end
+							end
+
+							if not found and reagents then
+								for id in pairs(reagents) do
+									if id and string.find(string.lower(GetItemInfo(id)),w) then
+										found = true
+										break
+									end
+								end
+							end
 						end
 
-						if tooltipRecipeCacheRight[i][recipeID] and string.match(tooltipRecipeCacheRight[i][recipeID], w, 1, true) then
-							found = true
-							break
+						if not found then
+							return true
 						end
-					end
-
-					if not found then
-						return true
 					end
 				end
 			end
@@ -1067,7 +1100,9 @@ do
 
 
 	function GnomeWorks:DoTradeSkillUpdate()
+--print("DO UPDATE")
 		if frame:IsVisible() then
+--print("SCAN TRADE")
 			self:ScanTrade()
 		end
 	end
@@ -1079,6 +1114,7 @@ do
 
 
 	function GnomeWorks:TRADE_SKILL_SHOW()
+--print("TRADE_SKILL_SHOW")
 		if IsControlKeyDown() then
 			if frame:IsShown() then
 				frame:Hide()
@@ -1089,9 +1125,7 @@ do
 		else
 			self:GetTradeIDFromAPI()
 
-			TradeSkillFrame_Update();
-
---			self:FixRepeatIssue()			-- calls a bit of blizzard code that seems to fix the issue with repeats failing early.  purely emprical
+			TradeSkillFrame_Update()						-- seems to fix the early bailout of trade skill iterations
 
 			self:ResetSkillSelect()
 
@@ -1165,6 +1199,7 @@ do
 
 
 	function GnomeWorks:TRADE_SKILL_UPDATE(...)
+--print("MAIN WINDOW TRADE_SKILL_UPDATE")
 		if self.updateTimer then
 			self:CancelTimer(self.updateTimer, true)
 		end

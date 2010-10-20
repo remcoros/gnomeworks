@@ -166,28 +166,6 @@ do
 		print("|cffff2020GnomeWorks:",...)
 	end
 
--- this section of code is called each time the gw frame is shown.  it comes from the blizzard tradeskill show routine and seems to fix the problem with early termination of the tradeskill repeat
--- no idea why
-	function GnomeWorks:FixRepeatIssue()
-		TradeSkillCreateButton:Disable();
-		TradeSkillCreateAllButton:Disable();
-		if ( GetTradeSkillSelectionIndex() == 0 ) then
-			TradeSkillFrame_SetSelection(GetFirstTradeSkill());
-		else
-			TradeSkillFrame_SetSelection(GetTradeSkillSelectionIndex());
-		end
-		FauxScrollFrame_SetOffset(TradeSkillListScrollFrame, 0);
-		TradeSkillListScrollFrameScrollBar:SetMinMaxValues(0, 0);
-		TradeSkillListScrollFrameScrollBar:SetValue(0);
-		SetPortraitTexture(TradeSkillFramePortrait, "player");
-		TradeSkillOnlyShowMakeable(TradeSkillFrameAvailableFilterCheckButton:GetChecked());
-		TradeSkillFrame_Update();
-
-		-- Moved to the bottom to prevent addons which hook it from blocking tradeskills
-		CloseDropDownMenus();
-	end
-
-
 
 	function GnomeWorks:PLAYER_GUILD_UPDATE(...)
 		if self.data.playerData[UnitName("player")] then
@@ -198,8 +176,8 @@ do
 	end
 
 
-	function GnomeWorks:OnLoad()
-		self:print("Initializing (r"..VERSION..")")
+	local function InitializeData()
+		GnomeWorks:print("Initializing (r"..VERSION..")")
 
 		local player = UnitName("player")
 
@@ -215,7 +193,7 @@ do
 
 
 		if LibStub then
-			self.libPT = LibStub:GetLibrary("LibPeriodicTable-3.1", true)
+			GnomeWorks.libPT = LibStub:GetLibrary("LibPeriodicTable-3.1", true)
 --			self.libTS = LibStub:GetLibrary("LibTradeSkill", true)
 		end
 
@@ -283,7 +261,7 @@ do
 		end
 
 		for k, player in pairs({ player, "All Recipes" } ) do
-			InitServerPlayerDBTables(factionServer, player, "playerData", "inventoryData", "queueData", "recipeGroupData", "cooldowns", "vendorQueue","bankQueue","guildBankQueue")
+			InitServerPlayerDBTables(factionServer, player, "playerData", "inventoryData", "queueData", "recipeGroupData", "cooldowns", "vendorQueue","bankQueue","guildBankQueue","auctionQueue","altQueue")
 		end
 
 
@@ -349,15 +327,27 @@ do
 		table.insert(list,"All Recipes")
 		table.insert(list,1,player)
 
+		SetTradeSkillSubClassFilter(0, 1, 1)
+		SetTradeSkillItemNameFilter("")
+		SetTradeSkillItemLevelFilter(0,0)
+
+		return true
+	end
+
+
+	local function RegisterEvents()
 		GnomeWorks:RegisterEvent("MERCHANT_UPDATE")
 		GnomeWorks:RegisterEvent("MERCHANT_SHOW")
+		GnomeWorks:RegisterEvent("MERCHANT_CLOSE")
 
 
 		GnomeWorks:RegisterEvent("BAG_UPDATE")
 
 		GnomeWorks:RegisterEvent("BANKFRAME_OPENED")
+		GnomeWorks:RegisterEvent("BANKFRAME_CLOSED")
 
 		GnomeWorks:RegisterEvent("GUILDBANKFRAME_OPENED")
+		GnomeWorks:RegisterEvent("GUILDBANKFRAME_CLOSED")
 		GnomeWorks:RegisterEvent("GUILDBANKBAGSLOTS_CHANGED")
 
 		GnomeWorks:RegisterEvent("PLAYER_GUILD_UPDATE")
@@ -365,32 +355,30 @@ do
 
 		GnomeWorks:RegisterEvent("AUCTION_HOUSE_SHOW")
 		GnomeWorks:RegisterEvent("AUCTION_HOUSE_CLOSE")
+
+
+		return true
 	end
 
 
-	function GnomeWorks:Initialize()
-		GnomeWorks:ParseSkillList()
+	local function ParseTradeLinks()
+		return GnomeWorks:ParseSkillList()
+	end
 
+	local function CreateUI()
 		GnomeWorks.MainWindow = GnomeWorks:CreateMainWindow()
 
 		GnomeWorks.QueueWindow = GnomeWorks:CreateQueueWindow()
 
---		GnomeWorks.MainWindow:Hide()
-
-
-		-- reset filters
-		SetTradeSkillSubClassFilter(0, 1, 1)
-		SetTradeSkillItemNameFilter("")
-		SetTradeSkillItemLevelFilter(0,0)
-
+		if IsAddOnLoaded("AddOnLoader") then
+			GnomeWorks.MainWindow:Hide()
+		end
 
 		GnomeWorks:RegisterEvent("TRADE_SKILL_SHOW")
 		GnomeWorks:RegisterEvent("TRADE_SKILL_UPDATE")
 		GnomeWorks:RegisterEvent("TRADE_SKILL_CLOSE")
 
 		GnomeWorks:RegisterEvent("CHAT_MSG_SKILL")
-
-
 
 		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED", "SpellCastCompleted")
 
@@ -412,7 +400,17 @@ do
 		end)
 
 		collectgarbage("collect")
+
+		GnomeWorks:TRADE_SKILL_UPDATE()
 	end
+
+	local function ParseKnownRecipes()
+
+		GnomeWorks:ScheduleTimer(function() GnomeWorks:DecodeTradeLinks(CreateUI) end, 2)
+
+		return true
+	end
+
 
 
 	function GnomeWorks:OnTradeSkillShow()
@@ -422,35 +420,45 @@ do
 		GnomeWorks:TRADE_SKILL_UPDATE()
 	end
 
+	local initList = LibStagedExecution:NewList()
+
 
 	if not IsAddOnLoaded("AddOnLoader") then
 		GnomeWorks:RegisterEvent("ADDON_LOADED", function(event, name)
 			if string.lower(name) == string.lower(modName) then
 				GnomeWorks:UnregisterEvent(event)
 --				GnomeWorks:ScheduleTimer("OnLoad",.01)
-				GnomeWorks:OnLoad()
 
-				local function Init(event)
-					GnomeWorks:UnregisterEvent("TRADE_SKILL_UPDATE")
-					GnomeWorks:UnregisterEvent("TRADE_SKILL_OPEN")
-		--			GnomeWorks:ScheduleTimer("OnTradeSkillShow",.01)
-		--			GnomeWorks:OnLoad()
-					GnomeWorks:Initialize()
-					GnomeWorks[event](GnomeWorks)
-				end
-				GnomeWorks:RegisterEvent("TRADE_SKILL_UPDATE", Init)
-				GnomeWorks:RegisterEvent("TRADE_SKILL_SHOW", Init)
+				InitializeData()
+				RegisterEvents()
+
+
+				initList:AddSegment(ParseTradeLinks)
+				initList:AddSegment(ParseKnownRecipes)
+
+
+				initList:Execute()
 			end
 		end )
 	else
 		GnomeWorks:RegisterEvent("ADDON_LOADED", function(event, name)
 --			print("gnomeworks detected the loading of "..tostring(name))
 			if string.lower(name) == string.lower(modName) then
---				GnomeWorks:ScheduleTimer("OnLoad",1)
-				GnomeWorks:OnLoad()
-				GnomeWorks:Initialize()
-				GnomeWorks.MainWindow:Hide()
 				GnomeWorks:UnregisterEvent(event)
+
+				initList:AddSegment(InitializeData)
+				initList:AddSegment(RegisterEvents)
+				initList:AddSegment(ParseTradeLinks)
+				initList:AddSegment(ParseKnownRecipes)
+
+
+				initList:Execute()
+
+--				GnomeWorks:ScheduleTimer("OnLoad",1)
+--				GnomeWorks:OnLoad()
+--				GnomeWorks:Initialize()
+--				GnomeWorks.MainWindow:Hide()
+
 			end
 		end)
 	end

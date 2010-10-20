@@ -8,6 +8,18 @@ do
 	local shoppingListFrame
 	local shoppingListPlayer
 
+	local queueList = { "bank", "guildBank", "alt", "vendor", "auction" }
+
+	local inventoryColors = {
+--		queue = "|cffff0000",
+		bag = "|cffffff80",
+		vendor = "|cff80ff80",
+		bank =  "|cffffa050",
+		guildBank = "|cff5080ff",
+		alt = "|cffff80ff",
+		auction = "|cffb0b000",
+	}
+
 
 	local columnHeaders = {
 		{
@@ -38,10 +50,23 @@ do
 									entry.subGroup.expanded = not entry.subGroup.expanded
 									sf:Refresh()
 								else
-									if entry.itemID then
---										GnomeWorks:PushSelection()
---										GnomeWorks:SelectRecipe(entry.recipeID)
-									end
+--									if entry.source == "bank" then
+										if GnomeWorks.atBank then
+											GnomeWorks:BankCollectItems(entry.itemID, entry.count)
+										end
+--									elseif entry.source == "guildBank" then
+										if GnomeWorks.atGuildBank then
+											GnomeWorks:GuildBankCollectItems(entry.itemID, entry.count)
+										end
+--									elseif entry.source == "vendor" then
+										if GnomeWorks.atVendor then
+											GnomeWorks:BuyVendorItems(GnomeWorks.player, entry.itemID, entry.count)
+										end
+--									elseif entry.source == "auction" then
+										if GnomeWorks.atAuctionHouse then
+											GnomeWorks:BeginSingleReagentScan(entry.itemID)
+										end
+--									end
 								end
 							else
 								if source == "button" then
@@ -77,26 +102,73 @@ do
 							end
 
 							cellFrame.button:Show()
+
+							cellFrame.text:SetFormattedText("%s%s",entry.color,entry.name)
+
+							cellFrame.text:SetFontObject("GameFontHighlight")
 						else
 							cellFrame.button:Hide()
+
+							cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t%s%s", GetItemIcon(entry.itemID),entry.color,(GetItemInfo(entry.itemID)))
+
+							cellFrame.text:SetFontObject("GameFontHighlightsmall")
 						end
-
-
-
-						cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t%s", GetItemIcon(entry.itemID),(GetItemInfo(entry.itemID)))
-						cellFrame.text:SetTextColor(.8,.25,.8)
 					end,
 		}, -- [2]
 	}
 
 
 
-	function GnomeWorks:ShoppingListShow(player, queue)
+	function GnomeWorks:ShoppingListShow(player)
+		if sf then												-- it's possible that this might get called prior to full initialization
+			local parentFrame = sf:GetParent():GetParent()
 
+			parentFrame:Show()
+
+			player = player or self.player
+
+			for k,queue in pairs(queueList) do
+				local itemCount = 0
+
+				if not sf.data.entries[k] then
+					sf.data.entries[k] = {}
+					sf.data.entries[k].subGroup = { expanded = true, entries = {} }
+				end
+
+				sf.data.entries[k].name = queue
+				sf.data.entries[k].index = k
+
+				sf.data.entries[k].color = inventoryColors[queue]
+
+				local data = sf.data.entries[k].subGroup.entries
+
+				if self.data[queue.."Queue"][player] then
+					for itemID,count in pairs(self.data[queue.."Queue"][player]) do
+						if count then
+							itemCount = itemCount + 1
+
+--print((GetItemInfo(itemID)),"x",count)
+
+							if data[itemCount] then
+								data[itemCount].itemID = itemID
+								data[itemCount].count = count
+								data[itemCount].index = itemCount
+							else
+								data[itemCount] = { itemID = itemID, count = count, index = itemCount, color = inventoryColors[queue], source = queue }
+							end
+						end
+					end
+				end
+
+				sf.data.entries[k].subGroup.numEntries = itemCount
+			end
+
+			sf:Refresh()
+		end
 	end
 
 
-	function GnomeWorks:BuildShoppingScrollFrame(frame)
+	function GnomeWorks:BuildShoppingListScrollFrame(frame)
 
 		local function ResizeFrame(scrollFrame,width,height)
 			if scrollFrame then
@@ -121,12 +193,19 @@ do
 				insets = { left = 9.5, right = 9.5, top = 9.5, bottom = 11.5 }
 			}
 
+
 		shoppingListFrame = CreateFrame("Frame",nil,frame)
-		shoppingListFrame:SetPoint("BOTTOMLEFT",20,60)
-		shoppingListFrame:SetPoint("TOP", frame, 0, -45)
+		shoppingListFrame:SetPoint("BOTTOMLEFT",20,20)
+		shoppingListFrame:SetPoint("TOP", frame, "CENTER", 0, -85)
 		shoppingListFrame:SetPoint("RIGHT", frame, -20,0)
 
+
+
 		sf = GnomeWorks:CreateScrollingTable(shoppingListFrame, ScrollPaneBackdrop, columnHeaders, ResizeFrame)
+
+		sf.data = { entries = {} }
+
+		self:RegisterMessageDispatch("GnomeWorksQueueCountsChanged GnomeWorksInventoryScanComplete", function() GnomeWorks:ShoppingListShow() end)
 
 --[[
 		sf.IsEntryFiltered = function(self, entry)

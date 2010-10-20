@@ -85,10 +85,10 @@ do
 
 
 
-	function GnomeWorks:BankCollectItems()
-print("BankCollectItems")
+	function GnomeWorks:BankCollectItems(singleItemID, singleItemCount)		-- pass an itemID, nil to collect all needed itemID or itemID, count to collect a specified number
+--print("BankCollectItems")
 		if bankCollectLocked then return end
-print("not-locked out")
+--print("not-locked out")
 
 		bankCollectLocked = true
 
@@ -114,40 +114,46 @@ print("not-locked out")
 					if link then
 						local itemID = tonumber(string.match(link, "item:(%d+)"))
 
-						local count = self.data.bankQueue[player][itemID]
+						if (singleItemID and itemID == singleItemID) or (not singleItemID and itemID) then
 
-						if count and count > 0 then
-							local _,numAvailable = GetContainerItemInfo(bag, i)
+							local count = singleItemCount or self.data.bankQueue[player][itemID]
 
-							ClearCursor()
+							if count and count > 0 then
+								local _,numAvailable = GetContainerItemInfo(bag, i)
 
-							local itemName, _, _, _, _, _, _, stackSize = GetItemInfo(link)
+								ClearCursor()
 
-							local numMoved
+								local itemName, _, _, _, _, _, _, stackSize = GetItemInfo(link)
 
-							if numAvailable < count then
-								numMoved = numAvailable
-							else
-								numMoved = count
-							end
+								local numMoved
 
-							local toBag, toSlot = FindBagSlot(itemID, numMoved)
+								if numAvailable < count then
+									numMoved = numAvailable
+								else
+									numMoved = count
+								end
 
-							if toBag then
-		--						PickupContainerItem(bag, i)
-								SplitContainerItem(bag, i, numMoved)
+								local toBag, toSlot = FindBagSlot(itemID, numMoved)
 
-								PickupContainerItem(toBag, toSlot)
+								if toBag then
+			--						PickupContainerItem(bag, i)
+									SplitContainerItem(bag, i, numMoved)
+
+									PickupContainerItem(toBag, toSlot)
 
 
-								self.data.bankQueue[player][itemID] = self.data.bankQueue[player][itemID] - numMoved
+									if singleItemCount then
+										singleItemCount = singleItemCount - numMoved
+									else
+										self.data.bankQueue[player][itemID] = self.data.bankQueue[player][itemID] - numMoved
+									end
 
-
-								self:print(string.format("collecting %s x %s from bank",itemName,numMoved))
-								itemMoved = true
-							elseif not bagErr then
-								self:warning("cannot collect some items due to lack of bag space")
-								bagErr = true
+									self:print(string.format("collecting %s x %s from bank",itemName,numMoved))
+									itemMoved = true
+								elseif not bagErr then
+									self:warning("cannot collect some items due to lack of bag space")
+									bagErr = true
+								end
 							end
 						end
 					end
@@ -160,7 +166,7 @@ print("not-locked out")
 		self:RegisterEvent("BAG_UPDATE")
 
 		if itemMoved then
-			self:InventoryScan()
+			self:ScheduleTimer("InventoryScan",.25)
 		end
 	end
 
@@ -193,10 +199,17 @@ print("not-locked out")
 --			self:BankCollectItems()
 		end
 
-		self:ShoppingListShow((UnitName("player")), "bankQueue")
+		self.atBank = true
+
+		self:ShoppingListShow((UnitName("player")))
 
 		bankLocked = nil
 	end
+
+	function GnomeWorks:BANKFRAME_CLOSED(...)
+		self.atBank = false
+	end
+
 
 
 	function GnomeWorks:GUILDBANKFRAME_OPENED(...)
@@ -206,11 +219,18 @@ print("not-locked out")
 			QueryGuildBankTab(tab)
 		end
 
-		self:ShoppingListShow((UnitName("player")), "guildBankQueue")
+		self.atGuildBank = true
+		self:ShoppingListShow((UnitName("player")))
 	end
 
 
-	function GnomeWorks:GuildBankCollectItems()
+	function GnomeWorks:GUILDBANKFRAME_CLOSED(...)
+		self.atGuildBank = false
+	end
+
+
+
+	function GnomeWorks:GuildBankCollectItems(singleItemID, singleItemCount)		-- pass an itemID, nil to collect all needed itemID or itemID, count to collect a specified number
 		if bankCollectLocked then return end
 
 		bankCollectLocked = true
@@ -247,35 +267,41 @@ print("not-locked out")
 						local _,numAvailable = GetGuildBankItemInfo(tab, slot)
 						local itemID = tonumber(string.match(link, "item:(%d+)"))
 
-						local count = self.data.guildBankQueue[player][itemID]
+						if (singleItemID and itemID == singleItemID) or (not singleItemID and itemID) then
+							local count = singleItemCount or self.data.guildBankQueue[player][itemID]
 
-						if count and count > 0 then
-							ClearCursor()
+							if count and count > 0 then
+								ClearCursor()
 
-							local itemName, _, _, _, _, _, _, stackSize = GetItemInfo(link)
+								local itemName, _, _, _, _, _, _, stackSize = GetItemInfo(link)
 
-							local numMoved
+								local numMoved
 
-							if numAvailable < count then
-								numMoved = numAvailable
-							else
-								numMoved = count
-							end
+								if numAvailable < count then
+									numMoved = numAvailable
+								else
+									numMoved = count
+								end
 
-							local toBag, toSlot = FindBagSlot(itemID, numMoved)
+								local toBag, toSlot = FindBagSlot(itemID, numMoved)
 
-							if toBag then
-								SplitGuildBankItem(tab, slot, numMoved)
+								if toBag then
+									SplitGuildBankItem(tab, slot, numMoved)
 
-								PickupContainerItem(toBag, toSlot)
+									PickupContainerItem(toBag, toSlot)
 
-								self.data.guildBankQueue[player][itemID] = self.data.guildBankQueue[player][itemID] - numMoved
+									if singleItemCount then
+										singleItemCount = singleItemCount - numMoved
+									else
+										self.data.guildBankQueue[player][itemID] = self.data.guildBankQueue[player][itemID] - numMoved
+									end
 
-								self:print(string.format("collecting %s x %s from guild bank",itemName,numMoved))
-								itemMoved = true
-							elseif not bagErr then
-								self:warning("cannot collect some items due to lack of bag space")
-								bagErr = true
+									self:print(string.format("collecting %s x %s from guild bank",itemName,numMoved))
+									itemMoved = true
+								elseif not bagErr then
+									self:warning("cannot collect some items due to lack of bag space")
+									bagErr = true
+								end
 							end
 						end
 					end
