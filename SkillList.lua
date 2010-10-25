@@ -940,6 +940,8 @@ DebugSpam("adding "..(recipeLink or "nil").." to "..groupName)
 
 
 	function GnomeWorks:IsSpellKnown(recipeID, player)
+		if player == "All Recipes" then return true end
+
 		player = player or self.player
 --[[
 		local tradeID = GnomeWorksDB.tradeIDs[recipeID]

@@ -470,7 +470,7 @@ end
 				for itemID, numNeeded in pairs(reagents) do
 					local needed = count * numNeeded
 
-					entry.reserved[itemID] = math.min(needed, GnomeWorks:GetInventoryCount(itemID, player, "bag queue"))
+					entry.reserved[itemID] = math.max(0,math.min(needed, GnomeWorks:GetInventoryCount(itemID, player, "bag queue")))
 				end
 			end
 
@@ -773,11 +773,6 @@ end
 		local source = GnomeWorks.data.itemSource
 
 		if source[reagentID] then
-
---			local reagents = GnomeWorksDB.reagents
---			local results = GnomeWorksDB.results
---			local tradeIDs = GnomeWorksDB.tradeIDs
-
 			local craftingOptions = 0
 
 --[[
@@ -979,7 +974,6 @@ end
 
 					queueAdded = true
 
---					AdjustConstructionQueueCounts(constructionQueue[i])
 					break
 				end
 			end

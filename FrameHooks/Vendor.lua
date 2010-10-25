@@ -13,26 +13,31 @@ do
 		if GnomeWorks.data.reagentUsage[itemID] and not GnomeWorksDB.vendorItems[itemID] and not GnomeWorksDB.results[spoofedRecipeID] then
 			local name, texture, price, quantity, numAvailable, isUsable, extendedCost = GetMerchantItemInfo(i)
 
-			if numAvailable == -1 then
-				local honorPoints, arenaPoints, itemCount = GetMerchantItemCostInfo(i)
+			if numAvailable == -1 then					-- unlimited stock items only
+				local itemCount = GetMerchantItemCostInfo(i)
 
 				if not extendedCost then
 					GnomeWorks:print("recording vendor item: ",name)
 					GnomeWorksDB.vendorItems[itemID] = true
-				elseif arenaPoints == 0 and honorPoints == 0 then
+				else
 					local reagents = {}
 					GnomeWorksDB.results[spoofedRecipeID] = { [itemID] = quantity }
 
 					GnomeWorksDB.tradeIDs[spoofedRecipeID] = 100001
 
 					for n=1,itemCount do
-						local itemTexture, itemValue, itemLink = GetMerchantItemCostItem(i, n)
+						local itemTexture, itemValue, itemLink, itemName = GetMerchantItemCostItem(i, n)
 
-						local costItemID = tonumber(string.match(itemLink,"item:(%d+)"))
+						if itemLink then
+							local costItemID = tonumber(string.match(itemLink,"item:(%d+)"))
 
-						reagents[costItemID] = itemValue
+							reagents[costItemID] = itemValue
 
-						GnomeWorks:AddToReagentCache(costItemID, spoofedRecipeID, itemValue)
+							GnomeWorks:AddToReagentCache(costItemID, spoofedRecipeID, itemValue)
+						else
+							-- currency conversions.  hmm...
+
+						end
 					end
 
 					GnomeWorksDB.names[spoofedRecipeID] = string.format("Vendor Conversion: %s",name)

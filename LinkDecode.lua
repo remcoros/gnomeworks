@@ -102,6 +102,7 @@ do
 
 	local function OpenNextLink()
 		decodeIndex = decodeIndex + 1
+--print("open next link")
 
 		if decodeIndex <= #linkDecodeList then
 --print(linkDecodeList[decodeIndex])
@@ -109,9 +110,11 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 			local tradeString = string.match(linkDecodeList[decodeIndex], "(trade:%d+:%d+:%d+:[0-9a-fA-F]+:[A-Za-z0-9+/]+)")
 			ItemRefTooltip:SetHyperlink(tradeString)
 		else
-			if decodeIndex == #linkDecodeList+1 and GetSpellInfo(GetSpellInfo(2656)) then
---print("scan smelting")
-				CastSpellByName(GetSpellInfo(2656)) -- force a scan of smelting because smelting links don't work in pre-cata
+			if false and decodeIndex == #linkDecodeList+1 and GetSpellInfo(GetSpellInfo(2656)) then		-- forced false because it appears castspellbyname is protected and needs a mouse click
+
+				local smelting = GetSpellInfo(2656)
+
+				CastSpellByName(smelting) -- force a scan of smelting because smelting links don't work
 			else
 				ExitDecodeProcess()
 			end
@@ -128,9 +131,19 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 			local gotNil
 --print("skillName:",skillName, type(skillName))
 			if skillType == "header" then
-				local _,playerName = IsTradeSkillLinked()
+				local isLinked,playerName = IsTradeSkillLinked()
+--print(isLinked, playerName, GetTradeSkillLine())
 
-				frameText:SetText(playerName.." "..linkDecodeList[decodeIndex].." "..GetNumTradeSkills().." recipes")
+				if playerName then
+					frameText:SetText(playerName.." "..linkDecodeList[decodeIndex].." "..GetNumTradeSkills().." recipes")
+				else
+					playerName = UnitName("player")
+
+					local tradeName = GetTradeSkillLine()
+
+					frameText:SetText(playerName.." "..tradeName.." "..GetNumTradeSkills().." recipes")
+				end
+
 
 				local knownSpells = {}
 				local knownItems = {}
@@ -169,6 +182,7 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 					GnomeWorks.data.knownSpells[playerName] = knownSpells
 					GnomeWorks.data.knownItems[playerName] = knownItems
 --print(playerName, GnomeWorks.data.knownSpells[playerName])
+
 					OpenNextLink()
 				end
 			end
@@ -189,15 +203,13 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 	function GnomeWorks:DecodeTradeLinks(func)
 		frame:SetPoint("CENTER")
 		frame:SetWidth(400)
-		frame:SetHeight(50)
+		frame:SetHeight(100)
 		frame:Show()
 
 		self.Window:SetBetterBackdrop(frame,{bgFile = "Interface\\AddOns\\GnomeWorks\\Art\\newFrameBackground.tga",
 												edgeFile = "Interface\\AddOns\\GnomeWorks\\Art\\newFrameBorder.tga",
 												tile = true, tileSize = 16, edgeSize = 16,
 												insets = { left = 3, right = 3, top = 3, bottom = 3 }})
-
-
 
 		frameText:SetText("GnomeWorks is scanning trade links...")
 

@@ -340,6 +340,8 @@ do
 	api.GetTradeSkillItemLink = function(index)
 		local recipeID = skillList[index]
 
+		if not recipeID then return end
+
 		if type(recipeID) == "string" then
 			return
 		end
@@ -404,7 +406,7 @@ do
 
 
 	api.ConfigureMacroText = function(recipeID)
-		return "/use "..GetItemInfo(next(commonRecipes[recipeID].reagents))
+		return "/cast "..GetSpellInfo(51005).."\r/use "..GetItemInfo(-recipeID)
 
 	end
 
