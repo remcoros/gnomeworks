@@ -8,14 +8,25 @@
 do
 	local GnomeWorks = GnomeWorks
 
-	local frame = CreateFrame("Frame")
+	local frame = CreateFrame("Button")
 
-	local frameText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	local frameText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	frameText:SetJustifyH("CENTER")
 	frameText:SetPoint("LEFT")
 	frameText:SetPoint("RIGHT")
+	frameText:SetPoint("BOTTOM")
 	frameText:SetTextColor(1,1,1)
 	frameText:SetText("GnomeWorks")
+
+
+	local frameInfo = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	frameInfo:SetJustifyH("CENTER")
+	frameInfo:SetPoint("LEFT")
+	frameInfo:SetPoint("RIGHT")
+	frameInfo:SetPoint("TOP")
+	frameInfo:SetTextColor(1,1,1)
+	frameInfo:SetText("Click to skip stalled scans")
+
 
 
 	local linkDecodeList = {}
@@ -121,28 +132,55 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 		end
 	end
 
+	local function OnUpdate(frame, elapsed)
+		frame.countDown = (frame.countDown or 0) - elapsed
+
+		if frame.countDown < 0 then
+			local isLinked,playerName = IsTradeSkillLinked()
+
+			if playerName then
+				frameText:SetText(playerName.." "..linkDecodeList[decodeIndex].." "..GetNumTradeSkills().." recipes")
+			else
+				playerName = UnitName("player")
+
+				local tradeName = GetTradeSkillLine()
+
+				frameText:SetText(playerName.." "..tradeName.." "..GetNumTradeSkills().." recipes")
+			end
+
+--			for i=1,GetNumTradeSkills() do
+--				print(GetTradeSkillInfo(i))
+--			end
+
+			frame.countDown = 5
+		end
+	end
+
 
 	local function ScanEventHandler(frame, event)
 --print("Scan Event Handler",event)
 		if event == "TRADE_SKILL_SHOW" then
 			frameOpen = true
 		elseif event == "TRADE_SKILL_UPDATE" then
+			local isLinked,playerName = IsTradeSkillLinked()
+
+			if playerName then
+				frameText:SetText(playerName.." "..linkDecodeList[decodeIndex].." "..GetNumTradeSkills().." recipes")
+			else
+				playerName = UnitName("player")
+
+				local tradeName = GetTradeSkillLine()
+
+				frameText:SetText(playerName.." "..tradeName.." "..GetNumTradeSkills().." recipes")
+			end
+
+
 			local skillName, skillType = GetTradeSkillInfo(1)
 			local gotNil
 --print("skillName:",skillName, type(skillName))
 			if skillType == "header" then
-				local isLinked,playerName = IsTradeSkillLinked()
+
 --print(isLinked, playerName, GetTradeSkillLine())
-
-				if playerName then
-					frameText:SetText(playerName.." "..linkDecodeList[decodeIndex].." "..GetNumTradeSkills().." recipes")
-				else
-					playerName = UnitName("player")
-
-					local tradeName = GetTradeSkillLine()
-
-					frameText:SetText(playerName.." "..tradeName.." "..GetNumTradeSkills().." recipes")
-				end
 
 
 				local knownSpells = {}
@@ -203,12 +241,12 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 	function GnomeWorks:DecodeTradeLinks(func)
 		frame:SetPoint("CENTER")
 		frame:SetWidth(400)
-		frame:SetHeight(100)
+		frame:SetHeight(20)
 		frame:Show()
 
 		self.Window:SetBetterBackdrop(frame,{bgFile = "Interface\\AddOns\\GnomeWorks\\Art\\newFrameBackground.tga",
 												edgeFile = "Interface\\AddOns\\GnomeWorks\\Art\\newFrameBorder.tga",
-												tile = true, tileSize = 16, edgeSize = 16,
+												tile = true, tileSize = 8, edgeSize = 8,
 												insets = { left = 3, right = 3, top = 3, bottom = 3 }})
 
 		frameText:SetText("GnomeWorks is scanning trade links...")
@@ -248,11 +286,31 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 			end
 		end
 
+--[[
+		local playerName = UnitName("player")
+		local playerData = playerList[playerName]
+		local linkList = playerData.links
+
+		if linkList then
+			for tradeID, tradeLink in pairs(linkList) do
+--print(tradeID)
+				if not unlinkableTrades[tradeID] then
+--print(GetSpellLink(tradeID) or tradeID)
+					linkDecodeList[#linkDecodeList+1] = tradeLink
+					playerNameList[#playerNameList+1] = playerName
+				end
+			end
+		end
+]]
+
 --		frame:RegisterEvent("TRADE_SKILL_SHOW")
 		frame:RegisterEvent("TRADE_SKILL_UPDATE")
 		frame:RegisterEvent("TRADE_SKILL_CLOSE")
 
 		frame:SetScript("OnEvent", ScanEventHandler)
+		frame:SetScript("OnUpdate", OnUpdate)
+
+		frame:SetScript("OnClick", CloseTradeSkill)
 
 		decodeIndex = 0
 		scanDepth = 50

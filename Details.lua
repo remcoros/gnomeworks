@@ -526,7 +526,8 @@ do
 			end
 
 			detailIcon:SetScript("OnClick", function(frame,...)
-				HandleModifiedItemClick("item:"..frame.itemID)
+				local name,link = GetItemInfo(frame.itemID)
+				HandleModifiedItemClick(link)
 			end)
 
 			detailIcon:SetScript("OnEnter", function(frame,...)

@@ -512,6 +512,21 @@ DebugSpam("SCAN BUSY!")
 
 		self.player = player
 
+		local name, skillType = GetTradeSkillInfo(1)
+
+		local key = player..":"..tradeID
+
+		dataScanned[key] = false
+
+
+		if skillType ~= "header" then
+			self:ScheduleTimer("UpdateMainWindow",.1)
+
+			return
+		end
+
+
+
 		self.scanInProgress = true
 
 
@@ -541,10 +556,7 @@ DebugSpam("SCAN BUSY!")
 DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." "..numSkills.." recipes")
 
 
-		local key = player..":"..tradeID
 
-
-		dataScanned[key] = false
 
 
 		if not data.skillDB[key] then
@@ -718,6 +730,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 							if gotNil then
 								recacheRecipe[recipeID] = true
+								results[recipeID] = nil
 							end
 
 						end
@@ -729,6 +742,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 			if gotNil and recipeID then
 				recacheRecipe[recipeID] = true
+				results[recipeID] = nil
 			end
 		end
 

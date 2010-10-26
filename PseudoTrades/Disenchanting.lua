@@ -438,7 +438,7 @@ do
 			for i = 1, #skillList, 1 do
 				local recipeID = skillList[i]
 
-				if knownItems[-recipeID] then
+				if knownItems and knownItems[-recipeID] then
 
 					local itemID = -recipeID
 					local itemName, itemLink, itemRarity, itemLevel  = GetItemInfo(itemID)
@@ -535,7 +535,7 @@ do
 
 			local recipeID = skillList[i]
 
-			if knownItems[-recipeID] then
+			if knownItems and knownItems[-recipeID] then
 				GnomeWorks:RecipeGroupAddRecipe(flatGroup, recipeID, i, true)
 
 				local bracketName = GetRecipeBracket(recipeID)

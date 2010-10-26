@@ -8,6 +8,92 @@ local VERSION = ("$Revision$"):match("%d+")
 local LARGE_NUMBER = 1000000
 
 
+
+do
+	-- filter the text of the skill button
+	-- only set up for english clients at the moment
+
+
+	local GLYPH_MATCH_STRING	= "(%w+) Glyph"
+	local GLYPH_REPLACEMENT_STRING	= "Glyph of"
+	local GLYPH_TOKEN_MAJOR		= "Major"
+	local GLYPH_TOKEN_MINOR		= "Minor"
+	local GLYPH_TOKEN_PRIME		= "Prime"
+
+	local ENCHANTING_REPLACEMENT_STRING = "Enchant "
+
+
+	glyphTypes = {}
+
+	local glyphTypeColor = {
+		[GLYPH_TOKEN_MAJOR] = "|cffff40a0",
+		[GLYPH_TOKEN_MINOR] = "|cffa040f0",
+		[GLYPH_TOKEN_PRIME] = "|cff80a0ff",
+	}
+
+
+	local function GlyphType(itemID)
+		if not glyphTypes then
+			glyphTypes = {}
+		end
+
+
+		if not glyphTypes[itemID] then
+			local tooltip = getglobal("LSWParsingTooltip")
+
+
+			if tooltip == nil then
+				tooltip = CreateFrame("GameTooltip", "LSWParsingTooltip", UIParent, "GameTooltipTemplate")
+				tooltip:SetOwner(LSW.parentFrame, "ANCHOR_NONE")
+			end
+
+			tooltip:SetHyperlink("item:"..itemID)
+
+			local tiplines = tooltip:NumLines()
+
+			for i=2, tiplines, 1 do
+				local lineText = getglobal("LSWParsingTooltipTextLeft"..i):GetText() or " "
+
+
+				local g = string.match(lineText, GLYPH_MATCH_STRING)
+
+				if g then
+					glyphTypes[itemID] = g
+					break
+				end
+			end
+		end
+
+		return glyphTypes[itemID]
+	end
+
+
+	function GnomeWorks:FilterRecipeName(text, itemID, recipeID)
+		if not text then
+		--	LSW:ChatMessage(button:GetName())
+			return
+		end
+
+		if itemID and string.match(text, GLYPH_REPLACEMENT_STRING) then
+			local glyphType = GlyphType(itemID)
+
+			if glyphType then
+				local newText = string.gsub(text, GLYPH_REPLACEMENT_STRING, (glyphTypeColor[glyphType] or "")..glyphType..":|r")
+
+				return newText
+			end
+		end
+
+		if recipeID and string.match(text, ENCHANTING_REPLACEMENT_STRING) then
+			local newText = string.gsub(text, ENCHANTING_REPLACEMENT_STRING, "")
+			return newText
+		end
+
+		return text
+	end
+end
+
+
 do
 	local frame
 	local sf
@@ -664,6 +750,13 @@ do
 							local itemLink = GnomeWorks:GetTradeSkillItemLink(entry.index)
 							local spellName = GnomeWorks:GetRecipeName(entry.recipeID)
 
+							if itemLink then
+								local itemID = tonumber(string.match(itemLink,"item:(%d+)"))
+
+								spellName = GnomeWorks:FilterRecipeName(spellName, itemID, entry.recipeID)
+							end
+
+
 							cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t %s", GnomeWorks:GetTradeSkillIcon(entry.index) or "", spellName or "recipe:"..entry.recipeID)
 
 							cellFrame.button:Hide()
@@ -1129,6 +1222,8 @@ do
 
 			self:ResetSkillSelect()
 
+			GnomeWorks:TRADE_SKILL_UPDATE()
+
 			if self.hideMainWindow then
 				self.hideMainWindow = nil
 				CloseTradeSkill()
@@ -1168,6 +1263,10 @@ do
 			end
 
 			sf.data = group
+			sf:Refresh()
+			sf:Show()
+		else
+			sf.data = {}
 			sf:Refresh()
 			sf:Show()
 		end

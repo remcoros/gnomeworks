@@ -81,25 +81,6 @@ do
 	}
 
 
-	local function DeleteQueueEntry()
-		local entryNum
-
-		local queue = GnomeWorks.data.queueData[queuePlayer]
-
-		for k,v in ipairs(queue) do
-			if v == currentRecipe then
-				entryNum = k
-			end
-		end
-
-		if entryNum then
-			table.remove(queue, entryNum)
-
-			GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
-			GnomeWorks:SendMessageDispatch("GnomeWorksSkillListChanged")
-			GnomeWorks:SendMessageDispatch("GnomeWorksDetailsChanged")
-		end
-	end
 
 
 	local function ColumnControl(cellFrame,button,source,menu)
@@ -107,14 +88,14 @@ do
 		local scrollFrame = cellFrame:GetParent():GetParent()
 		currentRecipe = cellFrame:GetParent().data
 
-		if button == "RightButton" and currentRecipe.manualEntry then
+
 			if cellFrame.header[menu] then
 				local x, y = GetCursorPosition()
 				local uiScale = UIParent:GetEffectiveScale()
 
 				EasyMenu(cellFrame.header[menu], menuFrame, UIParent, x/uiScale,y/uiScale, "MENU", 5)
 			end
-		end
+
 --[[
 		else
 			scrollFrame.sortInvert = (scrollFrame.SortCompare == cellFrame.header.sortCompare) and not scrollFrame.sortInvert
@@ -128,326 +109,7 @@ do
 	end
 
 
-	local columnHeaders = {
-		{
-			name = "#",
-			align = "CENTER",
-			width = 30,
-			font = "GameFontHighlightSmall",
-			OnClick = function(cellFrame, button, source)
-							local rowFrame = cellFrame:GetParent()
-							if rowFrame.rowIndex>0 then
-								local entry = rowFrame.data
---print(entry.manualEntry)
 
-								if entry.manualEntry then
-									if button == "RightButton" then
-										entry.count = entry.count - 1
-									else
-										entry.count = entry.count + 1
-									end
-
-									if entry.count < 1 then
-										entry.count = 1
-									end
-
-									GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
-									GnomeWorks:SendMessageDispatch("GnomeWorksSkillListChanged")
-									GnomeWorks:SendMessageDispatch("GnomeWorksDetailsChanged")
-
---									GnomeWorks:ShowQueueList()
-								end
-							end
-						end,
-			OnEnter = function(cellFrame, button)
-							local rowFrame = cellFrame:GetParent()
-							if rowFrame.rowIndex>0 then
-								local entry = rowFrame.data
-
-								local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,GnomeWorks.player)				--GnomeWorksDB.results[entry.recipeID]
---								local reagents = GnomeWorksDB.reagents[entry.recipeID]
-
-								if entry then
-									GameTooltip:SetOwner(rowFrame, "ANCHOR_TOPRIGHT")
-									GameTooltip:ClearLines()
-
-
-									if entry.itemID then
-										GameTooltip:AddLine(select(2,GetItemInfo(entry.itemID)))
-
-										local required = entry.numNeeded
-										local deficit = entry.count
-
-										if entry.command == "create" then
-											deficit = entry.count * results[entry.itemID]
-										end
-
-										local inQueue = deficit + (entry.bag or 0) - entry.numNeeded
-
-
-										if required>0 then
-											local prevCount = 0
-
-											GameTooltip:AddDoubleLine("Required", required)
-
-											GameTooltip:AddLine("Current Stock:",1,1,1)
-
-											for i,key in pairs(inventoryIndex) do
-												if key ~= "vendor" then
-													local count = entry[key] or 0
-
-													if count ~= prevCount then
-														GameTooltip:AddDoubleLine(inventoryTags[key],count)
-														prevCount = count
-													end
-												end
-											end
-
-											if entry.command == "create" then
-												if entry.numCraftable > 0 then
-													GameTooltip:AddDoubleLine("craftable",entry.numCraftable * results[entry.itemID])
-													prevCount = entry.numCraftable * results[entry.itemID]
-												else
-	--													GameTooltip:AddLine("None craftable")
-												end
-											end
-
-											if inQueue > 0 then
-												GameTooltip:AddDoubleLine("|cffff8000reserved",inQueue)
-											end
-
-											if prevCount == 0 then
-	--												GameTooltip:AddLine("None available")
-											end
-
-											if prevCount ~= 0 then
-												if deficit > 0 then
-													GameTooltip:AddDoubleLine("|cffff0000total deficit:",deficit)
-												end
-											end
-
-
-											if entry.reagents then
-												GameTooltip:AddLine("")
-												GameTooltip:AddLine("Required Reagents:")
-												for reagentID,numNeeded in pairs(reagents) do
-													GameTooltip:AddDoubleLine("    "..GetItemInfo(reagentID),numNeeded)
-												end
-											end
-										end
-									else
-										GameTooltip:AddLine(GetSpellLink(entry.recipeID))
-										GameTooltip:AddDoubleLine("Requested", entry.count)
-										GameTooltip:AddDoubleLine("Craftable", entry.numCraftable)
-
-										if entry.reagents then
-											GameTooltip:AddLine("")
-											GameTooltip:AddLine("Required Reagents:")
-											for reagentID,numNeeded in pairs(reagents) do
-												GameTooltip:AddDoubleLine("    "..GetItemInfo(reagentID),numNeeded)
-											end
-										end
-									end
-
-									GameTooltip:Show()
-								end
-							end
-						end,
-			OnLeave = function()
-							GameTooltip:Hide()
-						end,
-			draw =	function (rowFrame,cellFrame,entry)
---print(entry.manualEntry,entry.command, entry.recipeID or entry.itemID, entry.count, entry.numAvailable)
-
-							if entry.command ~= "options" then
-								if entry.numCraftable then
-									if entry.numCraftable == 0 then
-										cellFrame.text:SetTextColor(1,0,0)
-									elseif entry.count > entry.numCraftable then
-										cellFrame.text:SetTextColor(.8,.8,0)
-									else
-										cellFrame.text:SetTextColor(1,1,1)
-									end
-								end
-							else
-								cellFrame.text:SetTextColor(1,1,1)
-							end
-
-							cellFrame.text:SetText(entry.count)
-						end,
-		}, -- [1]
-		{
---			font = "GameFontHighlight",
-			button = {
-				normalTexture = "Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga",
-				highlightTexture = "Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga",
-				width = 14,
-				height = 14,
-			},
-			name = "Item",
-			width = 250,
-			recipeMenu = {
-				{
-					text = "Delete",
---					icon = filter.icon,
---					tooltipText = filter.tooltip,
-					func = DeleteQueueEntry,
-					notCheckable = true,
---					menuList = filter.menuList,
---					hasArrow = filter.menuList ~= nil,
-				},
-			},
-			OnClick = function(cellFrame, button, source)
-							if cellFrame:GetParent().rowIndex>0 then
-								local entry = cellFrame:GetParent().data
-
-								if entry.subGroup and source == "button" then
-									entry.subGroup.expanded = not entry.subGroup.expanded
-									sf:Refresh()
-								else
-									if entry.recipeID then
-										if button == "LeftButton" then
-											GnomeWorks:PushSelection()
-											GnomeWorks:SelectRecipe(entry.recipeID)
-										else
-											ColumnControl(cellFrame, button, source, "recipeMenu")
-										end
-									end
-								end
-							else
-								if source == "button" then
-									cellFrame.collapsed = not cellFrame.collapsed
-
-									if not cellFrame.collapsed then
-										GnomeWorks:CollapseAllHeaders(sf.data.entries)
-										sf:Refresh()
-
-										cellFrame.button:SetNormalTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_closed.tga")
-										cellFrame.button:SetHighlightTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_closed.tga")
-									else
-										GnomeWorks:ExpandAllHeaders(sf.data.entries)
-										sf:Refresh()
-
-										cellFrame.button:SetNormalTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga")
-										cellFrame.button:SetHighlightTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga")
-									end
-								end
-							end
-						end,
-			draw =	function (rowFrame,cellFrame,entry)
-						cellFrame.text:SetPoint("LEFT", cellFrame, "LEFT", entry.depth*8+4+12, 0)
-						cellFrame.button:SetPoint("LEFT", cellFrame, "LEFT", entry.depth*8, 0)
-						local craftable
-
-						if entry.subGroup and (entry.command == "options" or entry.count > entry.numCraftable) then
-							if entry.subGroup.expanded then
-								cellFrame.button:SetNormalTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga")
-								cellFrame.button:SetHighlightTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga")
-							else
-								cellFrame.button:SetNormalTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_closed.tga")
-								cellFrame.button:SetHighlightTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_closed.tga")
-							end
-
---							cellFrame.text:SetFormattedText("%s (%d Recipes)",entry.name,#entry.subGroup.entries)
-							cellFrame.button:Show()
-
-							craftable = true
-						else
-							cellFrame.button:Hide()
-						end
-
-						local needsScan = GnomeWorksDB.results[entry.recipeID]==nil
-
-						if entry.manualEntry then
-							cellFrame.text:SetFontObject("GameFontHighlight")
-						else
-							cellFrame.text:SetFontObject("GameFontHighlightsmall")
-						end
-
-
-
-						if entry.command == "create" then
-							local name, rank, icon = GnomeWorks:GetTradeInfo(entry.recipeID)
-
-
-
-
-							if entry.manualEntry then
-								if entry.sourcePlayer then
-									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t %s (%s)",icon or "",GnomeWorks:GetRecipeName(entry.recipeID), entry.sourcePlayer)
-								else
-									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t %s",icon or "",GnomeWorks:GetRecipeName(entry.recipeID))
-								end
-							else
-
-								if entry.itemID then
-									icon = GetItemIcon(entry.itemID)
-								end
---[[
-								if entry.command == "create" then
-									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t |cffd0d090%s: %s (x%d)",icon or "",GnomeWorks:GetTradeName(entry.tradeID),GnomeWorks:GetRecipeName(entry.recipeID),entry.results[entry.itemID])
-								else
-									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t |cffd0d090%s: %s",icon or "",GnomeWorks:GetTradeName(entry.tradeID),GnomeWorks:GetRecipeName(entry.recipeID))
-								end
-]]
---								local results = GnomeWorksDB.results[entry.recipeID]
-								local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,GnomeWorks.player)
-
-								if entry.command == "create" and results[entry.itemID] ~= 1 then
-									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t |cffd0d090 %s (x%d)",icon or "",GnomeWorks:GetRecipeName(entry.recipeID),results[entry.itemID])
-								else
-									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t |cffd0d090 %s",icon or "",GnomeWorks:GetRecipeName(entry.recipeID))
-								end
-							end
---[[
-							if needsScan then
-								cellFrame.text:SetTextColor(1,0,0, (entry.manualEntry and 1) or .75)
-							elseif entry.manualEntry then
-								cellFrame.text:SetTextColor(1,1,1,1)
-							else
-								cellFrame.text:SetTextColor(.3,1,1,.75)
-							end
-]]
-
-						elseif entry.command == "collect" then
-
-							if not GetItemInfo(entry.itemID) then
-								GameTooltip:SetHyperlink("item:"..entry.itemID)
-							end
-
-							local itemName = GetItemInfo(entry.itemID) or "item:"..entry.itemID
-
-							if craftable and entry.subGroup.expanded then
-								cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t |ca040ffffCraft|r |cffc0c0c0%s",GetItemIcon(entry.itemID) or "",itemName)
-							else
-								local c = "|cffb0b000"
-
-								if GnomeWorks:VendorSellsItem(entry.itemID) then
-									c = "|cff00b000"
-								end
-
-
-
-								if not entry.source then
-									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t %sPurchase|r |cffc0c0c0%s", GetItemIcon(entry.itemID) or "",c,itemName)
-								else
-									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t %sFrom %s%s|r |cffc0c0c0%s", GetItemIcon(entry.itemID) or "",c, inventoryColors[entry.source],entry.source,itemName)
-								end
-							end
---[[
-							if GnomeWorks:VendorSellsItem(entry.itemID) then
-								cellFrame.text:SetTextColor(0,.7,0)
-							else
-								cellFrame.text:SetTextColor(.7,.7,0)
-							end
-]]
-						elseif entry.command == "options" then
-							cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t Crafting Options for %s", GetItemIcon(entry.itemID),(GetItemInfo(entry.itemID)))
-							cellFrame.text:SetTextColor(.8,.25,.8)
-						end
-					end,
-		}, -- [2]
-	}
 
 
 
@@ -526,6 +188,8 @@ end
 --print("RESERVE", player, queue)
 		if queue then
 			for k,entry in ipairs(queue) do
+				entry.parent = queue
+
 				if entry.command == "create" then
 					entry.numCraftable = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "bag queue")
 
@@ -583,124 +247,6 @@ end
 	end
 
 
-	local function BuildQueueScrollingFrame()
-
-		local function ResizeQueueFrame(scrollFrame,width,height)
-			if scrollFrame then
-				scrollFrame.columnWidth[2] = scrollFrame.columnWidth[2] + width - scrollFrame.headerWidth
-				scrollFrame.headerWidth = width
-
-				local x = 0
-
-				for i=1,#scrollFrame.columnFrames do
-					scrollFrame.columnFrames[i]:SetPoint("LEFT",scrollFrame, "LEFT", x,0)
-					scrollFrame.columnFrames[i]:SetPoint("RIGHT",scrollFrame, "LEFT", x+scrollFrame.columnWidth[i],0)
-
-					x = x + scrollFrame.columnWidth[i]
-				end
-			end
-		end
-
-		local ScrollPaneBackdrop  = {
-				bgFile = "Interface\\AddOns\\GnomeWorks\\Art\\frameInsetSmallBackground.tga",
-				edgeFile = "Interface\\AddOns\\GnomeWorks\\Art\\frameInsetSmallBorder.tga",
-				tile = true, tileSize = 16, edgeSize = 16,
-				insets = { left = 9.5, right = 9.5, top = 9.5, bottom = 11.5 }
-			}
-
-
-		queueFrame = CreateFrame("Frame",nil,frame)
-		queueFrame:SetPoint("LEFT",20,0)
-		queueFrame:SetPoint("BOTTOM",frame,"CENTER",0,-25)
-		queueFrame:SetPoint("TOP", frame, 0, -45)
-		queueFrame:SetPoint("RIGHT", frame, -20,0)
-
-
---		GnomeWorks.queueFrame = queueFrame
-
-		sf = GnomeWorks:CreateScrollingTable(queueFrame, ScrollPaneBackdrop, columnHeaders, ResizeQueueFrame)
-
-
---		sf.childrenFirst = true
-
-		sf.IsEntryFiltered = function(self, entry)
-			if entry.manualEntry then
---			print("manual entry", entry.command, GetItemInfo(entry.itemID), entry.numAvailable, entry.count, entry.numBag, entry.numNeeded)
-				return false
-			end
-
-
---			if true then return false end
-
---print("filter", entry.command, GetItemInfo(entry.itemID), entry.numAvailable, entry.count, entry.numNeeded)
-			if entry.command == "collect" and entry.count < 1 then
-				return true
-			elseif entry.command == "create" and entry.count < 1 then
-				return true
-			else
---print("filter", entry.command, GetItemInfo(entry.itemID), entry.numAvailable, entry.count, entry.numBag, entry.numNeeded)
-				return false
-			end
-		end
-
---[[
-		sf.IsEntryFiltered = function(self, entry)
-			for k,filter in pairs(filterParameters) do
-				if filter.enabled then
-					if filter.func(entry) then
-						return true
-					end
-				end
-			end
-
-			if textFilter and textFilter ~= "" then
-				for w in string.gmatch(textFilter, "%a+") do
-					if string.match(string.lower(entry.name), w, 1, true)==nil then
-						return true
-					end
-				end
-			end
-
-			return false
-		end
-]]
-
-		local function UpdateRowData(scrollFrame,entry,firstCall)
-			local player = queuePlayer
---print("update row data", entry.command, entry.recipeID and GetSpellLink(entry.recipeID) or entry.itemID and GetItemInfo(entry.itemID))
-
-			local itemID = entry.itemID
-			local recipeID = entry.recipeID
-
-			if itemID then
-				entry.inQueue = GnomeWorks:GetInventoryCount(itemID, player, "queue")
-
-				entry.bag = GnomeWorks:GetInventoryCount(itemID, player, "bag")
-				entry.bank = GnomeWorks:GetInventoryCount(itemID, player, "bank")
-				entry.guildBank = GnomeWorks:GetInventoryCount(itemID, player, "guildBank")
-				entry.alt = GnomeWorks:GetInventoryCount(itemID, "faction", "bank")
-			end
-
-			if entry.command == "create" then
-				if entry.numCraftable >= entry.count then
-					if entry.subGroup then
-						entry.subGroup.expanded = false
-					end
-				end
-
-				if entry.count > 0 then
-					entry.noHide = true
-				else
-					entry.noHide = false
-				end
-			end
-
---print("done updating")
-		end
-
-
-		sf:RegisterRowUpdate(UpdateRowData)
-	end
 
 
 
@@ -731,7 +277,7 @@ end
 
 			reserved = {},
 
-			noHide = true,
+--			noHide = true,
 		}
 
 		if GnomeWorksDB.reagents[recipeID] then
@@ -861,7 +407,9 @@ end
 					table.insert(optionGroup.subGroup.entries, craftOptions[i])
 				end
 			elseif #craftOptions>0 then
-				table.insert(queue.subGroup.entries, craftOptions[1])
+				for i=1,#craftOptions do
+					table.insert(queue.subGroup.entries, craftOptions[i])
+				end
 			else
 				local stillNeeded = numNeeded - GnomeWorks:GetInventoryCount(reagentID, player, "bag queue")
 
@@ -981,6 +529,8 @@ end
 
 		if not queueAdded then
 			local newQueue = CreateQueue(player, recipeID, count, tradeID, sourcePlayer, #queueData)
+
+			newQueue.parent = queueData
 
 			table.insert(queueData, newQueue)
 		end
@@ -1444,6 +994,527 @@ end
 		end)
 
 		return controlFrame
+	end
+
+
+
+
+	local function QueueRecipeSwap(button, a,b)
+		CloseDropDownMenus()
+
+		if a and b then
+			if a.parent == b.parent then
+				local p = a.parent
+
+				p[a.index], p[b.index] = p[b.index], p[a.index]
+
+				a.index, b.index = b.index, a.index
+				a.expanded, b.expanded = b.expanded, a.expanded
+			end
+		end
+
+		GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
+	end
+
+
+	local function DeleteQueueEntry()
+		CloseDropDownMenus()
+		local entryNum
+
+		local queue = GnomeWorks.data.queueData[queuePlayer]
+
+		for k,v in ipairs(queue) do
+			if v == currentRecipe then
+				entryNum = k
+			end
+		end
+
+		if entryNum then
+			table.remove(queue, entryNum)
+
+			GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
+			GnomeWorks:SendMessageDispatch("GnomeWorksSkillListChanged")
+			GnomeWorks:SendMessageDispatch("GnomeWorksDetailsChanged")
+		end
+	end
+
+
+
+
+	local columnHeaders = {
+		{
+			name = "#",
+			align = "CENTER",
+			width = 30,
+			font = "GameFontHighlightSmall",
+			OnClick = function(cellFrame, button, source)
+							local rowFrame = cellFrame:GetParent()
+							if rowFrame.rowIndex>0 then
+								local entry = rowFrame.data
+--print(entry.manualEntry)
+
+								if entry.manualEntry then
+									if button == "RightButton" then
+										entry.count = entry.count - 1
+									else
+										entry.count = entry.count + 1
+									end
+
+									if entry.count < 1 then
+										entry.count = 1
+									end
+
+									GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
+									GnomeWorks:SendMessageDispatch("GnomeWorksSkillListChanged")
+									GnomeWorks:SendMessageDispatch("GnomeWorksDetailsChanged")
+
+--									GnomeWorks:ShowQueueList()
+								end
+							end
+						end,
+			OnEnter = function(cellFrame, button)
+							local rowFrame = cellFrame:GetParent()
+							if rowFrame.rowIndex>0 then
+								local entry = rowFrame.data
+
+								local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,GnomeWorks.player)				--GnomeWorksDB.results[entry.recipeID]
+--								local reagents = GnomeWorksDB.reagents[entry.recipeID]
+
+								if entry then
+									GameTooltip:SetOwner(rowFrame, "ANCHOR_TOPRIGHT")
+									GameTooltip:ClearLines()
+
+
+									if entry.itemID then
+										GameTooltip:AddLine(select(2,GetItemInfo(entry.itemID)))
+
+										local required = entry.numNeeded
+										local deficit = entry.count
+
+										if entry.command == "create" then
+											deficit = entry.count * results[entry.itemID]
+										end
+
+										local inQueue = deficit + (entry.bag or 0) - entry.numNeeded
+
+
+										if required>0 then
+											local prevCount = 0
+
+											GameTooltip:AddDoubleLine("Required", required)
+
+											GameTooltip:AddLine("Current Stock:",1,1,1)
+
+											for i,key in pairs(inventoryIndex) do
+												if key ~= "vendor" then
+													local count = entry[key] or 0
+
+													if count ~= prevCount then
+														GameTooltip:AddDoubleLine(inventoryTags[key],count)
+														prevCount = count
+													end
+												end
+											end
+
+											if entry.command == "create" then
+												if entry.numCraftable > 0 then
+													GameTooltip:AddDoubleLine("craftable",entry.numCraftable * results[entry.itemID])
+													prevCount = entry.numCraftable * results[entry.itemID]
+												else
+	--													GameTooltip:AddLine("None craftable")
+												end
+											end
+
+											if inQueue > 0 then
+												GameTooltip:AddDoubleLine("|cffff8000reserved",inQueue)
+											end
+
+											if prevCount == 0 then
+	--												GameTooltip:AddLine("None available")
+											end
+
+											if prevCount ~= 0 then
+												if deficit > 0 then
+													GameTooltip:AddDoubleLine("|cffff0000total deficit:",deficit)
+												end
+											end
+
+
+											if entry.reagents then
+												GameTooltip:AddLine("")
+												GameTooltip:AddLine("Required Reagents:")
+												for reagentID,numNeeded in pairs(reagents) do
+													GameTooltip:AddDoubleLine("    "..GetItemInfo(reagentID),numNeeded)
+												end
+											end
+										end
+									else
+										GameTooltip:AddLine(GetSpellLink(entry.recipeID))
+										GameTooltip:AddDoubleLine("Requested", entry.count)
+										GameTooltip:AddDoubleLine("Craftable", entry.numCraftable)
+
+										if entry.reagents then
+											GameTooltip:AddLine("")
+											GameTooltip:AddLine("Required Reagents:")
+											for reagentID,numNeeded in pairs(reagents) do
+												GameTooltip:AddDoubleLine("    "..GetItemInfo(reagentID),numNeeded)
+											end
+										end
+									end
+
+									GameTooltip:Show()
+								end
+							end
+						end,
+			OnLeave = function()
+							GameTooltip:Hide()
+						end,
+			draw =	function (rowFrame,cellFrame,entry)
+--print(entry.manualEntry,entry.command, entry.recipeID or entry.itemID, entry.count, entry.numAvailable)
+
+							if entry.command ~= "options" then
+								if entry.numCraftable then
+									if entry.numCraftable == 0 then
+										cellFrame.text:SetTextColor(1,0,0)
+									elseif entry.count > entry.numCraftable then
+										cellFrame.text:SetTextColor(.8,.8,0)
+									else
+										cellFrame.text:SetTextColor(1,1,1)
+									end
+								end
+							else
+								cellFrame.text:SetTextColor(1,1,1)
+							end
+
+							cellFrame.text:SetText(entry.count)
+						end,
+		}, -- [1]
+		{
+--			font = "GameFontHighlight",
+			button = {
+				normalTexture = "Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga",
+				highlightTexture = "Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga",
+				width = 14,
+				height = 14,
+			},
+			name = "Item",
+			width = 250,
+			recipeMenuManualEntry = {
+				{
+					text = "Delete",
+--					icon = filter.icon,
+--					tooltipText = filter.tooltip,
+					func = DeleteQueueEntry,
+					notCheckable = true,
+--					menuList = filter.menuList,
+--					hasArrow = filter.menuList ~= nil,
+				},
+			},
+			recipeMenuCrafted = {
+				{
+					text = "Select Recipe Source",
+					notCheckable = true,
+					hasArrow = true,
+				},
+			},
+			OnClick = function(cellFrame, button, source)
+							if cellFrame:GetParent().rowIndex>0 then
+								local entry = cellFrame:GetParent().data
+
+								if entry.subGroup and source == "button" then
+									entry.subGroup.expanded = not entry.subGroup.expanded
+									sf:Refresh()
+								else
+									if entry.recipeID then
+										if button == "LeftButton" then
+											GnomeWorks:PushSelection()
+											GnomeWorks:SelectRecipe(entry.recipeID)
+										else
+											if entry.manualEntry then
+												ColumnControl(cellFrame, button, source, "recipeMenuManualEntry")
+											else
+												local recipeMenu = cellFrame.header.recipeMenuCrafted
+
+												local sortMenu = {}
+
+--												for recipeID in pairs(GnomeWorks.data.itemSource[entry.itemID]) do
+												for k,subEntry in ipairs(entry.parent) do
+													if subEntry.command == "create" then
+														local menuEntry = {}
+
+														local results = GnomeWorks:GetRecipeData(subEntry.recipeID)
+
+														menuEntry.text = math.ceil(subEntry.numNeeded / results[subEntry.itemID]).." x "..GnomeWorks:GetRecipeName(subEntry.recipeID)
+														menuEntry.checked = subEntry == entry
+														menuEntry.arg1 = subEntry
+														menuEntry.arg2 = entry
+														menuEntry.func = QueueRecipeSwap
+
+														sortMenu[#sortMenu+1] = menuEntry
+													end
+												end
+
+												recipeMenu[1].menuList = sortMenu
+
+												ColumnControl(cellFrame, button, source, "recipeMenuCrafted")
+											end
+										end
+									end
+								end
+							else
+								if source == "button" then
+									cellFrame.collapsed = not cellFrame.collapsed
+
+									if not cellFrame.collapsed then
+										GnomeWorks:CollapseAllHeaders(sf.data.entries)
+										sf:Refresh()
+
+										cellFrame.button:SetNormalTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_closed.tga")
+										cellFrame.button:SetHighlightTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_closed.tga")
+									else
+										GnomeWorks:ExpandAllHeaders(sf.data.entries)
+										sf:Refresh()
+
+										cellFrame.button:SetNormalTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga")
+										cellFrame.button:SetHighlightTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga")
+									end
+								end
+							end
+						end,
+			draw =	function (rowFrame,cellFrame,entry)
+						cellFrame.text:SetPoint("LEFT", cellFrame, "LEFT", entry.depth*8+4+12, 0)
+						cellFrame.button:SetPoint("LEFT", cellFrame, "LEFT", entry.depth*8, 0)
+						local craftable
+
+						if entry.subGroup and (entry.command == "options" or entry.count > entry.numCraftable) then
+							if entry.subGroup.expanded then
+								cellFrame.button:SetNormalTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga")
+								cellFrame.button:SetHighlightTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga")
+							else
+								cellFrame.button:SetNormalTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_closed.tga")
+								cellFrame.button:SetHighlightTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_closed.tga")
+							end
+
+--							cellFrame.text:SetFormattedText("%s (%d Recipes)",entry.name,#entry.subGroup.entries)
+							cellFrame.button:Show()
+
+							craftable = true
+						else
+							cellFrame.button:Hide()
+						end
+
+						local needsScan = GnomeWorksDB.results[entry.recipeID]==nil
+
+						if entry.manualEntry then
+							cellFrame.text:SetFontObject("GameFontHighlight")
+						else
+							cellFrame.text:SetFontObject("GameFontHighlightsmall")
+						end
+
+
+
+						if entry.command == "create" then
+							local name, rank, icon = GnomeWorks:GetTradeInfo(entry.recipeID)
+
+
+
+
+							if entry.manualEntry then
+								if entry.sourcePlayer then
+									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t %s (%s)",icon or "",GnomeWorks:GetRecipeName(entry.recipeID), entry.sourcePlayer)
+								else
+									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t %s",icon or "",GnomeWorks:GetRecipeName(entry.recipeID))
+								end
+							else
+
+								if entry.itemID then
+									icon = GetItemIcon(entry.itemID)
+								end
+--[[
+								if entry.command == "create" then
+									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t |cffd0d090%s: %s (x%d)",icon or "",GnomeWorks:GetTradeName(entry.tradeID),GnomeWorks:GetRecipeName(entry.recipeID),entry.results[entry.itemID])
+								else
+									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t |cffd0d090%s: %s",icon or "",GnomeWorks:GetTradeName(entry.tradeID),GnomeWorks:GetRecipeName(entry.recipeID))
+								end
+]]
+--								local results = GnomeWorksDB.results[entry.recipeID]
+								local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,GnomeWorks.player)
+
+								if entry.command == "create" and results[entry.itemID] ~= 1 then
+									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t |cffd0d090 %s (x%d)",icon or "",GnomeWorks:GetRecipeName(entry.recipeID),results[entry.itemID])
+								else
+									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t |cffd0d090 %s",icon or "",GnomeWorks:GetRecipeName(entry.recipeID))
+								end
+							end
+--[[
+							if needsScan then
+								cellFrame.text:SetTextColor(1,0,0, (entry.manualEntry and 1) or .75)
+							elseif entry.manualEntry then
+								cellFrame.text:SetTextColor(1,1,1,1)
+							else
+								cellFrame.text:SetTextColor(.3,1,1,.75)
+							end
+]]
+
+						elseif entry.command == "collect" then
+
+							if not GetItemInfo(entry.itemID) then
+								GameTooltip:SetHyperlink("item:"..entry.itemID)
+							end
+
+							local itemName = GetItemInfo(entry.itemID) or "item:"..entry.itemID
+
+							if craftable and entry.subGroup.expanded then
+								cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t |ca040ffffCraft|r |cffc0c0c0%s",GetItemIcon(entry.itemID) or "",itemName)
+							else
+								local c = "|cffb0b000"
+
+								if GnomeWorks:VendorSellsItem(entry.itemID) then
+									c = "|cff00b000"
+								end
+
+
+
+								if not entry.source then
+									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t %sPurchase|r |cffc0c0c0%s", GetItemIcon(entry.itemID) or "",c,itemName)
+								else
+									cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t %sFrom %s%s|r |cffc0c0c0%s", GetItemIcon(entry.itemID) or "",c, inventoryColors[entry.source],entry.source,itemName)
+								end
+							end
+--[[
+							if GnomeWorks:VendorSellsItem(entry.itemID) then
+								cellFrame.text:SetTextColor(0,.7,0)
+							else
+								cellFrame.text:SetTextColor(.7,.7,0)
+							end
+]]
+						elseif entry.command == "options" then
+							cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t Crafting Options for %s", GetItemIcon(entry.itemID),(GetItemInfo(entry.itemID)))
+							cellFrame.text:SetTextColor(.8,.25,.8)
+						end
+					end,
+		}, -- [2]
+	}
+
+
+
+	local function BuildQueueScrollingFrame()
+
+		local function ResizeQueueFrame(scrollFrame,width,height)
+			if scrollFrame then
+				scrollFrame.columnWidth[2] = scrollFrame.columnWidth[2] + width - scrollFrame.headerWidth
+				scrollFrame.headerWidth = width
+
+				local x = 0
+
+				for i=1,#scrollFrame.columnFrames do
+					scrollFrame.columnFrames[i]:SetPoint("LEFT",scrollFrame, "LEFT", x,0)
+					scrollFrame.columnFrames[i]:SetPoint("RIGHT",scrollFrame, "LEFT", x+scrollFrame.columnWidth[i],0)
+
+					x = x + scrollFrame.columnWidth[i]
+				end
+			end
+		end
+
+		local ScrollPaneBackdrop  = {
+				bgFile = "Interface\\AddOns\\GnomeWorks\\Art\\frameInsetSmallBackground.tga",
+				edgeFile = "Interface\\AddOns\\GnomeWorks\\Art\\frameInsetSmallBorder.tga",
+				tile = true, tileSize = 16, edgeSize = 16,
+				insets = { left = 9.5, right = 9.5, top = 9.5, bottom = 11.5 }
+			}
+
+
+		queueFrame = CreateFrame("Frame",nil,frame)
+		queueFrame:SetPoint("LEFT",20,0)
+		queueFrame:SetPoint("BOTTOM",frame,"CENTER",0,-25)
+		queueFrame:SetPoint("TOP", frame, 0, -45)
+		queueFrame:SetPoint("RIGHT", frame, -20,0)
+
+
+--		GnomeWorks.queueFrame = queueFrame
+
+		sf = GnomeWorks:CreateScrollingTable(queueFrame, ScrollPaneBackdrop, columnHeaders, ResizeQueueFrame)
+
+
+--		sf.childrenFirst = true
+
+		sf.IsEntryFiltered = function(self, entry)
+			if entry.manualEntry then
+--			print("manual entry", entry.command, GetItemInfo(entry.itemID), entry.numAvailable, entry.count, entry.numBag, entry.numNeeded)
+				return false
+			end
+
+
+--			if true then return false end
+
+--print("filter", entry.command, GetItemInfo(entry.itemID), entry.numAvailable, entry.count, entry.numNeeded)
+			if entry.command == "collect" and entry.count < 1 then
+				return true
+			elseif entry.command == "create" and entry.count < 1 then
+				return true
+			else
+--print("filter", entry.command, GetItemInfo(entry.itemID), entry.numAvailable, entry.count, entry.numBag, entry.numNeeded)
+				return false
+			end
+		end
+
+--[[
+		sf.IsEntryFiltered = function(self, entry)
+			for k,filter in pairs(filterParameters) do
+				if filter.enabled then
+					if filter.func(entry) then
+						return true
+					end
+				end
+			end
+
+			if textFilter and textFilter ~= "" then
+				for w in string.gmatch(textFilter, "%a+") do
+					if string.match(string.lower(entry.name), w, 1, true)==nil then
+						return true
+					end
+				end
+			end
+
+			return false
+		end
+]]
+
+		local function UpdateRowData(scrollFrame,entry,firstCall)
+			local player = queuePlayer
+--print("update row data", entry.command, entry.recipeID and GetSpellLink(entry.recipeID) or entry.itemID and GetItemInfo(entry.itemID))
+
+			local itemID = entry.itemID
+			local recipeID = entry.recipeID
+
+			if itemID then
+				entry.inQueue = GnomeWorks:GetInventoryCount(itemID, player, "queue")
+
+				entry.bag = GnomeWorks:GetInventoryCount(itemID, player, "bag")
+				entry.bank = GnomeWorks:GetInventoryCount(itemID, player, "bank")
+				entry.guildBank = GnomeWorks:GetInventoryCount(itemID, player, "guildBank")
+				entry.alt = GnomeWorks:GetInventoryCount(itemID, "faction", "bank")
+			end
+
+			if entry.command == "create" then
+				if entry.numCraftable >= entry.count then
+					if entry.subGroup then
+						entry.subGroup.expanded = false
+					end
+				end
+
+				if entry.count > 0 then
+					entry.noHide = true
+				else
+					entry.noHide = false
+				end
+			end
+
+--print("done updating")
+		end
+
+
+		sf:RegisterRowUpdate(UpdateRowData)
 	end
 
 

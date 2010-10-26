@@ -89,6 +89,10 @@ do
 
 	function GnomeWorks:RecordKnownSpells(tradeID, player)
 --print("wants to record spells for",tradeID, player)
+		if not self.data.knownSpells[player] then
+			self.data.knownSpells[player] = {}
+		end
+
 		if self.data.pseudoTradeData[tradeID] and self.data.pseudoTradeData[tradeID].RecordKnownSpells then
 			self.data.pseudoTradeData[tradeID].RecordKnownSpells(player)
 		end
