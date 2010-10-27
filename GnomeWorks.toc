@@ -62,6 +62,8 @@ PseudoTrades\CommonSkills.lua
 PseudoTrades\Disenchanting.lua
 PseudoTrades\Milling.lua
 PseudoTrades\Prospecting.lua
+PseudoTrades\VendorConversion.lua
+
 
 #### API
 API.lua

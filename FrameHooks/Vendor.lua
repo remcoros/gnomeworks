@@ -8,9 +8,7 @@ do
 
 
 	local function RecordMerchantItem(itemID, i)
-		local spoofedRecipeID = itemID+200000
-
-		if GnomeWorks.data.reagentUsage[itemID] and not GnomeWorksDB.vendorItems[itemID] and not GnomeWorksDB.results[spoofedRecipeID] then
+		if GnomeWorks.data.reagentUsage[itemID] and not GnomeWorksDB.vendorItems[itemID] then -- and not GnomeWorksDB.results[spoofedRecipeID] then
 			local name, texture, price, quantity, numAvailable, isUsable, extendedCost = GetMerchantItemInfo(i)
 
 			if numAvailable == -1 then					-- unlimited stock items only
@@ -20,35 +18,7 @@ do
 					GnomeWorks:print("recording vendor item: ",name)
 					GnomeWorksDB.vendorItems[itemID] = true
 				else
-					local reagents = {}
-					GnomeWorksDB.results[spoofedRecipeID] = { [itemID] = quantity }
-
-					GnomeWorksDB.tradeIDs[spoofedRecipeID] = 100001
-
-					for n=1,itemCount do
-						local itemTexture, itemValue, itemLink, itemName = GetMerchantItemCostItem(i, n)
-
-						if itemLink then
-							local costItemID = tonumber(string.match(itemLink,"item:(%d+)"))
-
-							reagents[costItemID] = itemValue
-
-							GnomeWorks:AddToReagentCache(costItemID, spoofedRecipeID, itemValue)
-						else
-							-- currency conversions.  hmm...
-
-						end
-					end
-
-					GnomeWorksDB.names[spoofedRecipeID] = string.format("Vendor Conversion: %s",name)
-
-					GnomeWorksDB.reagents[spoofedRecipeID] = reagents
-
-
-					GnomeWorks:AddToItemCache(itemID, spoofedRecipeID, quantity)
-
-
-					GnomeWorks:print("recording vendor conversion for item: ",name)
+					GnomeWorks:RecordVendorConversion(itemID, i)
 				end
 			end
 		end
@@ -185,7 +155,7 @@ do
 		local player = UnitName("player")
 		local vendorQueue = self.data.vendorQueue[player]
 
-		if vendorQueue then
+		if vendorQueue and #vendorQueue>0 then
 --[[
 			if not self.MainWindow:IsVisible() then
 				self.player = player

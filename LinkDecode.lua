@@ -8,6 +8,9 @@
 do
 	local GnomeWorks = GnomeWorks
 
+	local clientVersion, clientBuild = GetBuildInfo()
+
+
 	local frame = CreateFrame("Button")
 
 	local frameText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -136,6 +139,11 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 		frame.countDown = (frame.countDown or 0) - elapsed
 
 		if frame.countDown < 0 then
+			if linkDecodeList[decodeIndex] then
+				local tradeString = string.match(linkDecodeList[decodeIndex], "(trade:%d+:%d+:%d+:[0-9a-fA-F]+:[A-Za-z0-9+/]+)")
+				ItemRefTooltip:SetHyperlink(tradeString)
+			end
+
 			local isLinked,playerName = IsTradeSkillLinked()
 
 			if playerName then
@@ -177,14 +185,14 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 
 			local skillName, skillType = GetTradeSkillInfo(1)
 			local gotNil
---print("skillName:",skillName, type(skillName))
+
 			if skillType == "header" then
 
 --print(isLinked, playerName, GetTradeSkillLine())
 
 
-				local knownSpells = {}
-				local knownItems = {}
+				local knownSpells = GnomeWorks.data.knownSpells[playerName]
+				local knownItems = GnomeWorks.data.knownItems[playerName]
 
 				for i = 1, GetNumTradeSkills() do
 					local _,skillType = GetTradeSkillInfo(i)
@@ -217,9 +225,9 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 				end
 
 				if not gotNil then
-					GnomeWorks.data.knownSpells[playerName] = knownSpells
-					GnomeWorks.data.knownItems[playerName] = knownItems
---print(playerName, GnomeWorks.data.knownSpells[playerName])
+--					GnomeWorks.data.knownSpells[playerName] = knownSpells
+--					GnomeWorks.data.knownItems[playerName] = knownItems
+--print(playerName, GnomeWorks.data.knownSpells[playerName], GnomeWorks.data.knownItems[playerName])
 
 					OpenNextLink()
 				end
@@ -273,7 +281,10 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 			if playerName ~= "All Recipes" then
 				local linkList = playerData.links
 
-				if linkList then
+				self.data.knownSpells[playerName] = {}
+				self.data.knownItems[playerName] = {}
+
+				if linkList and playerData.build == clientBuild then
 					for tradeID, tradeLink in pairs(linkList) do
 --print(tradeID)
 						if not unlinkableTrades[tradeID] then

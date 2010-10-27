@@ -31,6 +31,8 @@ do
 		[GLYPH_TOKEN_PRIME] = "|cff80a0ff",
 	}
 
+	local tooltipScanner = _G["GWParsingTooltip"] or CreateFrame("GameTooltip", "GWParsingTooltip", getglobal("ANCHOR_NONE"), "GameTooltipTemplate")
+
 
 	local function GlyphType(itemID)
 		if not glyphTypes then
@@ -39,20 +41,14 @@ do
 
 
 		if not glyphTypes[itemID] then
-			local tooltip = getglobal("LSWParsingTooltip")
-
-
-			if tooltip == nil then
-				tooltip = CreateFrame("GameTooltip", "LSWParsingTooltip", UIParent, "GameTooltipTemplate")
-				tooltip:SetOwner(LSW.parentFrame, "ANCHOR_NONE")
-			end
+			local tooltip = tooltipScanner
 
 			tooltip:SetHyperlink("item:"..itemID)
 
 			local tiplines = tooltip:NumLines()
 
 			for i=2, tiplines, 1 do
-				local lineText = getglobal("LSWParsingTooltipTextLeft"..i):GetText() or " "
+				local lineText = getglobal("GWParsingTooltipTextLeft"..i):GetText() or " "
 
 
 				local g = string.match(lineText, GLYPH_MATCH_STRING)
@@ -1612,7 +1608,9 @@ do
 			end
 
 			GnomeWorks:ShowQueueList()
-			GnomeWorks:AddToQueue(GnomeWorks.player, GnomeWorks.tradeID, entry.recipeID, numItems)
+			if entry then
+				GnomeWorks:AddToQueue(GnomeWorks.player, GnomeWorks.tradeID, entry.recipeID, numItems)
+			end
 		end
 
 

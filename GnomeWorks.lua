@@ -295,6 +295,9 @@ do
 			end
 		end
 
+
+		GnomeWorks.data.groupList = {}
+
 --		print("reagetUsage mem usage = ",math.floor(memUsage(reagentUsage)/1024).."kb")
 
 

@@ -709,6 +709,16 @@ end
 
 				if GnomeWorks:IsPseudoTrade(tradeID) then
 --					GnomeWorks:print(GnomeWorks:GetTradeName(tradeID),"isn't functional yet.")
+					local pseudoTrade = GnomeWorks.data.pseudoTradeData[tradeID]
+
+					if pseudoTrade and pseudoTrade.DoTradeSkill then
+						if pseudoTrade.DoTradeSkill(entry.recipeID, entry.count) then
+							if entry.manualEntry then
+								DeleteQueueEntry(GnomeWorks.data.queueData[queuePlayer], entry)
+							end
+						end
+					end
+
 				else
 --				print(entry.recipeID, GnomeWorks:GetRecipeName(entry.recipeID), entry.count, entry.numAvailable)
 					if GetSpellLink((GetSpellInfo(tradeID))) then

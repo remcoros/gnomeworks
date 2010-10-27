@@ -46,13 +46,13 @@ do
 		[13262] = true,			-- disenchant
 		[31252] = true,			-- prospecting
 
-		[100000] = true,
-		[100001] = true,
+		[100000] = true,		-- common skills
+		[100001] = true,		-- vendor conversion
 	}
 
 	local fakeTrades = {
-		[100000] = true,
-		[100001] = true,
+		[100000] = true,		-- common skills
+		[100001] = true,		-- vendor conversions
 	}
 
 	local tradeIcon = {

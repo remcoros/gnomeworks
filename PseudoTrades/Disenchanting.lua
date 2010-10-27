@@ -379,7 +379,7 @@ do
 	api.GetTradeSkillInfo = function(index)
 		local recipeID = skillList[index]
 
-		return (GetSpellInfo(recipeID)) or "nil", "optimal"
+		return (recipeID and (GetItemInfo(recipeID))) or "nil", "optimal"
 	end
 
 	api.GetTradeSkillIcon = function(index)
@@ -429,12 +429,12 @@ do
 	api.RecordKnownSpells = function(player)
 		local enchantingRank = GnomeWorks:GetTradeSkillRank(player, 7411)
 
-
+--print("recording known de's")
 		if enchantingRank > 0 then
 			local knownItems = GnomeWorks.data.knownItems[player]
 			local knownSpells = GnomeWorks.data.knownSpells[player]
 
-
+--print("known items",knownItems, #knownItems)
 			for i = 1, #skillList, 1 do
 				local recipeID = skillList[i]
 

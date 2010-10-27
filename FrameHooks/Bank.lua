@@ -201,7 +201,11 @@ do
 
 		self.atBank = true
 
-		self:ShoppingListShow((UnitName("player")))
+		local bankQueue = self.data.bankQueue[(UnitName("player"))]
+
+		if bankQueue and #bankQueue>0 then
+			self:ShoppingListShow((UnitName("player")))
+		end
 
 		bankLocked = nil
 	end
@@ -220,7 +224,12 @@ do
 		end
 
 		self.atGuildBank = true
-		self:ShoppingListShow((UnitName("player")))
+
+		local guildBankQueue = self.data.guildBankQueue[(UnitName("player"))]
+
+		if guildBankQueue and #guildBankQueue>0 then
+			self:ShoppingListShow((UnitName("player")))
+		end
 	end
 
 

@@ -391,7 +391,7 @@ DebugSpam("done parsing skill list")
 		end
 
 		local player = self.player
-		local tradeID = GnomeWorksDB.tradeIDs[recipeID]
+		local _,_,tradeID = GnomeWorks:GetRecipeData(recipeID)
 
 		if tradeID ~= self.tradeID then
 			if player == (UnitName("player")) and not pseudoTrades[tradeID] then

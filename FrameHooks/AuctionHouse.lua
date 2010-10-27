@@ -130,7 +130,12 @@ do
 		self.atAuctionHouse = true
 --		self:BeginReagentScan(GnomeWorks.data.inventoryData[(UnitName("player"))].queue, function() print("DONE WITH SCAN") end)
 
-		self:ShoppingListShow((UnitName("player")))
+
+		local auctionQueue = self.data.auctionQueue[(UnitName("player"))]
+
+		if auctionQueue and #auctionQueue>0 then
+			self:ShoppingListShow((UnitName("player")))
+		end
 	end
 
 
