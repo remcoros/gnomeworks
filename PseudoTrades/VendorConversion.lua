@@ -53,6 +53,11 @@ do
 
 			skillList[#skillList + 1] = spoofedRecipeID
 
+			for player, knownSpellList in pairs(GnomeWorks.data.knownSpells) do
+				knownSpellList[spoofedRecipeID] = #skillList
+			end
+
+
 			recipeList[spoofedRecipeID] = trade
 
 			for reagentID, numNeeded in pairs(reagents) do

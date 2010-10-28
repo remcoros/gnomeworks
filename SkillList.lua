@@ -510,6 +510,10 @@ DebugSpam("SCAN BUSY!")
 			player = UnitName("player")
 		end
 
+		if IsTradeSkillGuild() then
+			player = "Guild Recipes"
+		end
+
 		self.player = player
 
 		local name, skillType = GetTradeSkillInfo(1)

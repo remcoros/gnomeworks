@@ -333,6 +333,7 @@ do
 				inventory["craftedBank"] = {}
 			end
 
+
 			if self.data.playerData[player].guild then
 				if not inventory["craftedGuildBank"] then
 					inventory["craftedGuildBank"] = {}

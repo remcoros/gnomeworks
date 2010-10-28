@@ -320,6 +320,10 @@ do
 		end
 
 		if millingNames[recipeID] then
+			if string.find(millingNames[recipeID],"item:") and GetItemInfo(-recipeID) then
+				millingNames[recipeID] = string.format("Mill %s",GetItemInfo(-recipeID))
+			end
+
 			return millingNames[recipeID]
 		end
 	end
@@ -379,6 +383,12 @@ do
 
 		if type(recipeID) == "string" then
 			return recipeID, "header"
+		end
+
+		if millingNames[-recipeID] then
+			if string.find(millingNames[-recipeID],"item:") and GetItemInfo(recipeID) then
+				millingNames[-recipeID] = string.format("Mill %s",GetItemInfo(recipeID))
+			end
 		end
 
 		return millingNames[-recipeID], "optimal"

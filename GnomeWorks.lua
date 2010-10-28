@@ -426,6 +426,9 @@ do
 	local initList = LibStagedExecution:NewList()
 
 
+
+
+
 	if not IsAddOnLoaded("AddOnLoader") then
 		GnomeWorks:RegisterEvent("ADDON_LOADED", function(event, name)
 			if string.lower(name) == string.lower(modName) then

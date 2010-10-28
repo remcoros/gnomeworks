@@ -1009,7 +1009,7 @@ end
 
 
 
-	local function QueueRecipeSwap(button, a,b)
+	local function OpQueueRecipeSwap(button, a,b)
 		CloseDropDownMenus()
 
 		if a and b then
@@ -1027,14 +1027,17 @@ end
 	end
 
 
-	local function DeleteQueueEntry()
+
+
+
+	local function OpDeleteQueueEntry(button,entry)
 		CloseDropDownMenus()
 		local entryNum
 
 		local queue = GnomeWorks.data.queueData[queuePlayer]
 
 		for k,v in ipairs(queue) do
-			if v == currentRecipe then
+			if v == entry then
 				entryNum = k
 			end
 		end
@@ -1046,6 +1049,21 @@ end
 			GnomeWorks:SendMessageDispatch("GnomeWorksSkillListChanged")
 			GnomeWorks:SendMessageDispatch("GnomeWorksDetailsChanged")
 		end
+	end
+
+
+	local function OpMoveQueueEntryToBottom(button,entry)
+		OpDeleteQueueEntry(button, entry)
+		table.insert(GnomeWorks.data.queueData[queuePlayer], entry)
+
+		GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged GnomeWorksSkillListChanged GnomeWorksDetailsChanged")
+	end
+
+	local function OpMoveQueueEntryToTop(button,entry)
+		OpDeleteQueueEntry(button, entry)
+		table.insert(GnomeWorks.data.queueData[queuePlayer], 1, entry)
+
+		GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged GnomeWorksSkillListChanged GnomeWorksDetailsChanged")
 	end
 
 
@@ -1211,13 +1229,19 @@ end
 			width = 250,
 			recipeMenuManualEntry = {
 				{
-					text = "Delete",
---					icon = filter.icon,
---					tooltipText = filter.tooltip,
-					func = DeleteQueueEntry,
+					text = "Move To Top",
+					func = OpMoveQueueEntryToTop,
 					notCheckable = true,
---					menuList = filter.menuList,
---					hasArrow = filter.menuList ~= nil,
+				},
+				{
+					text = "Move To Bottom",
+					func = OpMoveQueueEntryToBottom,
+					notCheckable = true,
+				},
+				{
+					text = "Delete",
+					func = OpDeleteQueueEntry,
+					notCheckable = true,
 				},
 			},
 			recipeMenuCrafted = {
@@ -1241,6 +1265,12 @@ end
 											GnomeWorks:SelectRecipe(entry.recipeID)
 										else
 											if entry.manualEntry then
+												local recipeMenu = cellFrame.header.recipeMenuManualEntry
+
+												for i=1,#recipeMenu do
+													recipeMenu[i].arg1 = entry
+												end
+
 												ColumnControl(cellFrame, button, source, "recipeMenuManualEntry")
 											else
 												local recipeMenu = cellFrame.header.recipeMenuCrafted
@@ -1258,7 +1288,7 @@ end
 														menuEntry.checked = subEntry == entry
 														menuEntry.arg1 = subEntry
 														menuEntry.arg2 = entry
-														menuEntry.func = QueueRecipeSwap
+														menuEntry.func = OpQueueRecipeSwap
 
 														sortMenu[#sortMenu+1] = menuEntry
 													end

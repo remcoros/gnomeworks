@@ -139,7 +139,7 @@ do
 			local links = self:GetTradeLinkList(player)
 
 			for i,button in ipairs(frame.buttons) do
-				if links[button.tradeID] then
+				if links and links[button.tradeID] then
 					button:Show()
 
 					button.tradeLink = links[button.tradeID]

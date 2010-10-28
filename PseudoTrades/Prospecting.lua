@@ -187,6 +187,12 @@ do
 		end
 
 		if prospectingNames[recipeID] then
+			if string.find(prospectingNames[recipeID],"item:") then
+				if GetItemInfo(-recipeID) then
+					prospectingNames[recipeID] = string.format("Prospect %s",GetItemInfo(-recipeID))
+				end
+			end
+
 			return prospectingNames[recipeID]
 		end
 	end
@@ -244,6 +250,14 @@ do
 
 		if type(recipeID) == "string" then
 			return recipeID, "header"
+		end
+
+		if prospectingNames[-recipeID] then
+			if string.find(prospectingNames[-recipeID],"item:") then
+				if GetItemInfo(recipeID) then
+					prospectingNames[-recipeID] = string.format("Prospect %s",GetItemInfo(recipeID))
+				end
+			end
 		end
 
 		return prospectingNames[-recipeID], "optimal"
