@@ -148,6 +148,10 @@ end
 						else
 							numAvailable = GnomeWorks:GetInventoryCountExclusive(itemID, "faction", "bank", player)
 						end
+
+--						local sourceQueue = reagent.source.."Queue"
+--print((GetItemInfo(itemID)),GnomeWorks.data[sourceQueue][player][itemID] or 0)
+--						numAvailable = numAvailable - (GnomeWorks.data[sourceQueue][player][itemID] or 0)
 					end
 
 					local stillNeeded = reagents[itemID] * entry.count - (entry.reserved[itemID])
@@ -276,6 +280,8 @@ end
 			command = "create",
 
 			reserved = {},
+
+			priority = GnomeWorks:GetRecipePriority(recipeID),
 
 --			noHide = true,
 		}
@@ -407,6 +413,16 @@ end
 					table.insert(optionGroup.subGroup.entries, craftOptions[i])
 				end
 			elseif #craftOptions>0 then
+				table.sort(craftOptions, function(a,b)
+					if a.priority < b.priority then
+						return false
+					elseif a.priority > b.priority then
+						return true
+					else
+						return a.recipeID < b.recipeID
+					end
+				end)
+
 				for i=1,#craftOptions do
 					table.insert(queue.subGroup.entries, craftOptions[i])
 				end
@@ -637,8 +653,10 @@ end
 	local function FirstCraftableEntry(queue)
 		if queue then
 			for k,q in pairs(queue) do
-				if q.command == "create" and (q.numCraftable or 0) > 0 and (q.count or 0) > 0 then
-					return q
+				if q.command == "create" and (q.count or 0) > 0 then
+					if GnomeWorks:InventoryRecipeIterations(q.recipeID, queuePlayer, "bag")>0 then
+						return q
+					end
 				end
 
 				if q.subGroup then

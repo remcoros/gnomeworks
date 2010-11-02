@@ -15,7 +15,7 @@ do
 			}
 
 	local detailFrame
-	local height = 135
+	local height = 120
 	local detailsWidth = 240
 
 	local reagentFrame
@@ -302,7 +302,7 @@ do
 
 		reagentFrame = CreateFrame("Frame",nil,parentFrame)
 		reagentFrame:SetPoint("BOTTOM",0,20)
-		reagentFrame:SetPoint("TOP", detailFrame, "TOP", 0, -15)
+		reagentFrame:SetPoint("TOP", detailFrame, "TOP", 0, 0)
 		reagentFrame:SetPoint("RIGHT", parentFrame, -20,0)
 		reagentFrame:SetPoint("LEFT", detailFrame, "RIGHT", 5,0)
 
@@ -424,6 +424,11 @@ do
 
 
 	function GnomeWorks:CreateDetailFrame(frame)
+		local COLORORANGE = "|cffff8040"
+		local COLORYELLOW = "|cffffff00"
+		local COLORGREEN =  "|cff40c040"
+		local COLORGRAY =   "|cff808080"
+
 		detailFrame = CreateFrame("Frame",nil,frame)
 
 		detailFrame.textScroll = CreateFrame("ScrollFrame", "GWDetailFrame", detailFrame)
@@ -451,6 +456,64 @@ do
 		detailFrame.scrollChild:SetAlpha(1)
 
 
+
+		detailFrame.levelsBar = {}
+
+		detailFrame.levelsBar.bg = CreateFrame("Frame",nil,detailFrame)
+		detailFrame.levelsBar.bg:SetHeight(15)
+		detailFrame.levelsBar.bg:SetPoint("BOTTOMLEFT",detailFrame,"TOPLEFT",0,1)
+		detailFrame.levelsBar.bg:SetPoint("BOTTOMRIGHT",detailFrame,"TOPRIGHT",0,1)
+		GnomeWorks.Window:SetBetterBackdrop(detailFrame.levelsBar.bg,backDrop)
+
+
+		local function StatusBarOnEnter(bar)
+			GameTooltip:SetOwner(bar, "ANCHOR_TOP")
+--			local r,g,b = SkilletSkillName:GetTextColor()
+--			GameTooltip:AddLine(SkilletSkillName:GetText(),r,g,b)
+
+			local gray = detailFrame.levelsBar.green:GetValue()
+			local green = detailFrame.levelsBar.yellow:GetValue()
+			local yellow = detailFrame.levelsBar.orange:GetValue()
+			local orange = detailFrame.levelsBar.red:GetValue()
+
+			GameTooltip:AddLine(COLORORANGE..orange.."|r/"..COLORYELLOW..yellow.."|r/"..COLORGREEN..green.."|r/"..COLORGRAY..gray)
+
+			GameTooltip:Show()
+		end
+
+
+		local function CreateStatusBar(level, r,g,b,a)
+			local bar = CreateFrame("StatusBar",nil,detailFrame.levelsBar.bg)
+
+			bar:SetPoint("LEFT",2,0)
+			bar:SetPoint("RIGHT",-2,0)
+
+			bar:SetHeight(8)
+
+			bar:SetOrientation("HORIZONTAL")
+			bar:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
+			bar:SetStatusBarColor(r,g,b)
+
+			bar:SetFrameLevel(bar:GetFrameLevel()+level)
+
+			bar:SetScript("OnEnter",StatusBarOnEnter)
+			bar:SetScript("OnLeave",function() GameTooltip:Hide() end)
+			return bar
+		end
+
+		detailFrame.levelsBar.current = CreateStatusBar(6, .05, .1, .4)
+		detailFrame.levelsBar.current:SetHeight(4)
+--detailFrame.levelsBar.current:Hide()
+
+		detailFrame.levelsBar.red = CreateStatusBar(5, 1.00, 0.00, 0.00)
+		detailFrame.levelsBar.orange = CreateStatusBar(4, 1.00, 0.5, 0.25)
+		detailFrame.levelsBar.yellow = CreateStatusBar(3, 1.00, 1.00, 0.00)
+		detailFrame.levelsBar.green = CreateStatusBar(2, 0.25, 0.75, 0.25)
+
+--detailFrame.levelsBar.red:Hide()
+--detailFrame.levelsBar.yellow:Hide()
+--detailFrame.levelsBar.green:Hide()
+--detailFrame.levelsBar.orange:Hide()
 
 --		detailFrame.textScroll:SetScript("OnVerticalScroll", function(frame, value) print(value) end)
 
@@ -533,7 +596,12 @@ do
 			detailIcon:SetScript("OnEnter", function(frame,...)
 				if frame.itemID then
 					GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
-					GameTooltip:SetHyperlink("item:"..frame.itemID)
+					if frame.itemID < 0 then
+						GameTooltip:SetHyperlink("enchant:"..-frame.itemID)
+					else
+						GameTooltip:SetHyperlink("item:"..frame.itemID)
+					end
+
 					GameTooltip:AddLine("Shift-Click to Link Item")
 					GameTooltip:Show()
 				end
@@ -635,7 +703,7 @@ do
 
 		detailFrame:RegisterInfoFunction(function(index,recipeID,left,right)
 			if self:GetTradeSkillCooldown(index) then
-				left = left .. string.format("%s %s\n",COOLDOWN_REMAINING,SecondsToTime(self:GetTradeSkillCooldown(index)))
+				left = left .. string.format("|cffff0000%s %s\n",COOLDOWN_REMAINING,SecondsToTime(self:GetTradeSkillCooldown(index)))
 				right = right .. "\n"
 			end
 
@@ -689,6 +757,24 @@ do
 
 
 
+		local function GetSkillLevels(id)
+			local levels = GnomeWorks.libPT:ItemInSet(id,"TradeskillLevels")
+
+			if not levels then
+				return 0,0,0,0
+			else
+				local a,b,c,d = string.split("/",levels)
+
+				a = tonumber(a) or 0
+				b = tonumber(b) or 0
+				c = tonumber(c) or 0
+				d = tonumber(d) or 0
+
+				return a, b, c, d
+			end
+		end
+
+
 
 		function GnomeWorks:HideDetails()
 			detailFrame:Hide()
@@ -698,11 +784,13 @@ do
 			if not index or not self.tradeID then return end
 
 			local recipeID
+			local isPseudoTrade
 
 			if self.data.pseudoTradeData[self.tradeID] then
 				local trade = self.data.pseudoTradeData[self.tradeID]
 
 				recipeID = trade.skillList[index]
+				isPseudoTrade = true
 			else
 				recipeID = self.data.skillDB[self.player..":"..self.tradeID] and self.data.skillDB[self.player..":"..self.tradeID].recipeID[index]
 			end
@@ -725,6 +813,10 @@ do
 			if results then
 				for itemID, numMade in pairs(results) do
 					local itemIcon = GetItemIcon(itemID)
+
+					if itemID < 0 then
+						_,_,itemIcon = GetSpellInfo(-itemID)
+					end
 
 					detailIconList[resultCount]:SetNormalTexture(itemIcon)
 					detailIconList[resultCount].itemID = itemID
@@ -771,8 +863,32 @@ do
 	--			descriptionLabelRight:Show()
 			end
 
+			if not isPseudoTrade and results then
+				local id = next(results)
+				local rank, maxRank = GnomeWorks:GetTradeSkillRank()
+
+				local orange, yellow, green, gray = GetSkillLevels(id)
 
 
+				detailFrame.levelsBar.green:SetMinMaxValues(1,maxRank)
+				detailFrame.levelsBar.yellow:SetMinMaxValues(1,maxRank)
+				detailFrame.levelsBar.orange:SetMinMaxValues(1,maxRank)
+				detailFrame.levelsBar.red:SetMinMaxValues(1,maxRank)
+
+				detailFrame.levelsBar.current:SetMinMaxValues(1,maxRank)
+
+
+				detailFrame.levelsBar.green:SetValue(gray)
+				detailFrame.levelsBar.yellow:SetValue(green)
+				detailFrame.levelsBar.orange:SetValue(yellow)
+				detailFrame.levelsBar.red:SetValue(orange)
+
+				detailFrame.levelsBar.current:SetValue(rank)
+
+				detailFrame.levelsBar.bg:Show()
+			else
+				detailFrame.levelsBar.bg:Hide()
+			end
 
 		end
 

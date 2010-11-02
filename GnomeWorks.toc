@@ -3,11 +3,11 @@
 ## Notes: A replacement tradeskill window
 ## Author: lilsparky
 ## X-Category: Tradeskill
-## Version: $Rev$
+## Version: @project-revision@
 
 ## SavedVariables: GnomeWorksDB
 ## OptionalDeps: LibPeriodicTable-3.1
-## X-Revision: $Rev$
+
 
 ## LoadManagers: AddonLoader
 ## X-LoadOn-Always: delayed
@@ -73,6 +73,7 @@ API.lua
 ### plugin support
 plugins\lsw.lua
 plugins\arl.lua
+plugins\skillUpChance.lua
 
 
 #### hooking into different frames/events

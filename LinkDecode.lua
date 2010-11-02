@@ -146,8 +146,35 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 
 			local isLinked,playerName = IsTradeSkillLinked()
 
+			local recipeCount = 0
+
+
+			for i=1,GetNumTradeSkills() do
+				local gotNil = false
+
+				if GetTradeSkillItemLink(i) then -- and GetItemInfo(GetTradeSkillItemLink(i)) then
+					for r=1,GetTradeSkillNumReagents(i) do
+						if not GetTradeSkillReagentItemLink(i,r) then -- or not GetItemInfo(GetTradeSkillReagentItemLink(i,r)) then
+							gotNil = true
+							break
+						end
+					end
+				else
+					local name, skillType = GetTradeSkillInfo(i)
+
+					if skillType ~= "header" then
+						gotNil = true
+					end
+				end
+
+				if not gotNil then
+					recipeCount = recipeCount + 1
+				end
+			end
+
+
 			if playerName then
-				frameText:SetText(playerName.." "..linkDecodeList[decodeIndex].." "..GetNumTradeSkills().." recipes")
+				frameText:SetText((playerName or "??").." "..(linkDecodeList[decodeIndex] or "??").." "..(recipeCount or "??").."/"..GetNumTradeSkills().." recipes")
 			else
 				playerName = UnitName("player")
 
@@ -156,11 +183,9 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 				frameText:SetText(playerName.." "..tradeName.." "..GetNumTradeSkills().." recipes")
 			end
 
---			for i=1,GetNumTradeSkills() do
---				print(GetTradeSkillInfo(i))
---			end
 
-			frame.countDown = 5
+
+			frame.countDown = 1
 		end
 	end
 
@@ -168,8 +193,8 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 	local function ScanEventHandler(frame, event)
 --print("Scan Event Handler",event)
 		if event == "TRADE_SKILL_SHOW" then
-			frameOpen = true
-		elseif event == "TRADE_SKILL_UPDATE" then
+			TradeSkillSetFilter(-1, -1)
+
 			local isLinked,playerName = IsTradeSkillLinked()
 
 			if playerName then
@@ -183,11 +208,40 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 			end
 
 
+			local recipeCount = 0
+
+
+			for i=1,GetNumTradeSkills() do
+				local gotNil = false
+
+				if GetTradeSkillItemLink(i) then --  and GetItemInfo(GetTradeSkillItemLink(i)) then
+					for r=1,GetTradeSkillNumReagents(i) do
+						if not GetTradeSkillReagentItemLink(i,r) then -- or not GetItemInfo(GetTradeSkillReagentItemLink(i,r)) then
+							gotNil = true
+							break
+						end
+					end
+				else
+					local name, skillType = GetTradeSkillInfo(i)
+
+					if skillType ~= "header" then
+						gotNil = true
+					end
+				end
+
+				if not gotNil then
+					recipeCount = recipeCount + 1
+				end
+			end
+
+
 			local skillName, skillType = GetTradeSkillInfo(1)
 			local gotNil
 
-			if skillType == "header" then
+--			if skillType == "header" then
 
+--print(recipeCount, GetNumTradeSkills())
+			if recipeCount == GetNumTradeSkills() then
 --print(isLinked, playerName, GetTradeSkillLine())
 
 
@@ -262,7 +316,11 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 		callBack = func
 		local playerList = self.data.playerData
 
-		DeactivateEvents("TRADE_SKILL_SHOW")
+
+
+--		TradeSkillFrame_Update();
+
+--		DeactivateEvents("TRADE_SKILL_SHOW")
 --		DeactivateEvents("TRADE_SKILL_UPDATE")
 
 
@@ -314,9 +372,11 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 		end
 ]]
 
---		frame:RegisterEvent("TRADE_SKILL_SHOW")
-		frame:RegisterEvent("TRADE_SKILL_UPDATE")
+		frame:RegisterEvent("TRADE_SKILL_SHOW")
+--		frame:RegisterEvent("TRADE_SKILL_UPDATE")
 		frame:RegisterEvent("TRADE_SKILL_CLOSE")
+
+--		frame:RegisterAllEvents()
 
 		frame:SetScript("OnEvent", ScanEventHandler)
 		frame:SetScript("OnUpdate", OnUpdate)

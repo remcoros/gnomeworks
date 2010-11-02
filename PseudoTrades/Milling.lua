@@ -280,6 +280,8 @@ do
 		local trade,recipeList  = GnomeWorks:AddPseudoTrade(51005, api)
 		local millGroup = 1
 
+		trade.priority = .75
+
 		for k,bracket in pairs(millingLevels) do
 			skillList[#skillList + 1] = "Milling Group "..millGroup
 

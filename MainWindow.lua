@@ -2,7 +2,7 @@
 
 
 
-local VERSION = ("$Revision$"):match("%d+")
+local VERSION = ("@project-revision@")
 
 
 local LARGE_NUMBER = 1000000
@@ -130,6 +130,14 @@ do
 
 	local inventoryIndex = { "bag", "vendor", "bank", "guildBank", "alt" }
 
+	local inventoryColorBlindTag = {
+		bag = "",
+		vendor = "v",
+		bank = "b",
+		guildBank = "g",
+		alt = "a",
+	}
+
 	local inventoryColors = {
 		bag = "|cffffff80",
 		vendor = "|cff80ff80",
@@ -138,12 +146,9 @@ do
 		alt = "|cffff80ff",
 	}
 
+
+	local inventoryFormat = {}
 	local inventoryTags = {}
-
-	for k,v in pairs(inventoryColors) do
-		inventoryTags[k] = v..k
-	end
-
 
 
 	local selectedRows = {}
@@ -817,7 +822,7 @@ do
 
 							if GnomeWorksDB.vendorOnly[entry.recipeID] then
 								if entry.bag and entry.bag ~= 0 then
-									cellFrame.text:SetFormattedText("%s%d|r/\226\136\158",inventoryColors.bag,entry.bag)
+									cellFrame.text:SetFormattedText("%s|r/\226\136\158",string.format(inventoryFormat.bag,entry.bag))
 								else
 									cellFrame.text:SetText("\226\136\158")
 								end
@@ -828,25 +833,25 @@ do
 									local display = ""
 
 									if bag > 0 then
-										display = string.format("%s%d|r",inventoryColors.bag,bag)
+										display = string.format(inventoryFormat.bag,bag)
 									elseif vendor > 0 then
-										display = string.format("%s%d|r",inventoryColors.vendor,vendor)
+										display = string.format(inventoryFormat.vendor,vendor)
 									elseif bank > 0 then
-										display = string.format("%s%d|r",inventoryColors.bank,bank)
+										display = string.format(inventoryFormat.bank,bank)
 									elseif guildBank > 0 then
-										display = string.format("%s%d|r",inventoryColors.guildBank,guildBank)
+										display = string.format(inventoryFormat.guildBank,guildBank)
 									elseif alt > 0 then
-										display = string.format("%s%d|r",inventoryColors.alt,alt)
+										display = string.format(inventoryFormat.alt,alt)
 									end
 
 									if alt > guildBank and guildBank > 0 then
-										display = string.format("%s/%s%s", display, inventoryColors.alt, alt)
+										display = string.format("%s/%s", display, string.format(inventoryFormat.alt,alt))
 									elseif guildBank > bank and bank > 0 then
-										display = string.format("%s/%s%s", display, inventoryColors.guildBank, guildBank)
+										display = string.format("%s/%s", display, string.format(inventoryFormat.guildBank,guildBank))
 									elseif bank > vendor and vendor > 0 then
-										display = string.format("%s/%s%s", display, inventoryColors.bank, bank)
+										display = string.format("%s/%s", display, string.format(inventoryFormat.bank,bank))
 									elseif vendor > bag and bag > 0 then
-										display = string.format("%s/%s%s", display, inventoryColors.vendor, vendor)
+										display = string.format("%s/%s", display, string.format(inventoryFormat.vendor,vendor))
 									end
 
 
@@ -941,21 +946,21 @@ do
 								local display = ""
 
 								if bag > 0 then
-									display = string.format("%s%d|r",inventoryColors.bag,bag)
+									display = string.format(inventoryFormat.bag,bag)
 								elseif bank > 0 then
-									display = string.format("%s%d|r",inventoryColors.bank,bank)
+									display = string.format(inventoryFormat.bank,bank)
 								elseif guildBank > 0 then
-									display = string.format("%s%d|r",inventoryColors.guildBank,guildBank)
+									display = string.format(inventoryFormat.guildBank,guildBank)
 								elseif alt > 0 then
-									display = string.format("%s%d|r",inventoryColors.alt,alt)
+									display = string.format(inventoryFormat.alt,alt)
 								end
 
 								if alt > guildBank and guildBank > 0 then
-									display = string.format("%s/%s%s", display, inventoryColors.alt, alt)
+									display = string.format("%s/%s", display, string.format(inventoryFormat.alt,alt))
 								elseif guildBank > bank and bank > 0 then
-									display = string.format("%s/%s%s", display, inventoryColors.guildBank, guildBank)
+									display = string.format("%s/%s", display, string.format(inventoryFormat.guildBank,guildBank))
 								elseif bank > bag and bag > 0 then
-									display = string.format("%s/%s%s", display, inventoryColors.bank, bank)
+									display = string.format("%s/%s", display, string.format(inventoryFormat.bank,bank))
 								end
 
 								cellFrame.text:SetText(display)
@@ -1024,7 +1029,7 @@ do
 			end
 
 			if GnomeWorks.detailFrame:IsShown() then
-				skillFrame:SetPoint("BOTTOMLEFT",GnomeWorks.detailFrame,"TOPLEFT",0,25)
+				skillFrame:SetPoint("BOTTOMLEFT",GnomeWorks.detailFrame,"TOPLEFT",0,40)
 			else
 				skillFrame:SetPoint("BOTTOMLEFT",20,55)
 			end
@@ -1110,7 +1115,7 @@ do
 				entry.guildBank = guildBank
 				entry.alt = math.max(alt, guildBank)
 
-				local itemLink = GnomeWorks:GetTradeSkillItemLink(entry.index)
+				local itemLink = (entry.index and GnomeWorks:GetTradeSkillItemLink(entry.index))
 
 
 				if not entry.itemColor then
@@ -1965,6 +1970,18 @@ do
 
 			self:SendMessageDispatch("GnomeWorksDetailsChanged")
 		end)
+
+
+
+		for k,v in pairs(inventoryColors) do
+			inventoryTags[k] = v..k
+
+			if ( ENABLE_COLORBLIND_MODE == "1" ) then
+				inventoryFormat[k] = string.format("%%d|cffa0a0a0%s|r", inventoryColorBlindTag[k])
+			else
+				inventoryFormat[k] = string.format("%s%%d|r",v)
+			end
+		end
 
 
 		return frame

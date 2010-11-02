@@ -496,6 +496,8 @@ do
 	GnomeWorks:RegisterMessageDispatch("AddSpoofedRecipes", function ()
 		local trade,recipeList  = GnomeWorks:AddPseudoTrade(100000,api)
 
+		trade.priority = 1.25
+
 
 		for recipeID, data in pairs(commonRecipes) do
 			skillList[#skillList + 1] = recipeID

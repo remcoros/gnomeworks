@@ -152,6 +152,9 @@ do
 	GnomeWorks:RegisterMessageDispatch("AddSpoofedRecipes", function ()
 		local trade,recipeList  = GnomeWorks:AddPseudoTrade(31252, api)
 
+		trade.priority = .75
+
+
 		for oreID, gemTable in pairs(prospectingResults) do
 			recipeList[-oreID] = trade
 

@@ -480,6 +480,7 @@ DebugSpam("GetTradeSkill: "..(tradeName or "nil").." "..rank)
 
 
 	function GnomeWorks:ScanTrade()
+DebugSpam("SCAN TRADE")
 		if self.scanInProgress == true then
 DebugSpam("SCAN BUSY!")
 			return
@@ -505,6 +506,7 @@ DebugSpam("SCAN BUSY!")
 				player = "All Recipes"
 			end
 
+--			print(IsTradeSkillLinked())
 --			print(player.." "..rank.."/"..maxRank)
 		else
 			player = UnitName("player")
@@ -512,6 +514,11 @@ DebugSpam("SCAN BUSY!")
 
 		if IsTradeSkillGuild() then
 			player = "Guild Recipes"
+		end
+
+		if not player then
+			GnomeWorks:warning("ScanTrade can't find player name.  ",IsTradeSkillLinked())
+			player = "Unknown"
 		end
 
 		self.player = player
@@ -524,9 +531,9 @@ DebugSpam("SCAN BUSY!")
 
 
 		if skillType ~= "header" then
-			self:ScheduleTimer("UpdateMainWindow",.1)
+--			self:ScheduleTimer("UpdateMainWindow",.1)
 
-			return
+--			return
 		end
 
 
@@ -540,7 +547,7 @@ DebugSpam("SCAN BUSY!")
 
 
 	-- Unregsiter all frames from reacitng to update events since we're likely to generate a number of them in the scan
-		UnregisterUpdateEvents()
+--		UnregisterUpdateEvents()
 
 		for i = 1, GetNumTradeSkills() do
 			local skillName, skillType, _, isExpanded = GetTradeSkillInfo(i)
@@ -642,10 +649,10 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 							groupName = skillName
 						end
 
-						currentGroup = self:RecipeGroupNew(player, tradeID, "By Category", groupName)
-						currentGroup.autoGroup = true
+--						currentGroup = self:RecipeGroupNew(player, tradeID, "By Category", groupName)
+--						currentGroup.autoGroup = true
 
-						self:RecipeGroupAddSubGroup(mainGroup, currentGroup, i, true)
+--						self:RecipeGroupAddSubGroup(mainGroup, currentGroup, i, true)
 					else
 						local recipeLink = GetTradeSkillRecipeLink(i)
 						local recipeID = GetIDFromLink(recipeLink)
@@ -660,9 +667,9 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 
 						if currentGroup then
-							GnomeWorks:RecipeGroupAddRecipe(currentGroup, recipeID, i, true)
+--							GnomeWorks:RecipeGroupAddRecipe(currentGroup, recipeID, i, true)
 						else
-							GnomeWorks:RecipeGroupAddRecipe(mainGroup, recipeID, i, true)
+--							GnomeWorks:RecipeGroupAddRecipe(mainGroup, recipeID, i, true)
 						end
 
 
@@ -759,10 +766,11 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 		self:InventoryScan()
 
+		self:ScanCategoryGroups(mainGroup)
 		self:ScanSlotGroups(slotGroup)
 
 -- re-regsiter the update events again now that we're done scanning
-		RegisterUpdateEvents()
+--		RegisterUpdateEvents()
 
 
 --		self:RecipeGroupConstructDBString(mainGroup)
@@ -832,6 +840,68 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 ]]
 
 
+	function GnomeWorks:ScanCategoryGroups(mainGroup)
+		local groupList = {}
+
+--		self:UnregisterEvent("TRADE_SKILL_UPDATE")
+
+		if mainGroup then
+
+			local TradeSkillSlots = { GetTradeSkillSubClasses() }
+
+			self:RecipeGroupClearEntries(mainGroup)
+
+			for i=1,#TradeSkillSlots do
+				local groupName
+				local slotName = TradeSkillSlots[i]
+
+				local invSlot
+
+				if groupList[slotName] then
+					groupList[slotName] = groupList[slotName]+1
+					groupName = slotName.." "..groupList[slotName]
+				else
+					groupList[slotName] = 1
+					groupName = slotName
+				end
+
+				local currentGroup = self:RecipeGroupNew(self.player, self.tradeID, "By Category", groupName)
+
+				SetTradeSkillSubClassFilter(i,1,1)
+
+				for s=1,GetNumTradeSkills() do
+					local recipeLink = GetTradeSkillRecipeLink(s)
+
+
+--[[
+					if TradeSkillSlots[i] ~= "NONEQUIPSLOT" then
+						invSlot = GetInventorySlotInfo(invSlotLookup[ TradeSkillSlots[i] ])
+						self:EnchantingRecipeSlotAssign(recipeID, invSlot)
+					end
+]]
+
+
+					if recipeLink then
+						local recipeID = GetIDFromLink(recipeLink)
+--DebugSpam("adding "..(recipeLink or "nil").." to "..groupName)
+--print(skillIndexLookup[recipeID])
+						if skillIndexLookup[recipeID] then
+							self:RecipeGroupAddRecipe(currentGroup, recipeID, skillIndexLookup[recipeID], true)
+						end
+					end
+
+				end
+
+				self:RecipeGroupAddSubGroup(mainGroup, currentGroup, i+1000, true)
+			end
+		end
+
+		SetTradeSkillSubClassFilter(0,1,1)
+
+--		self:RegisterEvent("TRADE_SKILL_UPDATE")
+	end
+
+
 	function GnomeWorks:ScanSlotGroups(mainGroup)
 		local groupList = {}
 
@@ -875,13 +945,15 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 					if recipeLink then
 						local recipeID = GetIDFromLink(recipeLink)
-DebugSpam("adding "..(recipeLink or "nil").." to "..groupName)
-						self:RecipeGroupAddRecipe(currentGroup, recipeID, skillIndexLookup[recipeID], true)
+--DebugSpam("adding "..(recipeLink or "nil").." to "..groupName)
+						if skillIndexLookup[recipeID] then
+							self:RecipeGroupAddRecipe(currentGroup, recipeID, skillIndexLookup[recipeID], true)
+						end
 					end
 
 				end
 
-				self:RecipeGroupAddSubGroup(mainGroup, currentGroup, i, true)
+				self:RecipeGroupAddSubGroup(mainGroup, currentGroup, i+1000, true)
 			end
 		end
 

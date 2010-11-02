@@ -581,6 +581,9 @@ do
 		if WeaponID and ArmorID then
 			local trade,recipeList  = GnomeWorks:AddPseudoTrade(13262,api)
 
+			trade.priority = .75
+
+
 			BuildReagentTables()
 
 			for itemID, source in pairs(GnomeWorks.data.itemSource) do

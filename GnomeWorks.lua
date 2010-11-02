@@ -2,7 +2,7 @@
 local modName, modTable = ...
 
 
-local VERSION = ("$Revision$"):match("%d+")
+local VERSION = ("@project-revision@")
 
 
 
@@ -378,7 +378,7 @@ do
 		end
 
 		GnomeWorks:RegisterEvent("TRADE_SKILL_SHOW")
-		GnomeWorks:RegisterEvent("TRADE_SKILL_UPDATE")
+--		GnomeWorks:RegisterEvent("TRADE_SKILL_UPDATE")
 		GnomeWorks:RegisterEvent("TRADE_SKILL_CLOSE")
 
 		GnomeWorks:RegisterEvent("CHAT_MSG_SKILL")

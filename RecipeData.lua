@@ -245,6 +245,17 @@ print("getTradeInfo", recipeID)
 	end
 
 
+	function GnomeWorks:GetRecipePriority(recipeID)
+		local pseudoTrade = self.data.pseudoTradeRecipes[recipeID]
+
+		if pseudoTrade then
+			return pseudoTrade.priority
+		end
+
+		return 1
+	end
+
+
 	function GnomeWorks:GetRecipeTradeID(recipeID)
 		local pseudoTrade = self.data.pseudoTradeRecipes[recipeID]
 		if pseudoTrade then
