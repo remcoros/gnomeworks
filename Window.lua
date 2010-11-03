@@ -695,8 +695,8 @@ do
 		newButton:HookScript("OnEnter", function(b) b.state.Highlight:Show() end)
 		newButton:HookScript("OnLeave", function(b) b.state.Highlight:Hide() end)
 
-		newButton:HookScript("OnMouseDown", function(b) if b:IsEnabled()>0 then b.state.Down:Show() b.state.Up:Hide() end end)
-		newButton:HookScript("OnMouseUp", function(b) if b:IsEnabled()>0 then b.state.Down:Hide() b.state.Up:Show() end end)
+		newButton:HookScript("OnMouseDown", function(b) if b:IsEnabled() then b.state.Down:Show() b.state.Up:Hide() end end)
+		newButton:HookScript("OnMouseUp", function(b) if b:IsEnabled() then b.state.Down:Hide() b.state.Up:Show() end end)
 
 		return newButton
 	end

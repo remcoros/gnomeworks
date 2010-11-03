@@ -790,7 +790,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		end
 
 
-		self:ScheduleTimer("UpdateMainWindow",.1)
+--		self:ScheduleTimer("UpdateMainWindow",.1)
 		self:SendMessageDispatch("GnomeWorksScanComplete")
 --		self:SendMessageDispatch("GnomeWorksDetailsChanged")
 

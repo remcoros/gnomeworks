@@ -15,7 +15,7 @@ GnomeWorksDB = {}
 LibStub("AceEvent-3.0"):Embed(GnomeWorks)
 LibStub("AceTimer-3.0"):Embed(GnomeWorks)
 
-
+--[[
 -- execution holds
 -- the idea here is to put off processing until a particular event has fired
 -- this is needed for syncing data from the server
@@ -64,8 +64,7 @@ do
 		return true
 	end
 end
-
-
+]]
 
 -- message dispatch
 do
@@ -337,6 +336,20 @@ do
 		return true
 	end
 
+--[[
+	function GnomeWorks:CHAT_MSG_SYSTEM(event,arg1)
+print("CHAT_MSG_SYSTEM",arg1)
+		if string.find(arg1,ERR_SKILL_UP_SI) then
+print(arg1)
+			self:DoTradeSkillUpdate()
+		end
+
+		if string.find(arg1,ERR_LEARN_RECIPE_S) then
+print(arg1)
+			self:DoTradeSkillUpdate()
+		end
+	end
+]]
 
 	local function RegisterEvents()
 		GnomeWorks:RegisterEvent("MERCHANT_UPDATE")
@@ -358,7 +371,6 @@ do
 
 		GnomeWorks:RegisterEvent("AUCTION_HOUSE_SHOW")
 		GnomeWorks:RegisterEvent("AUCTION_HOUSE_CLOSE")
-
 
 		return true
 	end

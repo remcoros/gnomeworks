@@ -150,6 +150,10 @@ do
 	local inventoryFormat = {}
 	local inventoryTags = {}
 
+	for k,v in pairs(inventoryColors) do
+		inventoryTags[k] = v..k
+	end
+
 
 	local selectedRows = {}
 
@@ -355,7 +359,7 @@ do
 				tooltipText = filter.tooltip,
 				func = filterSet,
 				arg1 = filterName,
-				notCheckable = notCheckable,
+				notCheckable = filter.notCheckable,
 				menuList = filter.menuList,
 				hasArrow = filter.menuList ~= nil,
 			}
@@ -396,7 +400,7 @@ do
 
 	craftFilterMenu = {
 		{
-			text = "Filter by Inventory: "..inventoryColors.alt.."alts",
+			text = "Filter by Craftability: "..inventoryColors.alt.."alts",
 			menuList = craftSourceMenu,
 			hasArrow = true,
 			filterIndex = #inventoryIndex,
@@ -417,7 +421,7 @@ do
 
 		craftFilterMenu[1].checked = parameters[index].enabled
 		craftFilterMenu[1].filterIndex = index
-		craftFilterMenu[1].text = "Filter by Inventory: "..parameters[index].text
+		craftFilterMenu[1].text = "Filter by Craftability: "..parameters[index].text
 	end
 
 
@@ -425,7 +429,7 @@ do
 
 	for i,key in pairs(inventoryIndex) do
 		craftFilterParameters[i] = {
-			name = "Inventory"..key,
+			name = "Craftability"..key,
 			text = inventoryTags[key],
 			enabled = false,
 			func = function(entry)
@@ -480,6 +484,7 @@ do
 
 	for i,key in pairs(inventoryIndex) do
 		inventoryFilterParameters[i] = {
+			name = "Inventory"..key,
 			text = inventoryTags[key],
 			enabled = false,
 			func = function(entry)
@@ -1171,17 +1176,18 @@ do
 	end
 
 
-	function GnomeWorks:ScanComplete()
-		local player = self.player
-		local tradeID = self.tradeID
+	local function ScanComplete()
+		local player = GnomeWorks.player
+		local tradeID = GnomeWorks.tradeID
 
+		GnomeWorks:UpdateTradeButtons(player,tradeID)
+		GnomeWorks:ShowStatus()
+		GnomeWorks:ShowSkillList()
 
-		self:ShowSkillList()
-
-		if not self.selectedEntry then
+		if not GnomeWorks.selectedEntry then
 			for i=1,#sf.dataMap do
 				if not sf.dataMap[i].subGroup then
-					self:SelectEntry(sf.dataMap[i])
+					GnomeWorks:SelectEntry(sf.dataMap[i])
 					break
 				end
 			end
@@ -1189,7 +1195,7 @@ do
 
 		ResizeMainWindow()
 
-		self:SendMessageDispatch("GnomeWorksDetailsChanged")
+		GnomeWorks:SendMessageDispatch("GnomeWorksDetailsChanged")
 	end
 
 
@@ -1204,6 +1210,7 @@ do
 
 	function GnomeWorks:CHAT_MSG_SKILL()
 		self:ParseSkillList()
+		self:DoTradeSkillUpdate()
 	end
 
 
@@ -1223,7 +1230,11 @@ do
 
 			self:ResetSkillSelect()
 
-			GnomeWorks:TRADE_SKILL_UPDATE()
+			if self.updateTimer then
+				self:CancelTimer(self.updateTimer, true)
+			end
+
+			self.updateTimer = self:ScheduleTimer("DoTradeSkillUpdate",.1)
 
 			if self.hideMainWindow then
 				self.hideMainWindow = nil
@@ -1963,18 +1974,17 @@ do
 		frame:HookScript("OnHide", function() CloseTradeSkill() PlaySound("igCharacterInfoClose") end)
 
 
-		self:RegisterMessageDispatch("GnomeWorksScanComplete", "ScanComplete")
+		self:RegisterMessageDispatch("GnomeWorksScanComplete", ScanComplete)
 
-		GnomeWorks:RegisterMessageDispatch("GnomeWorksSkillListChanged", function()
+		self:RegisterMessageDispatch("GnomeWorksSkillListChanged", function()
 			self:ShowSkillList()
 
 			self:SendMessageDispatch("GnomeWorksDetailsChanged")
 		end)
 
 
-
 		for k,v in pairs(inventoryColors) do
-			inventoryTags[k] = v..k
+--			inventoryTags[k] = v..k
 
 			if ( ENABLE_COLORBLIND_MODE == "1" ) then
 				inventoryFormat[k] = string.format("%%d|cffa0a0a0%s|r", inventoryColorBlindTag[k])

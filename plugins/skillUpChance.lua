@@ -205,17 +205,19 @@ do
 
 
 		local function UpdateData(scrollFrame, entry)
-			local skillName, skillType = GetTradeSkillInfo(entry.index)
+			if GnomeWorks.tradeID and GnomeWorks.player then
+				local skillName, skillType = GetTradeSkillInfo(entry.index)
 
-			local rank,maxRank = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, GnomeWorks.tradeID)
+				local rank,maxRank = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, GnomeWorks.tradeID)
 
-			if skillType ~= "header" and entry.recipeID then
-				local itemLink = GnomeWorks:GetTradeSkillItemLink(entry.index)
+				if skillType ~= "header" and entry.recipeID then
+					local itemLink = GnomeWorks:GetTradeSkillItemLink(entry.index)
 
-				if itemLink then
-					local itemID = tonumber(string.match(itemLink,"item:(%d+)"))
+					if itemLink then
+						local itemID = tonumber(string.match(itemLink,"item:(%d+)"))
 
-					entry.skillUp = GetSkillUpChance(itemID or -entry.recipeID, rank)
+						entry.skillUp = GetSkillUpChance(itemID or -entry.recipeID, rank)
+					end
 				end
 			end
 		end
