@@ -974,6 +974,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		tradeID = tradeID or self.tradeID
 		player = player or self.player
 
+
 		if not player then
 			print("player is nil")
 		end
@@ -981,6 +982,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		if not tradeID then
 			print("tradeID is nil")
 		end
+
 
 		local link = (self.data.playerData[player] and self.data.playerData[player].links[tradeID])
 

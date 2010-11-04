@@ -81,12 +81,11 @@ do
 	end
 
 
-
 	local function ExitDecodeProcess()
 		frame:Hide()
 
---		frame:UnregisterEvent("TRADE_SKILL_SHOW")
-		frame:UnregisterEvent("TRADE_SKILL_UPDATE")
+		frame:UnregisterEvent("TRADE_SKILL_SHOW")
+--		frame:UnregisterEvent("TRADE_SKILL_UPDATE")
 		frame:UnregisterEvent("TRADE_SKILL_CLOSE")
 
 		frame:SetScript("OnEvent", nil)
@@ -106,7 +105,7 @@ do
 		end
 
 		ReactivateEvents("TRADE_SKILL_SHOW")
---		ReactivateEvents("TRADE_SKILL_UPDATE")
+		ReactivateEvents("TRADE_SKILL_UPDATE")
 
 --print("done scanning known skills")
 		GnomeWorks:ScheduleTimer(callBack,.25)
@@ -130,7 +129,8 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 
 				CastSpellByName(smelting) -- force a scan of smelting because smelting links don't work
 			else
-				ExitDecodeProcess()
+				GnomeWorks:ScheduleTimer(ExitDecodeProcess,.01)
+--				ExitDecodeProcess()
 			end
 		end
 	end
@@ -199,6 +199,7 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 
 			if playerName then
 				frameText:SetText(playerName.." "..linkDecodeList[decodeIndex].." "..GetNumTradeSkills().." recipes")
+--print(playerName.." "..linkDecodeList[decodeIndex].." "..GetNumTradeSkills().." recipes")
 			else
 				playerName = UnitName("player")
 
@@ -320,8 +321,8 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 
 --		TradeSkillFrame_Update();
 
---		DeactivateEvents("TRADE_SKILL_SHOW")
---		DeactivateEvents("TRADE_SKILL_UPDATE")
+		DeactivateEvents("TRADE_SKILL_SHOW")
+		DeactivateEvents("TRADE_SKILL_UPDATE")
 
 
 		if not self.data.knownSpells then

@@ -380,6 +380,7 @@ print(arg1)
 		return GnomeWorks:ParseSkillList()
 	end
 
+
 	local function CreateUI()
 		GnomeWorks.MainWindow = GnomeWorks:CreateMainWindow()
 
@@ -401,6 +402,7 @@ print(arg1)
 		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED", "SpellCastFailed")
 		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_STOPPED", "SpellCastFailed")
 
+		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_START", "SpellCastStart")
 
 		for name,plugin in pairs(GnomeWorks.plugins) do
 --print("initializing",name)
@@ -418,6 +420,7 @@ print(arg1)
 
 		GnomeWorks:TRADE_SKILL_UPDATE()
 	end
+
 
 	local function ParseKnownRecipes()
 
@@ -440,19 +443,18 @@ print(arg1)
 
 
 
-
 	if not IsAddOnLoaded("AddOnLoader") then
 		GnomeWorks:RegisterEvent("ADDON_LOADED", function(event, name)
 			if string.lower(name) == string.lower(modName) then
 				GnomeWorks:UnregisterEvent(event)
 --				GnomeWorks:ScheduleTimer("OnLoad",.01)
 
-				InitializeData()
-				RegisterEvents()
 
 
+				initList:AddSegment(InitializeData)
 				initList:AddSegment(ParseTradeLinks)
 				initList:AddSegment(ParseKnownRecipes)
+				initList:AddSegment(RegisterEvents)
 
 
 				initList:Execute()
@@ -465,9 +467,9 @@ print(arg1)
 				GnomeWorks:UnregisterEvent(event)
 
 				initList:AddSegment(InitializeData)
-				initList:AddSegment(RegisterEvents)
 				initList:AddSegment(ParseTradeLinks)
 				initList:AddSegment(ParseKnownRecipes)
+				initList:AddSegment(RegisterEvents)
 
 
 				initList:Execute()

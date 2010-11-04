@@ -188,17 +188,19 @@ do
 					return
 				end
 
-				local show
+				if scrollFrame:IsVisible() then
+					local show
 
-				local rank,maxRank = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, GnomeWorks.tradeID)
+					local rank,maxRank = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, GnomeWorks.tradeID)
 
-				if rank < maxRank then
-					if not GnomeWorks.data.pseudoTradeData[GnomeWorks.tradeID] then
-						return true
+					if rank < maxRank then
+						if not GnomeWorks.data.pseudoTradeData[GnomeWorks.tradeID] then
+							return true
+						end
 					end
-				end
 
-				return show
+					return show
+				end
 			end,
 		}
 

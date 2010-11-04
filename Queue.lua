@@ -688,6 +688,8 @@ end
 --print("SPELL CAST FAILED", ...)
 		if unit == "player" then
 			doTradeEntry = nil
+			GnomeWorks.IsProcessing = false
+			self:SendMessageDispatch("GnomeWorksProcessing")
 		end
 	end
 
@@ -704,6 +706,8 @@ end
 
 					doTradeEntry = nil
 					GnomeWorks.processSpell = nil
+
+					GnomeWorks.IsProcessing = false
 				end
 			else
 				if doTradeEntry.count < 1 then
@@ -715,6 +719,15 @@ end
 		end
 	end
 
+
+	function GnomeWorks:SpellCastStart(event,unit,spell,rank,lineID,spellID)
+--print("SPELL CAST START", spellID, doTradeEntry and doTradeEntry.recipeID)
+
+		if unit == "player"	and doTradeEntry and spellID == doTradeEntry.recipeID then
+			GnomeWorks.IsProcessing = true
+			self:SendMessageDispatch("GnomeWorksProcessing")
+		end
+	end
 
 
 	local function CreateControlButtons(frame)
@@ -803,7 +816,15 @@ end
 		local function ConfigureButton(button)
 			local entry = FirstCraftableEntry(GnomeWorks.data.queueData[queuePlayer])
 
-			if entry then
+			if GnomeWorks.IsProcessing then
+				button:SetFormattedText("Processing...")
+				button:Disable()
+				button:Show()
+
+				button.secure:Hide()
+
+				EditMacro("GWProcess", "GWProcess", 977, "", false, false)
+			elseif entry then
 				local _,_,tradeID = GnomeWorks:GetRecipeData(entry.recipeID)
 
 				button:SetFormattedText("Process %s x %d",GnomeWorks:GetRecipeName(entry.recipeID) or "spell:"..entry.recipeID,math.min(entry.numCraftable,entry.count))
@@ -1013,7 +1034,7 @@ end
 		controlFrame:SetHeight(20+line*20)
 		controlFrame:SetWidth(position)
 
-		GnomeWorks:RegisterMessageDispatch("GnomeWorksQueueCountsChanged", function()
+		GnomeWorks:RegisterMessageDispatch("GnomeWorksQueueCountsChanged GnomeWorksProcessing", function()
 			for i, b in pairs(buttons) do
 				if b.validate then
 					b:validate()
