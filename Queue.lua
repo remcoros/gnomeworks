@@ -1683,9 +1683,9 @@ end
 			end
 
 			if entry.command == "create" then
---				if not entry.numCraftable then
+				if not entry.numCraftable then
 					entry.numCraftable = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "bag queue")
---				end
+				end
 
 
 				if (entry.numCraftable or 0) >= (entry.count or 0) then
