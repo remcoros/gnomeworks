@@ -133,7 +133,7 @@ do
 
 		local auctionQueue = self.data.auctionQueue[(UnitName("player"))]
 
-		if auctionQueue and #auctionQueue>0 then
+		if auctionQueue and next(auctionQueue) then
 			self:ShoppingListShow((UnitName("player")))
 		end
 	end

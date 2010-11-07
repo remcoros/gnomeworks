@@ -647,9 +647,7 @@ end
 
 
 
-	function BuildFlatQueue(player)
-		local queue = GnomeWorks.data.queueData[player]
-		local flatQueue = GnomeWorks.data.flatQueue[player]
+	function BuildFlatQueueOLD(flatQueue, queue)
 		local reagentList = {}
 
 		for k,entry in pairs(queue) do
@@ -685,6 +683,8 @@ end
 		end
 	end
 
+
+--	function BuildFlatQueue(flatQueue, queue)
 
 
 	function GnomeWorks:ShowQueueList(player)
@@ -729,7 +729,7 @@ end
 			self.data.flatQueue[player] = table.wipe(self.data.flatQueue[player] or {})
 
 
-			BuildFlatQueue(player)
+			BuildFlatQueue(self.data.flatQueue[player], self.data.queueData[player])
 
 
 			sf.data.entries = self.data.flatQueue[player]
@@ -799,13 +799,14 @@ end
 	end
 
 
-	function GnomeWorks:SpellCastCompleted(event,unit,spell,rank)
+	function GnomeWorks:SpellCastCompleted(event,unit,spell,rank,lineID,spellID)
 --print("SPELL CAST COMPLETED", ...)
+--print(event,unit,spell,rank,lineID,spellID)
 
-		if unit == "player"	and doTradeEntry and spell == GetSpellInfo(doTradeEntry.recipeID) then
+		if unit == "player"	and doTradeEntry and spellID == doTradeEntry.recipeID then
 			if doTradeEntry.manualEntry then
 				doTradeEntry.count = doTradeEntry.count - 1
-
+--print("tickDown")
 				if doTradeEntry.count == 0 then
 					DeleteQueueEntry(self.data.queueData[queuePlayer], doTradeEntry)
 
@@ -818,7 +819,7 @@ end
 			else
 				if doTradeEntry.count < 1 then
 					StopTradeSkillRepeat()
-
+--print("STOP REPEAT")
 				end
 			end
 
@@ -827,10 +828,23 @@ end
 	end
 
 
+	function GnomeWorks:SpellCastStop(event,unit,spell,rank,lineID,spellID)
+--print("SPELL CAST START", spellID, doTradeEntry and doTradeEntry.recipeID)
+
+		if unit == "player" then
+			GnomeWorks.IsProcessing = false
+			self:SendMessageDispatch("GnomeWorksProcessing")
+		end
+	end
+
+
 	function GnomeWorks:SpellCastStart(event,unit,spell,rank,lineID,spellID)
 --print("SPELL CAST START", spellID, doTradeEntry and doTradeEntry.recipeID)
 
 		if unit == "player"	and doTradeEntry and spellID == doTradeEntry.recipeID then
+
+			CURRENT_TRADESKILL = GetTradeSkillLine()
+
 			GnomeWorks.IsProcessing = true
 			self:SendMessageDispatch("GnomeWorksProcessing")
 		end

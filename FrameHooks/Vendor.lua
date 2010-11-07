@@ -155,7 +155,7 @@ do
 		local player = UnitName("player")
 		local vendorQueue = self.data.vendorQueue[player]
 
-		if vendorQueue and #vendorQueue>0 then
+		if vendorQueue and next(vendorQueue) then
 --[[
 			if not self.MainWindow:IsVisible() then
 				self.player = player

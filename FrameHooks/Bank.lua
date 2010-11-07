@@ -203,7 +203,7 @@ do
 
 		local bankQueue = self.data.bankQueue[(UnitName("player"))]
 
-		if bankQueue and #bankQueue>0 then
+		if bankQueue and next(bankQueue) then
 			self:ShoppingListShow((UnitName("player")))
 		end
 
@@ -227,7 +227,7 @@ do
 
 		local guildBankQueue = self.data.guildBankQueue[(UnitName("player"))]
 
-		if guildBankQueue and #guildBankQueue>0 then
+		if guildBankQueue and next(guildBankQueue) then
 			self:ShoppingListShow((UnitName("player")))
 		end
 	end

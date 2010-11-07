@@ -1050,7 +1050,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 ]]
 --print("isSpellKnown",recipeID,player,self:GetRecipeName(recipeID))
 		if self.data.knownSpells[player][recipeID] then
---print("**** yes ****")
+--print(GnomeWorks:GetRecipeName(recipeID),"is known")
 			return true
 		else
 --print("no")

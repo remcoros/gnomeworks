@@ -26,7 +26,9 @@ do
 --	executionHoldFrame:RegisterAllEvents()
 
 	executionHoldFrame:SetScript("OnEvent", function(frame, event, ...)
---print("execution hold system",event)
+--if string.find(event,"UNIT_SPELL") then
+--	print("execution hold system",event)
+--end
 		if frame.hold[event] then
 			for method, params in pairs(frame.hold[event]) do
 				GnomeWorks[method](GnomeWorks, event, ...)
@@ -264,6 +266,9 @@ do
 		end
 
 
+		local trackedItems = {}
+
+
 		local itemSource = {}
 		GnomeWorks.data.itemSource = itemSource
 
@@ -276,6 +281,8 @@ do
 				else
 					itemSource[itemID] = { [recipeID] = numMade }
 				end
+
+				trackedItems[itemID] = true
 			end
 		end
 
@@ -291,8 +298,13 @@ do
 				else
 					reagentUsage[itemID] = { [recipeID] = numNeeded }
 				end
+
+				trackedItems[itemID] = true
 			end
 		end
+
+
+		GnomeWorks.data.trackedItems = trackedItems
 
 
 		GnomeWorks.data.groupList = {}
@@ -400,8 +412,8 @@ print(arg1)
 
 		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_FAILED", "SpellCastFailed")
 		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED", "SpellCastFailed")
-		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_STOP", "SpellCastFailed")
 
+		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_STOP", "SpellCastStop")
 		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_START", "SpellCastStart")
 
 		for name,plugin in pairs(GnomeWorks.plugins) do

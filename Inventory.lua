@@ -90,11 +90,13 @@ do
 
 		if recipeSource then
 			for childRecipeID, count in pairs(recipeSource) do
-				if count >= 1 then
+				if self:IsSpellKnown(childRecipeID, player) then
+					if count >= 1 then
 --print("Child Recipe", reagentID, childRecipeID)
-					local childResults, childReagents = self:GetRecipeData(childRecipeID)
+						local childResults, childReagents = self:GetRecipeData(childRecipeID)
 
-					numReagentsCraftable = numReagentsCraftable + CalculateRecipeCrafting(craftabilityTable, childReagents, player, containerList) * count
+						numReagentsCraftable = numReagentsCraftable + CalculateRecipeCrafting(craftabilityTable, childReagents, player, containerList) * count
+					end
 				end
 			end
 		end
@@ -344,27 +346,27 @@ do
 
 
 			if player == (UnitName("player")) then
-				for reagentID in pairs(GnomeWorks.data.reagentUsage) do
+				for itemID in pairs(GnomeWorks.data.trackedItems) do
+					local inBag = GetItemCount(itemID)
+					local inBank = GetItemCount(itemID,true)
 
-					if reagentID then
-						local inBag = GetItemCount(reagentID)
-						local inBank = GetItemCount(reagentID,true)
-
-						if inBag>0 then
-							inventory["bag"][reagentID] = inBag
-						else
-							inventory["bag"][reagentID] = nil
-						end
-
-						if inBank>0 then
-							inventory["bank"][reagentID] = inBank
-						else
-							inventory["bank"][reagentID] = nil
-						end
-			--DebugSpam(inventoryData[reagentID])
+					if inBag>0 then
+						inventory["bag"][itemID] = inBag
+					else
+						inventory["bag"][itemID] = nil
 					end
+
+					if inBank>0 then
+						inventory["bank"][itemID] = inBank
+					else
+						inventory["bank"][itemID] = nil
+					end
+			--DebugSpam(inventoryData[reagentID])
 				end
 			end
+
+
+
 
 			local craftedBag = table.wipe(inventory["craftedBag"])
 			local craftedBank = table.wipe(inventory["craftedBank"])
@@ -396,14 +398,11 @@ do
 
 			table.wipe(itemVisited)							-- this is a simple infinite loop avoidance scheme: basically, don't visit the same node twice
 
-			for reagentID in pairs(GnomeWorks.data.reagentUsage) do
-
-				if GnomeWorks.data.itemSource[reagentID] then
-					self:InventoryReagentCraftability(craftedBag, reagentID, player, "craftedBag queue")
-					self:InventoryReagentCraftability(craftedBank, reagentID, player, "craftedBank queue")
-					if craftedGuildBank then
-						self:InventoryReagentCraftability(craftedGuildBank, reagentID, player, "craftedGuildBank queue")
-					end
+			for itemID in pairs(GnomeWorks.data.itemSource) do
+				self:InventoryReagentCraftability(craftedBag, itemID, player, "craftedBag queue")
+				self:InventoryReagentCraftability(craftedBank, itemID, player, "craftedBank queue")
+				if craftedGuildBank then
+					self:InventoryReagentCraftability(craftedGuildBank, itemID, player, "craftedGuildBank queue")
 				end
 			end
 
