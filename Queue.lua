@@ -154,7 +154,7 @@ end
 --						numAvailable = numAvailable - (GnomeWorks.data[sourceQueue][player][itemID] or 0)
 					end
 
-					local stillNeeded = reagents[itemID] * entry.count - (entry.reserved[itemID])
+					local stillNeeded = ((reagents and reagents[itemID]) or 1) * entry.count - (entry.reserved and entry.reserved[itemID] or 0)
 
 					if numAvailable > stillNeeded then
 						numAvailable = stillNeeded
@@ -162,15 +162,19 @@ end
 
 					reagent.count = math.ceil(numAvailable)
 
-					entry.reserved[itemID] = (entry.reserved[itemID]) + reagent.count
-				else
+					if entry.reserved then
+						entry.reserved[itemID] = (entry.reserved[itemID]) + reagent.count
+					end
+
+				elseif reagent.command == "create" then
 					local itemID = reagent.itemID
 					local resultsReagent,reagentsReagent = GnomeWorks:GetRecipeData(reagent.recipeID,player)
 if not resultsReagent then
 	print(GetItemInfo(reagent.itemID or 0) or reagent.itemID, reagent.recipeID, reagent.command)
 end
 					local numAvailable = GnomeWorks:InventoryRecipeIterations(reagent.recipeID, player, "bag queue") * resultsReagent[itemID]
-					local stillNeeded = reagents[itemID] * entry.count - (entry.reserved[itemID])
+
+					local stillNeeded = ((reagents and reagents[itemID]) or 1) * entry.count - (entry.reserved and entry.reserved[itemID] or 0)
 
 					if numAvailable > stillNeeded then
 						numAvailable = stillNeeded
@@ -178,8 +182,9 @@ end
 
 					reagent.count = math.ceil(stillNeeded / resultsReagent[reagent.itemID])
 
-					entry.reserved[itemID] = (entry.reserved[itemID]) + reagent.count * resultsReagent[itemID]
-
+					if entry.reserved then
+						entry.reserved[itemID] = (entry.reserved[itemID]) + reagent.count * resultsReagent[itemID]
+					end
 
 					AdjustQueueCounts(player, reagent)
 				end
@@ -425,19 +430,32 @@ end
 
 				for i=1,#craftOptions do
 					table.insert(queue.subGroup.entries, craftOptions[i])
+
+					queue.subGroup.entries[i].parent = queue.subGroup.entries
 				end
 			else
-				local stillNeeded = numNeeded - GnomeWorks:GetInventoryCount(reagentID, player, "bag queue")
+				local stillNeeded = numNeeded - GnomeWorks:GetInventoryCount(reagentID, player, "bag")
 
 				for k,inv in pairs(collectInventories) do
-
-					table.insert(queue.subGroup.entries, InitReagentEntry(#queue.subGroup.entries+1, reagentID, numNeeded, stillNeeded,inv))
+					local numAvailable = LARGE_NUMBER
 
 					if inv ~= "alt" then
-						stillNeeded = stillNeeded - GnomeWorks:GetInventoryCountExclusive(reagentID, player, inv)
+						numAvailable = GnomeWorks:GetInventoryCountExclusive(reagentID, player, inv)
 					else
-						stillNeeded = stillNeeded - GnomeWorks:GetInventoryCountExclusive(reagentID, "faction", "bank")
+						numAvailable = GnomeWorks:GetInventoryCountExclusive(reagentID, "faction", "bank", player)
 					end
+
+					if numAvailable > stillNeeded then
+						numAvailable = stillNeeded
+					end
+
+
+					table.insert(queue.subGroup.entries, InitReagentEntry(#queue.subGroup.entries+1, reagentID, numNeeded, numAvailable,inv))
+
+
+					stillNeeded = stillNeeded - numAvailable
+
+	--				stillNeeded = stillNeeded - GnomeWorks:GetInventoryCount(reagentID, player, inv)
 
 					if stillNeeded < 0 then
 						stillNeeded = 0
@@ -447,13 +465,28 @@ end
 				table.insert(queue.subGroup.entries, InitReagentEntry(#queue.subGroup.entries+1, reagentID, numNeeded, stillNeeded))
 			end
 		else
-			local stillNeeded = numNeeded - GnomeWorks:GetInventoryCount(reagentID, player, "bag queue")
+			local stillNeeded = numNeeded - GnomeWorks:GetInventoryCount(reagentID, player, "bag")
 
 			for k,inv in pairs(collectInventories) do
+				local numAvailable = LARGE_NUMBER
 
-				table.insert(queue.subGroup.entries, InitReagentEntry(#queue.subGroup.entries+1, reagentID, numNeeded, stillNeeded,inv))
+				if inv ~= "alt" then
+					numAvailable = GnomeWorks:GetInventoryCountExclusive(reagentID, player, inv)
+				else
+					numAvailable = GnomeWorks:GetInventoryCountExclusive(reagentID, "faction", "bank", player)
+				end
 
-				stillNeeded = stillNeeded - GnomeWorks:GetInventoryCount(reagentID, player, inv)
+				if numAvailable > stillNeeded then
+					numAvailable = stillNeeded
+				end
+
+
+				table.insert(queue.subGroup.entries, InitReagentEntry(#queue.subGroup.entries+1, reagentID, numNeeded, numAvailable,inv))
+
+
+				stillNeeded = stillNeeded - numAvailable
+
+--				stillNeeded = stillNeeded - GnomeWorks:GetInventoryCount(reagentID, player, inv)
 
 				if stillNeeded < 0 then
 					stillNeeded = 0
@@ -592,6 +625,17 @@ end
 							sourceQueue[entry.itemID] = nil
 						end
 					end
+
+				elseif entry.command == "create" then
+					local results, reagents, tradeID = GnomeWorks:GetRecipeData(entry.recipeID)
+
+					if tradeID == 100001 then					-- vendor conversion
+						vendorQueue[entry.itemID] = (vendorQueue[entry.itemID] or 0) + entry.count
+
+						if vendorQueue[entry.itemID] == 0 then
+							vendorQueue[entry.itemID] = nil
+						end
+					end
 				end
 
 				if entry.subGroup then
@@ -600,6 +644,47 @@ end
 			end
 		end
 	end
+
+
+
+	function BuildFlatQueue(player)
+		local queue = GnomeWorks.data.queueData[player]
+		local flatQueue = GnomeWorks.data.flatQueue[player]
+		local reagentList = {}
+
+		for k,entry in pairs(queue) do
+			local results, reagents = GnomeWorks:GetRecipeData(entry.recipeID)
+
+			for reagentID, numNeeded in pairs(reagents) do
+				reagentList[reagentID] = (reagentList[reagentID] or 0) + numNeeded * entry.count
+			end
+		end
+
+--		local tempQueue = { subGroup = { entries = flatQueue } }
+
+		for reagentID, numNeeded in pairs(reagentList) do
+--			local function AddReagentToQueue(queue, reagentID, numNeeded, player)
+
+			local optionGroup = { index = 1, command = "options", itemID = reagentID, numNeeded = numNeeded, count = numNeeded, subGroup = { entries = {}, expanded = false }}
+
+			local entry, count = AddReagentToQueue(optionGroup, reagentID, numNeeded, player)
+
+			flatQueue[#flatQueue+1] = optionGroup
+		end
+
+		for k,entry in pairs(queue) do
+			local f = {}
+
+			for k,v in pairs(entry) do
+				if k ~= "subGroup" then
+					f[k] = v
+				end
+			end
+
+			flatQueue[#flatQueue+1] = f
+		end
+	end
+
 
 
 	function GnomeWorks:ShowQueueList(player)
@@ -635,6 +720,26 @@ end
 			self:SendMessageDispatch("GnomeWorksQueueCountsChanged")
 
 			sf.data.entries = self.data.queueData[player]
+
+--[[
+			if not self.data.flatQueue then
+				self.data.flatQueue = {}
+			end
+
+			self.data.flatQueue[player] = table.wipe(self.data.flatQueue[player] or {})
+
+
+			BuildFlatQueue(player)
+
+
+			sf.data.entries = self.data.flatQueue[player]
+
+
+--			self.data.inventoryData[player].queue = table.wipe(self.data.inventoryData[player].queue or {})
+
+--			ReserveReagentsIntoQueue(player, self.data.flatQueue[player])
+]]
+
 
 
 			sf:Refresh()
@@ -708,10 +813,12 @@ end
 					GnomeWorks.processSpell = nil
 
 					GnomeWorks.IsProcessing = false
+					self:SendMessageDispatch("GnomeWorksProcessing")
 				end
 			else
 				if doTradeEntry.count < 1 then
 					StopTradeSkillRepeat()
+
 				end
 			end
 
@@ -1365,7 +1472,7 @@ end
 						cellFrame.button:SetPoint("LEFT", cellFrame, "LEFT", entry.depth*8, 0)
 						local craftable
 
-						if entry.subGroup and (entry.command == "options" or entry.count > entry.numCraftable) then
+						if entry.subGroup and (entry.command == "options" or entry.count > (entry.numCraftable or 0)) then
 							if entry.subGroup.expanded then
 								cellFrame.button:SetNormalTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga")
 								cellFrame.button:SetHighlightTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga")
@@ -1576,7 +1683,12 @@ end
 			end
 
 			if entry.command == "create" then
-				if entry.numCraftable >= entry.count then
+--				if not entry.numCraftable then
+					entry.numCraftable = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "bag queue")
+--				end
+
+
+				if (entry.numCraftable or 0) >= (entry.count or 0) then
 					if entry.subGroup then
 						entry.subGroup.expanded = false
 					end

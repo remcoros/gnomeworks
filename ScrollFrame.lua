@@ -884,7 +884,9 @@ do
 			rowFrame.data = rowData
 
 			for i=1,#rowFrame.cols do
-				if scrollFrame.columnFrames[i]:IsShown() then
+				local columnFrame = scrollFrame.columnFrames[i]
+
+				if columnFrame and columnFrame:IsShown() then
 					if rowFrame.rowIndex == 0 then
 						if headers[i].button then
 							rowFrame.cols[i].text:SetPoint("LEFT",rowFrame.cols[i],"LEFT",16,0)

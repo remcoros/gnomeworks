@@ -197,7 +197,7 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 
 			local isLinked,playerName = IsTradeSkillLinked()
 
-			if playerName then
+			if playerName and linkDecodeList[decodeIndex] then
 				frameText:SetText(playerName.." "..linkDecodeList[decodeIndex].." "..GetNumTradeSkills().." recipes")
 --print(playerName.." "..linkDecodeList[decodeIndex].." "..GetNumTradeSkills().." recipes")
 			else
@@ -346,7 +346,7 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 				if linkList and playerData.build == clientBuild then
 					for tradeID, tradeLink in pairs(linkList) do
 --print(tradeID)
-						if not unlinkableTrades[tradeID] then
+						if not unlinkableTrades[tradeID] and tradeLink then
 --print(GetSpellLink(tradeID) or tradeID)
 							linkDecodeList[#linkDecodeList+1] = tradeLink
 							playerNameList[#playerNameList+1] = playerName

@@ -400,7 +400,7 @@ print(arg1)
 
 		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_FAILED", "SpellCastFailed")
 		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED", "SpellCastFailed")
-		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_STOPPED", "SpellCastFailed")
+		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_STOP", "SpellCastFailed")
 
 		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_START", "SpellCastStart")
 
