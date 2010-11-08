@@ -299,16 +299,23 @@ do
 		end
 
 		if not config.window[frameName] then
-			config.window[frameName] = { x = 0, y = 0, width = width, height = height}
+			config.window[frameName] = { x = 0, y = 0, width = width, height = height, r=1,g=1,b=1,opacity=1}
 		end
 
-		local x, y = config.window[frameName].x, config.window[frameName].y
-		local width, height = config.window[frameName].width, config.window[frameName].height
+		frame.config = config.window[frameName]
+
+		local x, y = frame.config.x, frame.config.y
+		local width, height = frame.config.width, frame.config.height
+
+		local r,g,b = frame.config.r or 255, frame.config.g or 255, frame.config.b or 255
+		local opacity = frame.config.opacity or 1
 
 
 		frame:SetPoint("CENTER",x,y)
 		frame:SetWidth(width)
 		frame:SetHeight(height)
+
+		frame:SetAlpha(math.max(.1,1-opacity))
 
 		frame.dockChildren = {}
 
@@ -317,6 +324,9 @@ do
 												edgeFile = "Interface\\AddOns\\GnomeWorks\\Art\\newFrameBorder.tga",
 												tile = true, tileSize = 48, edgeSize = 48,
 												insets = { left = 3, right = 3, top = 3, bottom = 3 }})
+
+		SetBetterBackdropColor(frame, r,g,b)
+
 --[[
 		self:SetBetterBackdrop(frame,{bgFile = "Interface\\AddOns\\GnomeWorks\\Art\\resizableBarberFrameBG.tga",
 												edgeFile = "Interface\\AddOns\\GnomeWorks\\Art\\resizableBarberFrameBorder.tga",
@@ -334,27 +344,23 @@ do
 											end)
 
 		frame.SavePosition = function(f)
-			local frameName = f:GetName()
+			local config = f.config
 
-			if frameName then
-				config.window[frameName].width = f:GetWidth()
-				config.window[frameName].height = f:GetHeight()
+			config.width = f:GetWidth()
+			config.height = f:GetHeight()
 
-				local cx, cy = f:GetCenter()
-				local ux, uy = UIParent:GetCenter()
+			local cx, cy = f:GetCenter()
+			local ux, uy = UIParent:GetCenter()
 
-				config.window[frameName].x = cx - ux
-				config.window[frameName].y = cy - uy
-			end
+			config.x = cx - ux
+			config.y = cy - uy
 		end
 
 		frame.SaveSize = function(f)
-			local frameName = f:GetName()
+			local config = f.config
 
-			if frameName then
-				config.window[frameName].width = f:GetWidth()
-				config.window[frameName].height = f:GetHeight()
-			end
+			config.width = f:GetWidth()
+			config.height = f:GetHeight()
 		end
 
 --[[
@@ -416,10 +422,10 @@ do
 			end
 
 			for child,params in pairs(frame.dockChildren) do
-				local frameName = child:GetName()
+				local config = child.config
 
-				local x, y = config.window[frameName].x, config.window[frameName].y
-				local width, height = config.window[frameName].width, config.window[frameName].height
+				local x, y = config.x, config.y
+				local width, height = config.width, config.height
 
 
 				child:ClearAllPoints()
@@ -445,10 +451,86 @@ do
 
 
 		local windowMenu = {
-			{ text = "Raise Frame", func = function() frame:SetFrameStrata("DIALOG")  if frame.title then frame.title:SetFrameStrata("DIALOG") end end },
-			{ text = "Lower Frame", func = function() frame:SetFrameStrata("LOW") if frame.title then frame.title:SetFrameStrata("LOW") end end },
-		}
+			{ text = "Raise Frame", notCheckable = 1, func = function() frame:SetFrameStrata("DIALOG")  if frame.title then frame.title:SetFrameStrata("DIALOG") end end },
+			{ text = "Lower Frame", notCheckable = 1, func = function() frame:SetFrameStrata("LOW") if frame.title then frame.title:SetFrameStrata("LOW") end end },
+			{
+				text = "Frame Color    ",
+				notCheckable = 1,
+				func = function(...)
+--					print("function",...)
+				end,
 
+				swatchFunc = function(...)
+					local f = UIDROPDOWNMENU_MENU_VALUE
+					local r,g,b = ColorPickerFrame:GetColorRGB()
+
+					f.config.r, f.config.g, f.config.b = r,g,b
+
+					if f.title then
+						f.title.textureLeft:SetVertexColor(r,g,b)
+						f.title.textureCenter:SetVertexColor(r,g,b)
+						f.title.textureRight:SetVertexColor(r,g,b)
+					end
+
+					SetBetterBackdropColor(f, r,g,b)
+				end,
+
+				opacityFunc = function(...)
+					local f = UIDROPDOWNMENU_MENU_VALUE
+					local opacity = OpacitySliderFrame:GetValue()
+
+					f.config.opacity = opacity
+
+					f:SetAlpha(math.max(.1,1-opacity))
+
+					if f.title then
+						f.title:SetAlpha(math.max(.1,1-opacity))
+					end
+				end,
+
+				cancelFunc = function(...)
+					local previousValues = ...
+
+					local f = UIDROPDOWNMENU_MENU_VALUE
+					local r,g,b = previousValues.r, previousValues.g, previousValues.b
+
+					f.config.r, f.config.g, f.config.b = r,g,b
+
+					if f.title then
+						f.title.textureLeft:SetVertexColor(r,g,b)
+						f.title.textureCenter:SetVertexColor(r,g,b)
+						f.title.textureRight:SetVertexColor(r,g,b)
+					end
+
+					SetBetterBackdropColor(f, r,g,b)
+
+
+					local opacity = previousValues.opacity
+
+					f.config.opacity = opacity
+
+					f:SetAlpha(math.max(.1,1-opacity))
+
+					if f.title then
+						f.title:SetAlpha(math.max(.1,1-opacity))
+					end
+				end,
+
+				hasColorSwatch = true,
+				hasOpacity = 1,
+			},
+		}
+--[[
+info.r = [1 - 255]  --  Red color value of the color swatch
+info.g = [1 - 255]  --  Green color value of the color swatch
+info.b = [1 - 255]  --  Blue color value of the color swatch
+info.colorCode = [STRING] -- "|cAARRGGBB" embedded hex value of the button text color. Only used when button is enabled
+info.swatchFunc = [function()]  --  Function called by the color picker on color change
+info.hasOpacity = [nil, 1]  --  Show the opacity slider on the colorpicker frame
+info.opacity = [0.0 - 1.0]  --  Percentatge of the opacity, 1.0 is fully shown, 0 is transparent
+info.opacityFunc = [function()]  --  Function called by the opacity slider when you change its value
+info.cancelFunc
+]]
 		windowMenuFrame = CreateFrame("Frame", "GWWindowMenuFrame", getglobal("UIParent"), "UIDropDownMenuTemplate")
 
 
@@ -466,6 +548,17 @@ do
 			else
 				local x, y = GetCursorPosition()
 				local uiScale = UIParent:GetEffectiveScale()
+
+				local entry = windowMenu[3]
+
+				f = frame
+
+
+				entry.r,entry.g,entry.b = f.config.r or 255, f.config.g or 255, f.config.b or 255
+
+				entry.opacity = f.config.opacity or 1
+
+				entry.value = f
 
 				EasyMenu(windowMenu, windowMenuFrame, getglobal("UIParent"), x/uiScale,y/uiScale, "MENU", 5)
 			end
@@ -524,6 +617,12 @@ do
 			title.textureCenter:SetTexCoord(0.0, 1.0, 0.0, 1.0)
 
 
+			title.textureLeft:SetVertexColor(r,g,b)
+			title.textureCenter:SetVertexColor(r,g,b)
+			title.textureRight:SetVertexColor(r,g,b)
+
+			title:SetAlpha(math.max(.1,1-opacity))
+
 			title:SetPoint("BOTTOM",frame,"TOP",0,0)
 
 			title:EnableMouse(true)
@@ -550,6 +649,14 @@ do
 				else
 					local x, y = GetCursorPosition()
 					local uiScale = UIParent:GetEffectiveScale()
+					local entry = windowMenu[3]
+					f = frame
+
+					entry.r,entry.g,entry.b = f.config.r or 255, f.config.g or 255, f.config.b or 255
+
+					entry.opacity = f.config.opacity or 1
+
+					entry.value = f
 
 					EasyMenu(windowMenu, windowMenuFrame, getglobal("UIParent"), x/uiScale,y/uiScale, "MENU", 5)
 				end

@@ -109,7 +109,7 @@ do
 						else
 							cellFrame.button:Hide()
 
-							cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t%s%s", GetItemIcon(entry.itemID) or "",entry.color,(GetItemInfo(entry.itemID)) or "item:"..entry.itemID)
+							cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t %s%s", GetItemIcon(entry.itemID) or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,entry.color,(GetItemInfo(entry.itemID)) or "item:"..entry.itemID)
 
 							cellFrame.text:SetFontObject("GameFontHighlightsmall")
 						end

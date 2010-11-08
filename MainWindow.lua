@@ -128,6 +128,8 @@ do
 	local tooltipRecipeCacheRight = {{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}}		-- 20 lines
 
 
+	local containerIndex = { "bag", "bank" }
+
 	local inventoryIndex = { "bag", "vendor", "bank", "guildBank", "alt" }
 
 	local inventoryColorBlindTag = {
@@ -752,6 +754,7 @@ do
 
 							cellFrame.text:SetFormattedText("%s (%d Recipes)",entry.name,#entry.subGroup.entries)
 							cellFrame.button:Show()
+
 						else
 							local itemLink = GnomeWorks:GetTradeSkillItemLink(entry.index)
 							local spellName = GnomeWorks:GetRecipeName(entry.recipeID)
@@ -763,7 +766,7 @@ do
 							end
 
 
-							cellFrame.text:SetFormattedText("|T%s:16:16:0:-2|t %s", GnomeWorks:GetTradeSkillIcon(entry.index) or "", spellName or "recipe:"..entry.recipeID)
+							cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t %s", GnomeWorks:GetTradeSkillIcon(entry.index) or "", cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,spellName or "recipe:"..entry.recipeID)
 
 							cellFrame.button:Hide()
 						end
@@ -906,7 +909,7 @@ do
 
 											if count ~= prevCount then
 												if count ~= 0 then
-													GameTooltip:AddDoubleLine(inventoryTags[key],count)
+													GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..count)
 												end
 												prevCount = count
 											end
@@ -993,13 +996,44 @@ do
 										GameTooltip:ClearLines()
 										GameTooltip:AddLine(GnomeWorks.player.."'s inventory")
 
+										local itemID = entry.itemID
+
 										local prev = 0
 										for i,key in pairs(inventoryIndex) do
 											if key ~= "vendor" then
 												local count = entry[key.."Inventory"] or 0
 
 												if prev ~= count and count ~= 0 then
-													GameTooltip:AddDoubleLine(inventoryTags[key],count)
+
+													if key == "alt" then
+														GameTooltip:AddDoubleLine(inventoryTags[key], inventoryColors[key]..(count-prev))
+
+														GameTooltip:AddLine("    ")
+
+														GameTooltip:AddLine("alt item locations:",.8,.8,.8)
+														for inventoryName, containers in pairs(GnomeWorks.data.inventoryData) do
+															if inventoryName ~= GnomeWorks.player then
+																local bag = 0
+																if containers.bag and containers.bag[itemID] then
+																	GameTooltip:AddDoubleLine("   "..inventoryColors.alt..inventoryName.."/bag",inventoryColors.alt..containers.bag[itemID])
+
+																	bag = containers.bag[itemID]
+																end
+																if containers.bank and containers.bank[itemID] and containers.bank[itemID] > bag then
+																	if string.find(inventoryName,"GUILD:") then
+																		local guildName = string.match(inventoryName,"GUILD:(.+)")
+																		if guildName ~= GnomeWorks.data.playerData[GnomeWorks.player].guild then
+																			GameTooltip:AddDoubleLine("   "..inventoryColors.alt..guildName.."/guildBank",inventoryColors.alt..(containers.bank[itemID] - bag))
+																		end
+																	else
+																		GameTooltip:AddDoubleLine("   "..inventoryColors.alt..inventoryName.."/bank",inventoryColors.alt..(containers.bank[itemID] - bag))
+																	end
+																end
+															end
+														end
+													else
+														GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..(count-prev))
+													end
 												end
 
 												prev = count
@@ -1072,7 +1106,7 @@ do
 
 		skillFrame = CreateFrame("Frame",nil,frame)
 		skillFrame:SetPoint("BOTTOMLEFT",20,20)
-		skillFrame:SetPoint("TOP", frame, 0, -85)
+		skillFrame:SetPoint("TOP", frame, 0, -70 - GnomeWorksDB.config.scrollFrameLineHeight)
 		skillFrame:SetPoint("RIGHT", frame, -20,0)
 
 		sf = GnomeWorks:CreateScrollingTable(skillFrame, ScrollPaneBackdrop, columnHeaders, ResizeSkillFrame)
@@ -1153,6 +1187,8 @@ do
 				if itemLink then
 
 					local itemID = tonumber(string.match(itemLink,"item:(%d+)"))
+
+					entry.itemID = itemID
 
 					if itemID then
 						entry.altInventory = GnomeWorks:GetInventoryCount(itemID, "faction", "bank")
@@ -1384,6 +1420,7 @@ do
 --				title.notClickable = true
 				title.fontObject = "GameFontNormal"
 
+				title.notCheckable = 1
 
 				UIDropDownMenu_AddButton(title)
 
@@ -1397,6 +1434,8 @@ do
 						playerMenu.hasArrow = true
 						playerMenu.value = player
 						playerMenu.disabled = false
+
+						playerMenu.notCheckable = 1
 
 						UIDropDownMenu_AddButton(playerMenu)
 						index = index + 1

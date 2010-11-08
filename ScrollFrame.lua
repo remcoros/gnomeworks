@@ -622,7 +622,9 @@ do
 
 --		local st = LibScrollingTable:CreateST(columnHeaders,rows,nil,nil,parentFrame)
 
-		local sf = libScrollKit:Create(parentFrame, 15)
+		local lineHeight = GnomeWorksDB.config.scrollFrameLineHeight or 15
+
+		local sf = libScrollKit:Create(parentFrame, lineHeight)
 
 		if not self.scrollFrameList then
 			self.scrollFrameList = {}
@@ -948,7 +950,7 @@ do
 		c:SetFrameLevel(c:GetFrameLevel()+5)
 
 		c.header = CreateFrame("Button",nil,c)
-		c.header:SetPoint("TOPLEFT",c,"TOPLEFT",0,15)
+		c.header:SetPoint("TOPLEFT",c,"TOPLEFT",0,lineHeight)
 		c.header:SetPoint("BOTTOMRIGHT",c,"TOPRIGHT")
 
 		local t = c.header:CreateTexture(nil,"OVERLAY")

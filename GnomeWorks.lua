@@ -118,6 +118,13 @@ end
 
 
 
+local defaultConfig = {
+	scrollFrameLineHeight = 15,
+}
+
+
+
+
 -- handle load sequence
 do
 	-- To fix Blizzard's bug caused by the new "self:SetFrameLevel(2);"
@@ -215,6 +222,12 @@ do
 
 		InitDBTables("config", "serverData", "vendorItems", "results", "names", "reagents", "tradeIDs", "vendorOnly")
 
+
+		for k,v in pairs(defaultConfig) do
+			if not GnomeWorksDB.config[k] then
+				GnomeWorksDB.config[k] = v
+			end
+		end
 
 
 		local function InitServerDBTables(server, var, ...)

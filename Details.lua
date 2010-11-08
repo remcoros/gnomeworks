@@ -22,9 +22,9 @@ do
 	local sf
 
 
-	local itemColorVendor = {.25,1.0,.25}
-	local itemColorCrafted = {.25,.75,1.0}
-	local itemColorNormal = {1,1,1}
+	local itemColorVendor = "|cff80ff80"
+	local itemColorCrafted = "|cff40a0ff"
+	local itemColorNormal = "|cffffffff"
 
 	local inventoryIndex = { "bag", "bank", "guildBank", "alt" }
 
@@ -151,10 +151,7 @@ do
 							GameTooltip:Hide()
 						end,
 			draw =	function (rowFrame,cellFrame,entry)
-						cellFrame.text:SetFormattedText(" |T%s:20:20:0:-2|t %s",entry.itcon or "", entry.name or "item:"..entry.id)
-						if entry.itemColor then
-							cellFrame.text:SetTextColor(unpack(entry.itemColor))
-						end
+						cellFrame.text:SetFormattedText(" |T%s:%d:%d:0:-2|t %s%s", entry.icon or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,entry.color,entry.name or "item:"..entry.itemID)
 					end,
 		}, -- [2]
 		{
@@ -302,7 +299,7 @@ do
 
 		reagentFrame = CreateFrame("Frame",nil,parentFrame)
 		reagentFrame:SetPoint("BOTTOM",0,20)
-		reagentFrame:SetPoint("TOP", detailFrame, "TOP", 0, 0)
+		reagentFrame:SetPoint("TOP", detailFrame, "TOP", 0, 15 - GnomeWorksDB.config.scrollFrameLineHeight)
 		reagentFrame:SetPoint("RIGHT", parentFrame, -20,0)
 		reagentFrame:SetPoint("LEFT", detailFrame, "RIGHT", 5,0)
 
@@ -399,11 +396,11 @@ do
 
 
 			if GnomeWorks:VendorSellsItem(entry.id) then
-				entry.itemColor = itemColorVendor
+				entry.color = itemColorVendor
 			elseif GnomeWorks.data.itemSource[entry.id] then
-				entry.itemColor = itemColorCrafted
+				entry.color = itemColorCrafted
 			else
-				entry.itemColor = itemColorNormal
+				entry.color = itemColorNormal
 			end
 
 			entry.icon = itemTexture
