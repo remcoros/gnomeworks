@@ -71,15 +71,14 @@ do
 						local name, texture, price, quantity, numAvailable, isUsable, extendedCost = GetMerchantItemInfo(i)
 						local _, _, _, _, _, _, _, stackSize = GetItemInfo(link)
 
-						local numPurchase = math.ceil(count/quantity)
+						local numPurchase = count/quantity
 	--print(numAvailable)
 						if numAvailable ~= 0 then
-							local numStacksNeeded    		= math.floor(count/stackSize);
-							local numVendorStacksPerStack 	= math.floor(stackSize/quantity);
-							local subStackCount        		= math.ceil((count-(numStacksNeeded*stackSize))/quantity);
+							local numStacksNeeded    		= math.floor(count/stackSize)
+							local subStackCount        		= math.ceil(count-(numStacksNeeded*stackSize))
 							if numStacksNeeded > 0 then
 								for l=1,numStacksNeeded do
-									BuyMerchantItem(i,numVendorStacksPerStack)
+									BuyMerchantItem(i,stackSize)
 								end
 							end
 							if subStackCount > 0 then
