@@ -315,7 +315,7 @@ do
 		frame:SetWidth(width)
 		frame:SetHeight(height)
 
-		frame:SetAlpha(math.max(.1,1-opacity))
+		frame:SetAlpha(math.max(.1,opacity))
 
 		frame.dockChildren = {}
 
@@ -477,14 +477,14 @@ do
 
 				opacityFunc = function(...)
 					local f = UIDROPDOWNMENU_MENU_VALUE
-					local opacity = OpacitySliderFrame:GetValue()
+					local opacity = 1-OpacitySliderFrame:GetValue()
 
 					f.config.opacity = opacity
 
-					f:SetAlpha(math.max(.1,1-opacity))
+					f:SetAlpha(math.max(.1,opacity))
 
 					if f.title then
-						f.title:SetAlpha(math.max(.1,1-opacity))
+						f.title:SetAlpha(math.max(.1,opacity))
 					end
 				end,
 
@@ -505,14 +505,14 @@ do
 					SetBetterBackdropColor(f, r,g,b)
 
 
-					local opacity = previousValues.opacity
+					local opacity = 1-previousValues.opacity
 
 					f.config.opacity = opacity
 
-					f:SetAlpha(math.max(.1,1-opacity))
+					f:SetAlpha(math.max(.1,opacity))
 
 					if f.title then
-						f.title:SetAlpha(math.max(.1,1-opacity))
+						f.title:SetAlpha(math.max(.1,opacity))
 					end
 				end,
 
@@ -621,7 +621,7 @@ info.cancelFunc
 			title.textureCenter:SetVertexColor(r,g,b)
 			title.textureRight:SetVertexColor(r,g,b)
 
-			title:SetAlpha(math.max(.1,1-opacity))
+			title:SetAlpha(math.max(.1,opacity))
 
 			title:SetPoint("BOTTOM",frame,"TOP",0,0)
 
