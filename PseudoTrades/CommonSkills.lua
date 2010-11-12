@@ -504,7 +504,10 @@ do
 
 			recipeList[recipeID] = trade
 
-			GnomeWorks:AddToItemCache(itemID, recipeID, numMade)
+
+			for itemID, numNeeded in pairs(data.results) do
+				GnomeWorks:AddToItemCache(itemID, recipeID, numMade)
+			end
 
 			for reagentID, numNeeded in pairs(data.reagents) do
 				GnomeWorks:AddToReagentCache(reagentID, recipeID, numNeeded)

@@ -275,7 +275,33 @@ do
 		end
 
 		for k, player in pairs({ player, "All Recipes" } ) do
-			InitServerPlayerDBTables(factionServer, player, "playerData", "inventoryData", "queueData", "recipeGroupData", "cooldowns", "vendorQueue","bankQueue","guildBankQueue","auctionQueue","altQueue")
+			InitServerPlayerDBTables(factionServer, player, "playerData", "inventoryData", "queueData", "recipeGroupData", "cooldowns", "vendorQueue","bankQueue","guildBankQueue","auctionQueue","altQueue", "knownSpells", "knownItems")
+		end
+
+
+		for player, spellList in pairs(GnomeWorks.data.knownSpells) do
+			 local list = {}
+
+			if type(spellList) == "string" then
+				for recipeID in string.gmatch(spellList,"(%d+):") do
+					list[tonumber(recipeID)] = true
+				end
+			end
+
+			GnomeWorks.data.knownSpells[player]	= list
+		end
+
+
+		for player, itemList in pairs(GnomeWorks.data.knownItems) do
+			 local list = {}
+
+			if type(itemList) == "string" then
+				for itemID in string.gmatch(itemList,"(%d+):") do
+					list[tonumber(itemID)] = true
+				end
+			end
+
+			GnomeWorks.data.knownItems[player]	= list
 		end
 
 
@@ -361,6 +387,37 @@ do
 		return true
 	end
 
+
+	function GnomeWorks:PLAYER_LOGOUT()
+		for inventoryName,inventoryData in pairs(self.data.inventoryData) do
+			for container, containerData in pairs(inventoryData) do
+				for itemID, num in pairs(containerData) do
+					if num == 0 then
+						containerData[itemID] = nil
+					end
+				end
+			end
+		end
+
+		local function ConcatLists(list)
+			for player,listData in pairs(self.data[list]) do
+				local array = {}
+
+				for id in pairs(listData) do
+					array[#array+1] = id
+				end
+
+				array[#array+1] = ":"
+
+				self.data[list][player] = table.concat(array,":")
+			end
+		end
+
+		ConcatLists("knownSpells")
+		ConcatLists("knownItems")
+	end
+
+
 --[[
 	function GnomeWorks:CHAT_MSG_SYSTEM(event,arg1)
 print("CHAT_MSG_SYSTEM",arg1)
@@ -397,6 +454,7 @@ print(arg1)
 		GnomeWorks:RegisterEvent("AUCTION_HOUSE_SHOW")
 		GnomeWorks:RegisterEvent("AUCTION_HOUSE_CLOSE")
 
+		GnomeWorks:RegisterEvent("PLAYER_LOGOUT")
 		return true
 	end
 
@@ -407,49 +465,53 @@ print(arg1)
 
 
 	local function CreateUI()
-		GnomeWorks.MainWindow = GnomeWorks:CreateMainWindow()
+		if not InCombatLockdown() then
+			GnomeWorks.MainWindow = GnomeWorks:CreateMainWindow()
 
-		GnomeWorks.QueueWindow = GnomeWorks:CreateQueueWindow()
+			GnomeWorks.QueueWindow = GnomeWorks:CreateQueueWindow()
 
-		if IsAddOnLoaded("AddOnLoader") then
-			GnomeWorks.MainWindow:Hide()
-		end
-
-		GnomeWorks:RegisterEvent("TRADE_SKILL_SHOW")
---		GnomeWorks:RegisterEvent("TRADE_SKILL_UPDATE")
-		GnomeWorks:RegisterEvent("TRADE_SKILL_CLOSE")
-
-		GnomeWorks:RegisterEvent("CHAT_MSG_SKILL")
-
-		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED", "SpellCastCompleted")
-
-		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_FAILED", "SpellCastFailed")
-		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED", "SpellCastFailed")
-
-		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_STOP", "SpellCastStop")
-		GnomeWorks:RegisterEvent("UNIT_SPELLCAST_START", "SpellCastStart")
-
-		for name,plugin in pairs(GnomeWorks.plugins) do
---print("initializing",name)
-			plugin.loaded = plugin.initialize()
-		end
-
-
-		hooksecurefunc("SetItemRef", function(s,link,button)
-			if string.find(s,"trade:") then
-				GnomeWorks:CacheTradeSkillLink(link)
+			if IsAddOnLoaded("AddOnLoader") then
+				GnomeWorks.MainWindow:Hide()
 			end
-		end)
 
-		collectgarbage("collect")
+			GnomeWorks:RegisterEvent("TRADE_SKILL_SHOW")
+	--		GnomeWorks:RegisterEvent("TRADE_SKILL_UPDATE")
+			GnomeWorks:RegisterEvent("TRADE_SKILL_CLOSE")
 
-		GnomeWorks:TRADE_SKILL_UPDATE()
+			GnomeWorks:RegisterEvent("CHAT_MSG_SKILL")
+
+			GnomeWorks:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED", "SpellCastCompleted")
+
+			GnomeWorks:RegisterEvent("UNIT_SPELLCAST_FAILED", "SpellCastFailed")
+			GnomeWorks:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED", "SpellCastFailed")
+
+			GnomeWorks:RegisterEvent("UNIT_SPELLCAST_STOP", "SpellCastStop")
+			GnomeWorks:RegisterEvent("UNIT_SPELLCAST_START", "SpellCastStart")
+
+			for name,plugin in pairs(GnomeWorks.plugins) do
+	--print("initializing",name)
+				plugin.loaded = plugin.initialize()
+			end
+
+
+			hooksecurefunc("SetItemRef", function(s,link,button)
+				if string.find(s,"trade:") then
+					GnomeWorks:CacheTradeSkillLink(link)
+				end
+			end)
+
+			collectgarbage("collect")
+
+			GnomeWorks:ScheduleTimer("TRADE_SKILL_UPDATE", 0.01)
+
+			return true
+		end
 	end
 
 
 	local function ParseKnownRecipes()
 
-		GnomeWorks:ScheduleTimer(function() GnomeWorks:DecodeTradeLinks(CreateUI) end, 2)
+--		GnomeWorks:ScheduleTimer(function() GnomeWorks:DecodeTradeLinks(CreateUI) end, 2)
 
 		return true
 	end
@@ -479,6 +541,7 @@ print(arg1)
 				initList:AddSegment(InitializeData)
 				initList:AddSegment(ParseTradeLinks)
 				initList:AddSegment(ParseKnownRecipes)
+				initList:AddSegment(CreateUI)
 				initList:AddSegment(RegisterEvents)
 
 
@@ -494,6 +557,7 @@ print(arg1)
 				initList:AddSegment(InitializeData)
 				initList:AddSegment(ParseTradeLinks)
 				initList:AddSegment(ParseKnownRecipes)
+				initList:AddSegment(CreateUI)
 				initList:AddSegment(RegisterEvents)
 
 

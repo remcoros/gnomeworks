@@ -152,11 +152,13 @@ do
 
 
 	function GnomeWorks:AddToItemCache(itemID, recipeID, numMade)
+		GnomeWorks.data.trackedItems[itemID] = true
 		return AddToDataTable(GnomeWorks.data.itemSource, itemID, recipeID, numMade)
 	end
 
 
 	function GnomeWorks:AddToReagentCache(reagentID, recipeID, numNeeded)
+		GnomeWorks.data.trackedItems[reagentID] = true
 		return AddToDataTable(GnomeWorks.data.reagentUsage, reagentID, recipeID, numNeeded)
 	end
 
@@ -618,6 +620,18 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		self:RecipeGroupClearEntries(flatGroup)
 
 
+		if not self.data.knownSpells[player] then
+			self.data.knownSpells[player] = {}
+		end
+
+		if not self.data.knownItems[player] then
+			self.data.knownItems[player] = {}
+		end
+
+
+		local knownSpells = self.data.knownSpells[player]
+
+		local knownItems = self.data.knownItems[player]
 
 
 		local groupList = {}
@@ -665,6 +679,8 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 						GnomeWorks:RecipeGroupAddRecipe(flatGroup, recipeID, i, true)
 
+						knownSpells[recipeID] = true
+
 
 						if currentGroup then
 --							GnomeWorks:RecipeGroupAddRecipe(currentGroup, recipeID, i, true)
@@ -700,8 +716,12 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 							local itemID, numMade = -recipeID, 1				-- itemID = RecipeID, numMade = 1 for enchants/item enhancements
 
+
+
 							if GetItemInfo(itemLink) then
 								itemID = GetIDFromLink(itemLink)
+
+								knownItems[itemID] = true
 
 								local minMade,maxMade = GetTradeSkillNumMade(i)
 
@@ -743,7 +763,10 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 								recacheRecipe[recipeID] = true
 								results[recipeID] = nil
 							end
-
+						else
+							for itemID in pairs(results[recipeID]) do
+								knownItems[itemID] = true
+							end
 						end
 					end
 				else
@@ -1035,25 +1058,10 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		if player == "All Recipes" then return true end
 
 		player = player or self.player
---[[
-		local tradeID = GnomeWorksDB.tradeIDs[recipeID]
 
-		local tradeLink = self.data.playerData[player].links[tradeID]
-
-		if tradeLink and self.libTS then
-			return self.libTS:CheckForSpell(tradeLink, recipeID)
-		else
-			return true
-		end
-
-		return false
-]]
---print("isSpellKnown",recipeID,player,self:GetRecipeName(recipeID))
-		if self.data.knownSpells[player][recipeID] then
---print(GnomeWorks:GetRecipeName(recipeID),"is known")
+		if self.data.knownSpells[player] and self.data.knownSpells[player][recipeID] then
 			return true
 		else
---print("no")
 			return false
 		end
 	end
