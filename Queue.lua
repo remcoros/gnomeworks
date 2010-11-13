@@ -181,7 +181,7 @@ do
 
 				elseif reagent.command == "create" then
 					local itemID = reagent.itemID
-					local resultsReagent,reagentsReagent = GnomeWorks:GetRecipeData(reagent.recipeID,player)
+					local resultsReagent,reagentsReagent,tradeID = GnomeWorks:GetRecipeData(reagent.recipeID,player)
 
 					local numAvailable = GnomeWorks:InventoryRecipeIterations(reagent.recipeID, player, "bag queue") * resultsReagent[itemID]
 
@@ -207,6 +207,15 @@ do
 
 					for itemID,numMade in pairs(resultsReagent) do
 						GnomeWorks:ReserveItemForQueue(player, itemID, -numMade * reagent.count)
+					end
+
+					if tradeID == 100001 then					-- vendor conversion
+						local vendorQueue = GnomeWorks.data.vendorQueue[player]
+						vendorQueue[itemID] = (vendorQueue[itemID] or 0) + reagent.count
+
+						if vendorQueue[itemID] == 0 then
+							vendorQueue[itemID] = nil
+						end
 					end
 				end
 			end
