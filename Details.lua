@@ -151,7 +151,7 @@ do
 							GameTooltip:Hide()
 						end,
 			draw =	function (rowFrame,cellFrame,entry)
-						cellFrame.text:SetFormattedText(" |T%s:%d:%d:0:-2|t %s%s", entry.icon or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,entry.color,entry.name or "item:"..entry.itemID)
+						cellFrame.text:SetFormattedText(" |T%s:%d:%d:0:-2|t %s%s", entry.icon or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,entry.color,entry.name or "item:"..(entry.itemID or "??"))
 					end,
 		}, -- [2]
 		{

@@ -507,6 +507,10 @@ do
 
 		GnomeWorks:RecipeGroupClearEntries(mainGroup)
 
+
+		api.RecordKnownSpells(player)
+
+
 		local bracketGroup = {}
 
 		for i = 1, #reagentBrackets do

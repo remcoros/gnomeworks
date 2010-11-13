@@ -57,6 +57,8 @@ Inventory.lua
 GetTradeSkill.lua
 LinkDecode.lua
 ShoppingList.lua
+Guild.lua
+
 
 PseudoTrades\CommonSkills.lua
 PseudoTrades\Disenchanting.lua

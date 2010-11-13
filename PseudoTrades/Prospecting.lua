@@ -175,6 +175,9 @@ do
 
 		trade.skillList = skillList
 
+
+		api.RecordKnownSpells((UnitName("player")))
+
 		return true
 	end)
 
@@ -339,6 +342,8 @@ do
 		local groupList = {}
 
 		local numHeaders = 0
+
+		api.RecordKnownSpells(player)
 
 		for i = 1, #skillList, 1 do
 			local subSpell, extra
