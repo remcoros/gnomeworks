@@ -121,12 +121,7 @@ do
 	local function AdjustQueueCounts(player, entry)
 		if entry.subGroup then
 			local count = entry.count
---			local reagents = GnomeWorksDB.reagents[entry.recipeID]
---			local results = GnomeWorksDB.results[entry.recipeID]
 			local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,player)
-if not results or not reagents then
-	print(results, reagents, entry.recipeID, GnomeWorks:GetRecipeName(entry.recipeID))
-end
 
 			if entry.reserved then
 				for itemID, numNeeded in pairs(reagents) do
@@ -138,6 +133,8 @@ end
 
 			for k,reagent in ipairs(entry.subGroup.entries) do
 				if reagent.command == "collect" then
+					local sourceQueue
+
 					local itemID = reagent.itemID
 
 					local numAvailable = LARGE_NUMBER
@@ -149,9 +146,14 @@ end
 							numAvailable = GnomeWorks:GetInventoryCountExclusive(itemID, "faction", "bank", player)
 						end
 
---						local sourceQueue = reagent.source.."Queue"
+						sourceQueue = GnomeWorks.data[reagent.source.."Queue"][player]
+
 --print((GetItemInfo(itemID)),GnomeWorks.data[sourceQueue][player][itemID] or 0)
---						numAvailable = numAvailable - (GnomeWorks.data[sourceQueue][player][itemID] or 0)
+						numAvailable = numAvailable - (sourceQueue[itemID] or 0)
+					elseif GnomeWorks:VendorSellsItem(reagent.itemID) then
+						sourceQueue = GnomeWorks.data.vendorQueue[player]
+					else
+						sourceQueue = GnomeWorks.data.auctionQueue[player]
 					end
 
 					local stillNeeded = ((reagents and reagents[itemID]) or 1) * entry.count - (entry.reserved and entry.reserved[itemID] or 0)
@@ -163,7 +165,13 @@ end
 					reagent.count = math.ceil(numAvailable)
 
 					if entry.reserved then
-						entry.reserved[itemID] = (entry.reserved[itemID]) + reagent.count
+						entry.reserved[itemID] = (entry.reserved[itemID] or 0) + reagent.count
+					end
+
+					if sourceQueue then
+						if sourceQueue[itemID] or reagent.count>0 then
+							sourceQueue[itemID] = (sourceQueue[itemID] or 0) + reagent.count
+						end
 					end
 
 				elseif reagent.command == "create" then
@@ -202,19 +210,6 @@ end
 				if entry.command == "create" then
 					entry.numCraftable = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "bag queue")
 
---[[
-					local numAvailable = GnomeWorks:GetInventoryCount(entry.itemID, player, "bag queue")
-
-
-
-					entry.count = math.ceil((entry.numNeeded - numAvailable)/entry.results[entry.itemID])
-
-					if entry.count < 0 then
-						entry.count = 0
-					end
-
-					entry.noHide = true
-]]
 					AdjustQueueCounts(player, entry)
 
 					if entry.subGroup then
@@ -707,15 +702,16 @@ end
 
 			self.data.inventoryData[player].queue = table.wipe(self.data.inventoryData[player].queue or {})
 
-			ReserveReagentsIntoQueue(player, self.data.queueData[player])
-
 			self.data.vendorQueue[player] = table.wipe(self.data.vendorQueue[player] or {})
 			self.data.auctionQueue[player] = table.wipe(self.data.auctionQueue[player] or {})
 			self.data.bankQueue[player] = table.wipe(self.data.bankQueue[player] or {})
 			self.data.guildBankQueue[player] = table.wipe(self.data.guildBankQueue[player] or {})
 			self.data.altQueue[player] = table.wipe(self.data.altQueue[player] or {})
 
-			BuildSourceQueues(player, self.data.queueData[player])
+
+			ReserveReagentsIntoQueue(player, self.data.queueData[player])
+
+--			BuildSourceQueues(player, self.data.queueData[player])
 
 			self:SendMessageDispatch("GnomeWorksQueueCountsChanged")
 

@@ -248,7 +248,7 @@ do
 
 					local tipLines = tooltipRecipeCache[recipeID]
 
-					for w in string.gmatch(textFilter, "%a+") do
+					for w in string.gmatch(textFilter, "%S+") do
 						local found
 
 						for i=1, tipLines do
@@ -268,7 +268,7 @@ do
 						end
 					end
 				else
-					for w in string.gmatch(textFilter, "%a+") do
+					for w in string.gmatch(textFilter, "%S+") do
 						local found
 						local recipeName = string.lower(GnomeWorks:GetRecipeName(recipeID))
 
