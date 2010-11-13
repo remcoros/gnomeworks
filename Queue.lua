@@ -132,6 +132,10 @@ do
 			end
 
 			for k,reagent in ipairs(entry.subGroup.entries) do
+
+				reagent.parent = entry.subGroup.entries
+
+
 				if reagent.command == "collect" then
 					local sourceQueue
 
@@ -169,6 +173,7 @@ do
 					end
 
 					if sourceQueue then
+--print(entry,k,(GetItemInfo(itemID)),reagent.source,reagent.count, sourceQueue[itemID] or 0)
 						if sourceQueue[itemID] or reagent.count>0 then
 							sourceQueue[itemID] = (sourceQueue[itemID] or 0) + reagent.count
 						end
@@ -177,10 +182,10 @@ do
 				elseif reagent.command == "create" then
 					local itemID = reagent.itemID
 					local resultsReagent,reagentsReagent = GnomeWorks:GetRecipeData(reagent.recipeID,player)
-if not resultsReagent then
-	print(GetItemInfo(reagent.itemID or 0) or reagent.itemID, reagent.recipeID, reagent.command)
-end
+
 					local numAvailable = GnomeWorks:InventoryRecipeIterations(reagent.recipeID, player, "bag queue") * resultsReagent[itemID]
+
+					reagent.numCraftable = numAvailable
 
 					local stillNeeded = ((reagents and reagents[itemID]) or 1) * entry.count - (entry.reserved and entry.reserved[itemID] or 0)
 
@@ -191,10 +196,18 @@ end
 					reagent.count = math.ceil(stillNeeded / resultsReagent[reagent.itemID])
 
 					if entry.reserved then
-						entry.reserved[itemID] = (entry.reserved[itemID]) + reagent.count * resultsReagent[itemID]
+						entry.reserved[itemID] = (entry.reserved[itemID] or 0) + reagent.count * resultsReagent[itemID]
 					end
 
 					AdjustQueueCounts(player, reagent)
+
+					for itemID,numNeeded in pairs(reagentsReagent) do
+						GnomeWorks:ReserveItemForQueue(player, itemID, numNeeded * reagent.count)
+					end
+
+					for itemID,numMade in pairs(resultsReagent) do
+						GnomeWorks:ReserveItemForQueue(player, itemID, -numMade * reagent.count)
+					end
 				end
 			end
 		end
@@ -202,6 +215,33 @@ end
 
 
 	local function ReserveReagentsIntoQueue(player, queue)
+--print("RESERVE", player, queue)
+		if queue then
+			for k,entry in ipairs(queue) do
+				entry.parent = queue
+
+				if entry.command == "create" then
+					entry.numCraftable = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "bag queue")
+
+					AdjustQueueCounts(player, entry)
+
+					local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,player)
+
+					for itemID,numNeeded in pairs(reagents) do
+						GnomeWorks:ReserveItemForQueue(player, itemID, numNeeded * entry.count)
+					end
+
+					for itemID,numMade in pairs(results) do
+--						GnomeWorks:ReserveItemForQueue(player, itemID, -numMade * entry.count)
+					end
+				end
+			end
+		end
+	end
+
+
+
+	local function ReserveReagentsIntoQueueOLD(player, queue)
 --print("RESERVE", player, queue)
 		if queue then
 			for k,entry in ipairs(queue) do
@@ -312,6 +352,51 @@ end
 	end
 
 
+	local function AddEntryToQueue(entry, queueData)
+		local queueAdded
+
+		for i=1,#queueData do
+			if entry.command == "create" and queueData[i].command == "create" and queueData[i].recipeID == entry.recipeID then
+				local results,reagents = GnomeWorks:GetRecipeData(queueData[i].recipeID,player)
+
+				queueData[i].count = queueData[i].count + entry.count
+
+				queueData[i].numNeeded = queueData[i].count * results[queueData[i].itemID]
+
+				queueAdded = true
+
+				queueData[i].control[#queueData[i].control+1] = entry
+
+				break
+			end
+
+			if entry.command == "collect" and queueData[i].command == "collect" and queueData[i].itemID == entry.itemID and queueData[i].source == entry.source then
+				queueData[i].count = queueData[i].count + entry.count
+
+				queueData[i].control[#queueData[i].control+1] = entry
+
+				queueAdded = true
+			end
+		end
+
+		if not queueAdded then
+			local newEntry = {
+				index = #queueData,
+				command = entry.command,
+				itemID = entry.itemID,
+				recipeID = entry.recipeID,
+				source = entry.source,
+				count = entry.count,
+				control = {entry},
+				manualEntry = entry.manualEntry,
+			}
+
+			queueData[#queueData+1] = newEntry
+		end
+	end
+
+
+
 	local recursionLimiter = {}
 	local cooldownUsed = {}
 
@@ -323,6 +408,37 @@ end
 		recursionLimiter[reagentID] = true
 
 		local source = GnomeWorks.data.itemSource
+
+
+
+		local stillNeeded = numNeeded - GnomeWorks:GetInventoryCount(reagentID, player, "bag")
+
+		for k,inv in pairs(collectInventories) do
+			local numAvailable = LARGE_NUMBER
+
+			if inv ~= "alt" then
+				numAvailable = GnomeWorks:GetInventoryCountExclusive(reagentID, player, inv)
+			else
+				numAvailable = GnomeWorks:GetInventoryCountExclusive(reagentID, "faction", "bank", player)
+			end
+
+			if numAvailable > stillNeeded then
+				numAvailable = stillNeeded
+			end
+
+
+			table.insert(queue.subGroup.entries, InitReagentEntry(#queue.subGroup.entries+1, reagentID, numNeeded, numAvailable,inv))
+
+
+			stillNeeded = stillNeeded - numAvailable
+
+--				stillNeeded = stillNeeded - GnomeWorks:GetInventoryCount(reagentID, player, inv)
+
+			if stillNeeded < 0 then
+				stillNeeded = 0
+			end
+		end
+
 
 		if source[reagentID] then
 			local craftingOptions = 0
@@ -423,42 +539,19 @@ end
 					end
 				end)
 
+				local indexStart = #queue.subGroup.entries
+
 				for i=1,#craftOptions do
+					craftOptions[i].index = i + indexStart
+
 					table.insert(queue.subGroup.entries, craftOptions[i])
+
+--					AddEntryToQueue(craftOptions[i], queue.subGroup.entries)
 
 					queue.subGroup.entries[i].parent = queue.subGroup.entries
 				end
-			else
-				local stillNeeded = numNeeded - GnomeWorks:GetInventoryCount(reagentID, player, "bag")
-
-				for k,inv in pairs(collectInventories) do
-					local numAvailable = LARGE_NUMBER
-
-					if inv ~= "alt" then
-						numAvailable = GnomeWorks:GetInventoryCountExclusive(reagentID, player, inv)
-					else
-						numAvailable = GnomeWorks:GetInventoryCountExclusive(reagentID, "faction", "bank", player)
-					end
-
-					if numAvailable > stillNeeded then
-						numAvailable = stillNeeded
-					end
-
-
-					table.insert(queue.subGroup.entries, InitReagentEntry(#queue.subGroup.entries+1, reagentID, numNeeded, numAvailable,inv))
-
-
-					stillNeeded = stillNeeded - numAvailable
-
-	--				stillNeeded = stillNeeded - GnomeWorks:GetInventoryCount(reagentID, player, inv)
-
-					if stillNeeded < 0 then
-						stillNeeded = 0
-					end
-				end
-
-				table.insert(queue.subGroup.entries, InitReagentEntry(#queue.subGroup.entries+1, reagentID, numNeeded, stillNeeded))
 			end
+--[[
 		else
 			local stillNeeded = numNeeded - GnomeWorks:GetInventoryCount(reagentID, player, "bag")
 
@@ -489,7 +582,10 @@ end
 			end
 
 			table.insert(queue.subGroup.entries, InitReagentEntry(#queue.subGroup.entries+1, reagentID, numNeeded, stillNeeded))
+]]
 		end
+
+		table.insert(queue.subGroup.entries, InitReagentEntry(#queue.subGroup.entries+1, reagentID, numNeeded, stillNeeded))
 
 
 --		if cooldownGroup then
@@ -642,7 +738,7 @@ end
 
 
 
-	function BuildFlatQueueOLD(flatQueue, queue)
+	local function BuildFlatQueueOLD(flatQueue, queue)
 		local reagentList = {}
 
 		for k,entry in pairs(queue) do
@@ -679,7 +775,32 @@ end
 	end
 
 
---	function BuildFlatQueue(flatQueue, queue)
+--[[
+		local newEntry = {
+			index = index,
+			command = "collect",
+			itemID = reagentID,
+			numNeeded = numNeeded,
+			count=count,
+			source=source,
+		}
+]]
+
+
+
+
+	local function BuildFlatQueue(flatQueue, queue)
+		for k,entry in pairs(queue) do
+			if entry.subGroup then
+				BuildFlatQueue(flatQueue, entry.subGroup.entries)
+			end
+
+			if entry.count > 0 then
+--print("add",(GetItemInfo(entry.itemID)),entry.count,entry.source)
+				AddEntryToQueue(entry,flatQueue)
+			end
+		end
+	end
 
 
 	function GnomeWorks:ShowQueueList(player)
@@ -717,24 +838,25 @@ end
 
 			sf.data.entries = self.data.queueData[player]
 
---[[
-			if not self.data.flatQueue then
-				self.data.flatQueue = {}
+
+			if GnomeWorksDB.config.queueLayoutFlat then
+				if not self.data.flatQueue then
+					self.data.flatQueue = {}
+				end
+
+				self.data.flatQueue[player] = table.wipe(self.data.flatQueue[player] or {})
+
+
+				BuildFlatQueue(self.data.flatQueue[player], self.data.queueData[player])
+
+
+				sf.data.entries = self.data.flatQueue[player]
 			end
-
-			self.data.flatQueue[player] = table.wipe(self.data.flatQueue[player] or {})
-
-
-			BuildFlatQueue(self.data.flatQueue[player], self.data.queueData[player])
-
-
-			sf.data.entries = self.data.flatQueue[player]
-
 
 --			self.data.inventoryData[player].queue = table.wipe(self.data.inventoryData[player].queue or {})
 
 --			ReserveReagentsIntoQueue(player, self.data.flatQueue[player])
-]]
+
 
 
 
@@ -914,8 +1036,9 @@ end
 
 		local function ClearQueue()
 			table.wipe(GnomeWorks.data.queueData[queuePlayer])
-			table.wipe(GnomeWorks.data.inventoryData[queuePlayer]["queue"])
+			table.wipe(GnomeWorks.data.inventoryData[queuePlayer].queue)
 
+			GnomeWorks:InventoryScan()
 
 			GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
 			GnomeWorks:SendMessageDispatch("GnomeWorksDetailsChanged")
@@ -1172,10 +1295,51 @@ end
 			if a.parent == b.parent then
 				local p = a.parent
 
-				p[a.index], p[b.index] = p[b.index], p[a.index]
+				if a.index < b.index then
+					table.remove(p,b.index)
+					table.insert(p,a.index,b)
+				else
+					table.remove(p,a.index)
+					table.insert(p,b.index,a)
+				end
 
-				a.index, b.index = b.index, a.index
+				for k,v in ipairs(p) do
+					v.index = k
+				end
+
 				a.expanded, b.expanded = b.expanded, a.expanded
+			else
+				if b.control then
+					for i,entry in ipairs(b.control) do
+--print(i,entry.command,GnomeWorks:GetRecipeName(entry.recipeID))
+
+						if entry.itemID == b.itemID then
+							local p = entry.parent
+							local swapEntry
+							local swapIndex
+
+							for k,subEntry in ipairs(p) do
+	--print(i,k,subEntry.command,(GetItemInfo(subEntry.itemID)),subEntry.source)
+								if subEntry.command == a.command and subEntry.itemID == a.itemID and subEntry.recipeID == a.recipeID and subEntry.source == a.source then
+									swapEntry = subEntry
+									swapIndex = k
+									break
+								end
+							end
+
+							if swapEntry then
+								table.remove(p,swapIndex)
+								table.insert(p,1,swapEntry)
+
+								for k,v in ipairs(p) do
+									v.index = k
+								end
+							else
+								print("error reordering recipes!")
+							end
+						end
+					end
+				end
 			end
 		end
 
@@ -1269,7 +1433,7 @@ end
 									GameTooltip:ClearLines()
 
 
-									if entry.itemID then
+									if false and entry.itemID then
 										GameTooltip:AddLine(select(2,GetItemInfo(entry.itemID)))
 
 										local required = entry.numNeeded
@@ -1332,7 +1496,7 @@ end
 												end
 											end
 										end
-									else
+									elseif entry.recipeID then
 										GameTooltip:AddLine(GetSpellLink(entry.recipeID))
 										GameTooltip:AddDoubleLine("Requested", entry.count)
 										GameTooltip:AddDoubleLine("Craftable", entry.numCraftable)
@@ -1402,7 +1566,7 @@ end
 			},
 			recipeMenuCrafted = {
 				{
-					text = "Select Recipe Source",
+					text = "Select Item Source",
 					notCheckable = true,
 					hasArrow = true,
 				},
@@ -1415,45 +1579,66 @@ end
 									entry.subGroup.expanded = not entry.subGroup.expanded
 									sf:Refresh()
 								else
-									if entry.recipeID then
-										if button == "LeftButton" then
+									if button == "LeftButton" then
+										if entry.recipeID then
 											GnomeWorks:PushSelection()
 											GnomeWorks:SelectRecipe(entry.recipeID)
-										else
-											if entry.manualEntry then
-												local recipeMenu = cellFrame.header.recipeMenuManualEntry
+										end
+									elseif button == "RightButton" then
+										if entry.manualEntry then
+											local recipeMenu = cellFrame.header.recipeMenuManualEntry
 
-												for i=1,#recipeMenu do
-													recipeMenu[i].arg1 = entry
-												end
-
-												ColumnControl(cellFrame, button, source, "recipeMenuManualEntry")
-											else
-												local recipeMenu = cellFrame.header.recipeMenuCrafted
-
-												local sortMenu = {}
-
---												for recipeID in pairs(GnomeWorks.data.itemSource[entry.itemID]) do
-												for k,subEntry in ipairs(entry.parent) do
-													if subEntry.command == "create" then
-														local menuEntry = {}
-
-														local results = GnomeWorks:GetRecipeData(subEntry.recipeID)
-
-														menuEntry.text = math.ceil(subEntry.numNeeded / results[subEntry.itemID]).." x "..GnomeWorks:GetRecipeName(subEntry.recipeID)
-														menuEntry.checked = subEntry == entry
-														menuEntry.arg1 = subEntry
-														menuEntry.arg2 = entry
-														menuEntry.func = OpQueueRecipeSwap
-
-														sortMenu[#sortMenu+1] = menuEntry
-													end
-												end
-
-												recipeMenu[1].menuList = sortMenu
-
-												ColumnControl(cellFrame, button, source, "recipeMenuCrafted")
+											for i=1,#recipeMenu do
+												recipeMenu[i].arg1 = entry
 											end
+
+											ColumnControl(cellFrame, button, source, "recipeMenuManualEntry")
+										else
+											local recipeMenu = cellFrame.header.recipeMenuCrafted
+
+											local sortMenu = {}
+
+--											for recipeID in pairs(GnomeWorks.data.itemSource[entry.itemID]) do
+											local list = entry.parent
+
+											list = list or entry.control[1].parent
+
+											for k,subEntry in ipairs(list) do
+												if (subEntry.command == "create" or subEntry.command == "collect") and subEntry.itemID == entry.itemID then
+													local menuEntry = {}
+
+													local results = GnomeWorks:GetRecipeData(subEntry.recipeID)
+
+													if subEntry.command == "create" then
+														menuEntry.text = math.ceil(subEntry.numNeeded / results[subEntry.itemID]).." x "..GnomeWorks:GetRecipeName(subEntry.recipeID)
+													else
+														local c = "|cffb0b000"
+
+														local itemName = GetItemInfo(entry.itemID) or "item:"..entry.itemID
+
+														if GnomeWorks:VendorSellsItem(entry.itemID) then
+															c = "|cff00b000"
+														end
+
+														if not subEntry.source then
+															menuEntry.text = string.format("%d x %sPurchase|r |cffc0c0c0%s",entry.numNeeded or entry.count,c,itemName)
+														else
+															menuEntry.text = string.format("%d x %sFrom %s%s|r |cffc0c0c0%s",entry.numNeeded or entry.count,c, inventoryColors[subEntry.source],subEntry.source,itemName)
+														end
+													end
+													menuEntry.checked = subEntry == entry
+													menuEntry.arg1 = subEntry
+													menuEntry.arg2 = entry
+													menuEntry.func = OpQueueRecipeSwap
+
+													sortMenu[#sortMenu+1] = menuEntry
+												end
+											end
+
+											recipeMenu[1].text = string.format("Select Source for %s x %d",(GetItemInfo(entry.itemID) or "item:"..entry.itemID),entry.numNeeded or entry.count)
+											recipeMenu[1].menuList = sortMenu
+
+											ColumnControl(cellFrame, button, source, "recipeMenuCrafted")
 										end
 									end
 								end
@@ -1513,8 +1698,6 @@ end
 							local name, rank, icon = GnomeWorks:GetTradeInfo(entry.recipeID)
 
 
-
-
 							if entry.manualEntry then
 								if entry.sourcePlayer then
 									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t %s (%s)",icon or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,GnomeWorks:GetRecipeName(entry.recipeID), entry.sourcePlayer)
@@ -1537,7 +1720,7 @@ end
 								local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,GnomeWorks.player)
 
 								if entry.command == "create" and results[entry.itemID] ~= 1 then
-									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t |cffd0d090 %s (x%d)",icon or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,GnomeWorks:GetRecipeName(entry.recipeID),results[entry.itemID])
+									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t |cffd0d090 %s (%sx%d)",icon or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,GnomeWorks:GetRecipeName(entry.recipeID),(GetItemInfo(entry.itemID)),entry.count * results[entry.itemID])
 								else
 									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t |cffd0d090 %s",icon or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,GnomeWorks:GetRecipeName(entry.recipeID))
 								end
@@ -1623,7 +1806,7 @@ end
 		queueFrame = CreateFrame("Frame",nil,frame)
 		queueFrame:SetPoint("LEFT",20,0)
 		queueFrame:SetPoint("BOTTOM",frame,"CENTER",0,-25)
-		queueFrame:SetPoint("TOP", frame, 0, -45)
+		queueFrame:SetPoint("TOP", frame, 0, -60)
 		queueFrame:SetPoint("RIGHT", frame, -20,0)
 
 
@@ -1726,7 +1909,7 @@ end
 		frame:DockWindow(self.MainWindow)
 
 
-		frame:SetMinResize(300,200)
+		frame:SetMinResize(300,300)
 
 		BuildQueueScrollingFrame()
 
@@ -1758,6 +1941,62 @@ end
 
 
 		self:RegisterMessageDispatch("GnomeWorksQueueChanged GnomeWorksTradeScanComplete GnomeWorksInventoryScanComplete", function() if frame:IsShown() then GnomeWorks:ShowQueueList() end end)
+
+
+		local LayoutMenu = {
+			{ text = "Grouped", func = function() GnomeWorksDB.config.queueLayoutFlat = nil GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged") frame.layoutSelection:SetText("Layout: Grouped") end },
+			{ text = "Flat", func = function() GnomeWorksDB.config.queueLayoutFlat = true GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged") frame.layoutSelection:SetText("Layout: Flat") end },
+		}
+
+
+		local function AdjustQueueLayout(frame)
+			if GnomeWorksDB.config.queueLayoutFlat then
+				LayoutMenu[1].checked = false
+				LayoutMenu[2].checked = true
+			else
+				LayoutMenu[1].checked = true
+				LayoutMenu[2].checked = false
+			end
+
+			local x, y = GetCursorPosition()
+			local uiScale = UIParent:GetEffectiveScale()
+
+--			EasyMenu(LayoutMenu, GnomeWorksMenuFrame, UIParent, x/uiScale, y/uiScale, "MENU", 5)
+
+			GnomeWorksDB.config.queueLayoutFlat = not GnomeWorksDB.config.queueLayoutFlat
+
+			if GnomeWorksDB.config.queueLayoutFlat then
+				frame:SetText("Layout: Flat")
+			else
+				frame:SetText("Layout: Grouped")
+			end
+
+			GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
+		end
+
+		local layoutSelection = CreateFrame("Button", nil, frame)
+		layoutSelection:SetPoint("BOTTOMLEFT",frame,"TOPLEFT",20,-45)
+		layoutSelection:SetPoint("RIGHT", frame,"RIGHT",-20,0)
+		layoutSelection:SetHeight(16)
+
+		if GnomeWorksDB.config.queueLayoutFlat then
+			layoutSelection:SetText("Layout: Flat")
+		else
+			layoutSelection:SetText("Layout: Grouped")
+		end
+
+		layoutSelection:SetNormalFontObject("GameFontNormal")
+		layoutSelection:SetHighlightFontObject("GameFontHighlight")
+
+		layoutSelection:EnableMouse(true)
+
+		layoutSelection:RegisterForClicks("AnyUp")
+
+		layoutSelection:SetScript("OnClick", AdjustQueueLayout)
+
+		layoutSelection:SetFrameLevel(layoutSelection:GetFrameLevel()+1)
+
+		frame.layoutSelection = layoutSelection
 
 
 		local control = CreateControlButtons(frame)
