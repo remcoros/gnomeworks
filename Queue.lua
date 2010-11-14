@@ -372,9 +372,9 @@ do
 
 				queueData[i].numNeeded = queueData[i].count * results[queueData[i].itemID]
 
-				queueAdded = true
-
 				queueData[i].control[#queueData[i].control+1] = entry
+
+				queueAdded = true
 
 				break
 			end
@@ -845,21 +845,20 @@ do
 
 			self:SendMessageDispatch("GnomeWorksQueueCountsChanged")
 
-			sf.data.entries = self.data.queueData[player]
+			if not self.data.flatQueue then
+				self.data.flatQueue = {}
+			end
+
+			self.data.flatQueue[player] = table.wipe(self.data.flatQueue[player] or {})
+
+
+			BuildFlatQueue(self.data.flatQueue[player], self.data.queueData[player])
 
 
 			if GnomeWorksDB.config.queueLayoutFlat then
-				if not self.data.flatQueue then
-					self.data.flatQueue = {}
-				end
-
-				self.data.flatQueue[player] = table.wipe(self.data.flatQueue[player] or {})
-
-
-				BuildFlatQueue(self.data.flatQueue[player], self.data.queueData[player])
-
-
 				sf.data.entries = self.data.flatQueue[player]
+			else
+				sf.data.entries = self.data.queueData[player]
 			end
 
 --			self.data.inventoryData[player].queue = table.wipe(self.data.inventoryData[player].queue or {})
@@ -886,15 +885,18 @@ do
 		if queue then
 			for k,q in pairs(queue) do
 				if q.command == "create" and (q.count or 0) > 0 then
-					if GnomeWorks:InventoryRecipeIterations(q.recipeID, queuePlayer, "bag")>0 then
-						return q
+					local count = GnomeWorks:InventoryRecipeIterations(q.recipeID, queuePlayer, "bag")
+					if count>0 then
+						return q, count
 					end
 				end
 
 				if q.subGroup then
-					local f = FirstCraftableEntry(q.subGroup.entries)
+					local first,count = FirstCraftableEntry(q.subGroup.entries)
 
-					if f then return f end
+					if first then
+						return first,count
+					end
 				end
 			end
 		end
@@ -980,11 +982,21 @@ do
 
 	local function CreateControlButtons(frame)
 		local function ProcessQueue()
-			local entry = FirstCraftableEntry(GnomeWorks.data.queueData[queuePlayer])
+			local entry, craftable
+
+			if GnomeWorksDB.config.queueLayoutFlat then
+				entry, craftable = FirstCraftableEntry(GnomeWorks.data.flatQueue[queuePlayer])
+			else
+				entry, craftable = FirstCraftableEntry(GnomeWorks.data.queueData[queuePlayer])
+			end
+
+
 
 			if entry then
 --				local tradeID = GnomeWorksDB.tradeIDs[entry.recipeID]
 				local _,_,tradeID = GnomeWorks:GetRecipeData(entry.recipeID)
+
+				local numRepeat = math.min(craftable, entry.count)
 
 				if GnomeWorks:IsPseudoTrade(tradeID) then
 --					GnomeWorks:print(GnomeWorks:GetTradeName(tradeID),"isn't functional yet.")
@@ -997,7 +1009,6 @@ do
 							end
 						end
 					end
-
 				else
 --				print(entry.recipeID, GnomeWorks:GetRecipeName(entry.recipeID), entry.count, entry.numAvailable)
 					if GetSpellLink((GetSpellInfo(tradeID))) then
@@ -1025,8 +1036,8 @@ do
 
 						if skillIndex then
 							doTradeEntry = entry
-							GnomeWorks:print("executing",GnomeWorks:GetRecipeName(entry.recipeID),"x",math.min(entry.count, entry.numCraftable))
-							DoTradeSkill(skillIndex,math.min(entry.count, entry.numCraftable))
+							GnomeWorks:print("executing",GnomeWorks:GetRecipeName(entry.recipeID),"x",numRepeat)
+							DoTradeSkill(skillIndex,numRepeat>=1 and numRepeat)
 						else
 							doTradeEntry = nil
 							GnomeWorks:print("can't find recipe:",GnomeWorks:GetRecipeName(entry.recipeID))
@@ -1070,7 +1081,9 @@ do
 				button:Disable()
 				button:Show()
 
-				button.secure:Hide()
+				if not InCombatLockdown() then
+					button.secure:Hide()
+				end
 
 				EditMacro("GWProcess", "GWProcess", 977, "", false, false)
 			elseif entry then
@@ -1087,16 +1100,21 @@ do
 					macroText = pseudoTrade.ConfigureMacroText(entry.recipeID)
 					doTradeEntry = entry
 
-					button.secure:Show()
-					button.secure:SetAttribute("type", "macro")
-					button.secure:SetAttribute("macrotext", macroText)
+					if not InCombatLockdown() then
+						button.secure:Show()
+						button.secure:SetAttribute("type", "macro")
+						button.secure:SetAttribute("macrotext", macroText)
+					end
 
 					EditMacro("GWProcess", "GWProcess", 977, macroText, false, false)				-- 97, 7
 				elseif tradeID then
 					button:SetScript("OnClick", ProcessQueue)
-					button.secure:Hide()
 
-					EditMacro("GWProcess", "GWProcess", 977, "/click GWProcess", false, false)
+					if not InCombatLockdown() then
+						button.secure:Hide()
+
+						EditMacro("GWProcess", "GWProcess", 977, "/click GWProcess", false, false)
+					end
 --[[
 					local spellName = GetSpellInfo(entry.recipeID)
 
@@ -1382,15 +1400,29 @@ do
 
 
 	local function OpMoveQueueEntryToBottom(button,entry)
-		OpDeleteQueueEntry(button, entry)
-		table.insert(GnomeWorks.data.queueData[queuePlayer], entry)
+		if entry.control then
+			for k,entry in ipairs(entry.control) do
+				OpDeleteQueueEntry(button, entry)
+				table.insert(GnomeWorks.data.queueData[queuePlayer], entry)
+			end
+		else
+			OpDeleteQueueEntry(button, entry)
+			table.insert(GnomeWorks.data.queueData[queuePlayer], entry)
+		end
 
 		GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged GnomeWorksSkillListChanged GnomeWorksDetailsChanged")
 	end
 
 	local function OpMoveQueueEntryToTop(button,entry)
-		OpDeleteQueueEntry(button, entry)
-		table.insert(GnomeWorks.data.queueData[queuePlayer], 1, entry)
+		if entry.control then
+			for k,entry in ipairs(entry.control) do
+				OpDeleteQueueEntry(button, entry)
+				table.insert(GnomeWorks.data.queueData[queuePlayer], 1, entry)
+			end
+		else
+			OpDeleteQueueEntry(button, entry)
+			table.insert(GnomeWorks.data.queueData[queuePlayer], 1, entry)
+		end
 
 		GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged GnomeWorksSkillListChanged GnomeWorksDetailsChanged")
 	end
@@ -1632,7 +1664,7 @@ do
 														if not subEntry.source then
 															menuEntry.text = string.format("%d x %sPurchase|r |cffc0c0c0%s",entry.numNeeded or entry.count,c,itemName)
 														else
-															menuEntry.text = string.format("%d x %sFrom %s%s|r |cffc0c0c0%s",entry.numNeeded or entry.count,c, inventoryColors[subEntry.source],subEntry.source,itemName)
+															menuEntry.text = string.format("%d x %sFrom %s|r |cffc0c0c0%s",entry.numNeeded or entry.count, inventoryColors[subEntry.source],subEntry.source,itemName)
 														end
 													end
 													menuEntry.checked = subEntry == entry
@@ -1672,6 +1704,12 @@ do
 							end
 						end,
 			draw =	function (rowFrame,cellFrame,entry)
+						if entry.control and not entry.manualEntry then
+							entry.depth = 2
+						else
+							entry.depth = 0
+						end
+
 						cellFrame.text:SetPoint("LEFT", cellFrame, "LEFT", entry.depth*8+4+12, 0)
 						cellFrame.button:SetPoint("LEFT", cellFrame, "LEFT", entry.depth*8, 0)
 						local craftable
@@ -1766,7 +1804,7 @@ do
 								if not entry.source then
 									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t %sPurchase|r |cffc0c0c0%s", GetItemIcon(entry.itemID) or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,c,itemName)
 								else
-									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t %sFrom %s%s|r |cffc0c0c0%s", GetItemIcon(entry.itemID) or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,c, inventoryColors[entry.source],entry.source,itemName)
+									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t %sFrom %s|r |cffc0c0c0%s", GetItemIcon(entry.itemID) or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1, inventoryColors[entry.source],entry.source,itemName)
 								end
 							end
 --[[
