@@ -18,6 +18,13 @@ do
 		local reagentCostColumn
 		local reagentScrollFrame
 
+		local queueScrollFrame
+		local queueCostColumn
+
+		local shoppingListScrollFrame
+		local shoppingListCostColumn
+
+
 		local itemCache
 
 
@@ -45,7 +52,6 @@ do
 				end,
 			},
 		}
-
 
 
 
@@ -237,22 +243,38 @@ do
 
 
 
-		local function ReagentCost_Tooltip(itemID, numNeeded)
+		local function ReagentCost_Tooltip(itemID, recipeID, numNeeded, parentFrame)
 			local LSWTooltip = GameTooltip
 
-			LSWTooltip:SetOwner(LSW.parentFrame, "ANCHOR_NONE")
-			LSWTooltip:SetPoint("BOTTOMLEFT", LSW.parentFrame, "BOTTOMRIGHT")
+			LSWTooltip:SetOwner(parentFrame or LSW.parentFrame, "ANCHOR_NONE")
+			LSWTooltip:SetPoint("BOTTOMLEFT", parentFrame or LSW.parentFrame, "BOTTOMRIGHT")
 
 			local total = 0
 
 			local pad = ""
 
-
-			LSWTooltip:AddLine("Cost Breakdown for "..GetItemInfo(itemID))
-
 			local residualMaterials = {}
 
-			local total = LSW.buttonScripts.CostButton_AddItem(itemID, numNeeded, 1, residualMaterials)
+			if not recipeID and itemID > 0 then
+				LSWTooltip:AddLine("Cost Breakdown for "..(GetItemInfo(itemID) or itemID))
+
+				total = LSW.buttonScripts.CostButton_AddItem(itemID, numNeeded, 1, residualMaterials)
+			else
+--				local recipeID = -itemID
+
+				LSWTooltip:AddLine("Cost Breakdown for "..GnomeWorks:GetRecipeName(recipeID))
+
+				local results,reagents = GnomeWorks:GetRecipeData(recipeID)
+
+				if LSW.recipeCache.reagents[recipeID] then
+					local costAmount = LSW:GetSkillCost(recipeID)
+
+					for itemID, numNeeded in pairs(LSW.recipeCache.reagents[recipeID]) do
+						total = total + LSW.buttonScripts.CostButton_AddItem(itemID, numNeeded, 1, residualMaterials)
+					end
+				end
+
+			end
 
 			if LSWConfig.costBasis == COST_BASIS_PURCHASE then
 				LSWTooltip:AddDoubleLine("Total estimated purchase cost: ", LSW:FormatMoney(total,true).."  ")
@@ -332,7 +354,7 @@ do
 				if cellFrame:GetParent().rowIndex>0 then
 					local entry = cellFrame:GetParent().data
 
-					ReagentCost_Tooltip(entry.id, entry.numNeeded)
+					ReagentCost_Tooltip(entry.id, nil, entry.numNeeded)
 
 	--				cellFrame:SetID(entry.skillIndex)
 	--				LSW.buttonScripts.costButton.OnEnter(cellFrame)
@@ -347,11 +369,57 @@ do
 
 
 
+		local queueCostColumnHeader = {
+			name = "Cost",
+			width = 50,
+			headerAlign = "CENTER",
+			align = "RIGHT",
+			font = "GameFontHighlightSmall",
+	--		filterMenu = costFilterMenu,
+			sortCompare = function(a,b)
+				return (a.cost or 0) - (b.cost or 0)
+			end,
+			draw = function (rowFrame, cellFrame, entry)
+--				if not entry.subGroup then
+					cellFrame.text:SetText((LSW:FormatMoney(entry.cost,true) or "??"))
+--				else
+	--				cellFrame.text:SetText("")
+	--			end
+			end,
+			OnClick = function (cellFrame, button, source)
+				if cellFrame:GetParent().rowIndex>0 then
+					local entry = cellFrame:GetParent().data
+	--				cellFrame:SetID(entry.skillIndex)
+	--				LSW.buttonScripts.costButton.OnClick(cellFrame, button)
+				else
+					columnControl(cellFrame,button,source)
+				end
+			end,
+			OnEnter = function (cellFrame)
+				if cellFrame:GetParent().rowIndex>0 then
+					local entry = cellFrame:GetParent().data
+
+					ReagentCost_Tooltip(entry.itemID, entry.recipeID, entry.count, queueScrollFrame)
+
+	--				cellFrame:SetID(entry.skillIndex)
+	--				LSW.buttonScripts.costButton.OnEnter(cellFrame)
+				else
+					columnTooltip(cellFrame, "LSW Item Cost")
+				end
+			end,
+			OnLeave = function (cellFrame)
+				GameTooltip:Hide()
+			end,
+		}
+
+
+
 		local function updateData(scrollFrame, entry)
 			local skillName, skillType, itemLink, recipeLink, itemID, recipeID = LSW:GetTradeSkillData(entry.index)
 
 
 			if skillType ~= "header" then
+				LSW.UpdateSingleRecipePrice(entry.recipeID)
 				entry.value, entry.fate = LSW:GetSkillValue(entry.recipeID, globalFate)
 				entry.cost = LSW:GetSkillCost(entry.recipeID)
 			end
@@ -360,15 +428,20 @@ do
 
 		local function updateReagentData(scrollFrame, entry)
 			entry.cost = LSW:GetItemCost(entry.id) * entry.numNeeded
-	--[[
-			local skillName, skillType, itemLink, recipeLink, itemID, recipeID = LSW:GetTradeSkillData(entry.skillIndex)
-
-			if skillType ~= "header" then
-				entry.value, entry.fate = LSW:GetSkillValue(recipeID, globalFate)
-				entry.cost = LSW:GetSkillCost(recipeID)
-			end
-	]]
 		end
+
+
+		local function updateQueueData(scrollFrame, entry)
+			if entry.command == "create" then
+				LSW.UpdateSingleRecipePrice(entry.recipeID)
+
+				entry.cost = (LSW:GetSkillCost(entry.recipeID) or 0) * (entry.count)
+			else
+				entry.cost = LSW:GetItemCost(entry.itemID) * (entry.count)
+			end
+		end
+
+
 
 
 		local function refreshWindow()
@@ -380,6 +453,7 @@ do
 
 			scrollFrame:Refresh()
 			reagentScrollFrame:Refresh()
+			queueScrollFrame:Refresh()
 		end
 
 
@@ -409,6 +483,12 @@ do
 	--		GnomeWorks:CreateFilterMenu(costFilterParameters, reagentCostFilterMenu, reagentCostColumnHeader)
 
 
+			queueScrollFrame = GnomeWorks:GetQueueListScrollFrame()
+			queueScrollFrame:RegisterRowUpdate(updateQueueData, plugin)
+
+			queueCostColumn = queueScrollFrame:AddColumn(queueCostColumnHeader, plugin)
+
+
 
 			itemCache = LSW.itemCache
 
@@ -431,7 +511,7 @@ do
 
 					if scroll then
 						itemID = scroll.scrollID					-- for enchants, the item created is a scroll
-						scrollVellum = scroll.vellumID
+						scrollVellum = 38682
 					else
 						itemID = -recipeID
 					end
@@ -448,6 +528,36 @@ do
 
 			button.checked = function() return plugin.enabled end
 
+
+
+			local f = CreateFrame("Frame")
+
+			local function AddPseudoTradeRecipes()
+				local recipeList = GnomeWorks.data.pseudoTradeRecipes
+				local recipeCache = LSW.recipeCache
+
+				for recipeID, tradeID in pairs(recipeList) do
+					local results,reagents = GnomeWorks:GetRecipeData(recipeID)
+
+					recipeCache.reagents[recipeID] = reagents
+					recipeCache.results[recipeID] = results
+
+					for itemID in pairs(reagents) do
+						LSW.AddToItemCache(itemID)
+					end
+
+					for itemID,numMade in pairs(results) do
+						LSW.AddToItemCache(itemID, recipeID, numMade)
+					end
+				end
+
+				f:Hide()
+			end
+
+
+			f:RegisterEvent("TRADE_SKILL_SHOW")
+
+			f:SetScript("OnEvent", AddPseudoTradeRecipes)
 		end
 
 

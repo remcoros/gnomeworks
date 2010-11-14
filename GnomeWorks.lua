@@ -72,11 +72,16 @@ end
 do
 	local dispatchTable = {}
 
-	function GnomeWorks:RegisterMessageDispatch(messageList, func)
+	function GnomeWorks:RegisterMessageDispatch(messageList, func, postProcess)
 		for message in string.gmatch(messageList, "%a+") do
 			if dispatchTable[message] then
 				local t = dispatchTable[message]
-				t[#t+1] = func
+				if postProcess then
+					t[#t+1] = func
+				else
+					table.insert(t,1,func)
+				end
+
 			else
 				dispatchTable[message] = { func }
 			end
@@ -89,7 +94,7 @@ do
 			if dispatchTable[message] then
 				t = dispatchTable[message]
 
-				for k,func in pairs(t) do
+				for k,func in ipairs(t) do
 --collectgarbage("collect")
 					if func ~= "delete" then
 						if type(func) == "function" and func() then					-- message returns true when it's set to fire once

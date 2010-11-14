@@ -88,6 +88,15 @@ do
 		return self.reagentFrame.scrollFrame
 	end
 
+	function GnomeWorks:GetQueueListScrollFrame()
+		return self.queueFrame.scrollFrame
+	end
+
+	function GnomeWorks:GetShoppinhListScrollFrame()
+		return self.shoppingListFrame.scrollFrame
+	end
+
+
 
 	--[[
 		GnomeWorks:GetQueue(player)

@@ -133,16 +133,14 @@ do
 	api.GetTradeSkillRecipeLink = function(index)
 		local recipeID = skillList[index]
 
-		if recipeID < 0 then
-			return "enchant:"..recipeID
-		else
-			return GetSpellLink(recipeID)
-		end
+		return "|cff80a0ff|Henchant:"..recipeID.."|h["..GnomeWorksDB.vendorConversionRecipes[recipeID].name.."]|h|r"
+
+--		return "enchant:"..recipeID
 	end
 
 
 	api.GetTradeSkillLine = function()
-		return "Common Skills", 1, 1
+		return "Vendor Conversions", 1, 1
 	end
 
 	api.GetTradeSkillInfo = function(index)

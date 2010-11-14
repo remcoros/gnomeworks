@@ -369,11 +369,7 @@ do
 			return
 		end
 
-		if recipeID < 0 then
-			return "enchant:"..recipeID
-		else
-			return GetSpellLink(recipeID)
-		end
+		return "|cff80a0ff|Henchant:"..recipeID.."|h["..millingNames[recipeID].."]|h|r"
 	end
 
 

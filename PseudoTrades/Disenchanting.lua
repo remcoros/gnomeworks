@@ -364,11 +364,7 @@ do
 	api.GetTradeSkillRecipeLink = function(index)
 		local recipeID = skillList[index]
 
-		if recipeID < 0 then
-			return "enchant:"..recipeID
-		else
-			return GetSpellLink(recipeID)
-		end
+		return "|cff80a0ff|Henchant:"..recipeID.."|h["..deNames[recipeID].."]|h|r"
 	end
 
 

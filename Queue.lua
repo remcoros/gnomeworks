@@ -1704,10 +1704,12 @@ do
 							end
 						end,
 			draw =	function (rowFrame,cellFrame,entry)
-						if entry.control and not entry.manualEntry then
-							entry.depth = 2
-						else
-							entry.depth = 0
+						if entry.control then
+							if not entry.manualEntry then
+								entry.depth = 2
+							else
+								entry.depth = 0
+							end
 						end
 
 						cellFrame.text:SetPoint("LEFT", cellFrame, "LEFT", entry.depth*8+4+12, 0)
@@ -1767,9 +1769,9 @@ do
 								local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,GnomeWorks.player)
 
 								if entry.command == "create" and results[entry.itemID] ~= 1 then
-									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t |cffd0d090 %s (%sx%d)",icon or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,GnomeWorks:GetRecipeName(entry.recipeID),(GetItemInfo(entry.itemID)),entry.count * results[entry.itemID])
+									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t |cffd0d090%s (%s x %d)",icon or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,GnomeWorks:GetRecipeName(entry.recipeID),(GetItemInfo(entry.itemID)),entry.count * results[entry.itemID])
 								else
-									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t |cffd0d090 %s",icon or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,GnomeWorks:GetRecipeName(entry.recipeID))
+									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t |cffd0d090%s",icon or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,GnomeWorks:GetRecipeName(entry.recipeID))
 								end
 							end
 --[[
@@ -1962,6 +1964,9 @@ do
 
 		shoppingListSF = GnomeWorks:BuildShoppingListScrollFrame(frame)
 
+
+		self.queueFrame = { scrollFrame = sf}
+		self.shoppingListFrame = { scrollFrame = shoppingListSF }
 
 
 		local playerName = CreateFrame("Button", nil, frame)
