@@ -471,6 +471,8 @@ do
 			valueColumn = scrollFrame:AddColumn(valueColumnHeader, plugin)
 			costColumn = scrollFrame:AddColumn(costColumnHeader, plugin)
 
+			scrollFrame.columnFrames["Profit"] = scrollFrame.columnFrames["Value"]						-- "name" drives column identification so alias the variable name to the registered name
+
 			GnomeWorks:CreateFilterMenu(costFilterParameters, costFilterMenu, costColumnHeader)
 
 
