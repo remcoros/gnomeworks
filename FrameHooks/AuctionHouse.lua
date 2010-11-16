@@ -100,22 +100,24 @@ do
 
 
 	function GnomeWorks:BeginSingleReagentScan(itemID)
-		auctionData = self.data.auctionData
+		if itemID then
+			auctionData = self.data.auctionData
 
-		callback = nil
+			callback = nil
 
-		reagentList = { [itemID] = 1 }
+			reagentList = { [itemID] = 1 }
 
-		if auctionData[itemID] then
-			table.wipe(auctionData[itemID])
-		end
+			if auctionData[itemID] then
+				table.wipe(auctionData[itemID])
+			end
 
-		page = 0
-		reagentID = next(reagentList)
-		if reagentID then
-			reagentName = GetItemInfo(reagentID)
+			page = 0
+			reagentID = next(reagentList)
+			if reagentID then
+				reagentName = GetItemInfo(reagentID)
 
-			SendQuery()
+				SendQuery()
+			end
 		end
 	end
 
@@ -139,7 +141,7 @@ do
 	end
 
 
-	function GnomeWorks:AUCTION_HOUSE_CLOSE(...)
+	function GnomeWorks:AUCTION_HOUSE_CLOSED(...)
 		self.atAuctionHouse = false
 		self:StopReagentScan()
 	end

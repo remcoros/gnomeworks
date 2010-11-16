@@ -165,6 +165,10 @@ do
 
 	function GnomeWorks:ShoppingListShow(player)
 		if sf then												-- it's possible that this might get called prior to full initialization
+			if LSW and LSW.Initialize then
+				LSW:Initialize()
+			end
+
 			local parentFrame = sf:GetParent():GetParent()
 
 			parentFrame:Show()

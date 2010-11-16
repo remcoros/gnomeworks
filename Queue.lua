@@ -747,57 +747,6 @@ do
 
 
 
-	local function BuildFlatQueueOLD(flatQueue, queue)
-		local reagentList = {}
-
-		for k,entry in pairs(queue) do
-			local results, reagents = GnomeWorks:GetRecipeData(entry.recipeID)
-
-			for reagentID, numNeeded in pairs(reagents) do
-				reagentList[reagentID] = (reagentList[reagentID] or 0) + numNeeded * entry.count
-			end
-		end
-
---		local tempQueue = { subGroup = { entries = flatQueue } }
-
-		for reagentID, numNeeded in pairs(reagentList) do
---			local function AddReagentToQueue(queue, reagentID, numNeeded, player)
-
-			local optionGroup = { index = 1, command = "options", itemID = reagentID, numNeeded = numNeeded, count = numNeeded, subGroup = { entries = {}, expanded = false }}
-
-			local entry, count = AddReagentToQueue(optionGroup, reagentID, numNeeded, player)
-
-			flatQueue[#flatQueue+1] = optionGroup
-		end
-
-		for k,entry in pairs(queue) do
-			local f = {}
-
-			for k,v in pairs(entry) do
-				if k ~= "subGroup" then
-					f[k] = v
-				end
-			end
-
-			flatQueue[#flatQueue+1] = f
-		end
-	end
-
-
---[[
-		local newEntry = {
-			index = index,
-			command = "collect",
-			itemID = reagentID,
-			numNeeded = numNeeded,
-			count=count,
-			source=source,
-		}
-]]
-
-
-
-
 	local function BuildFlatQueue(flatQueue, queue)
 		for k,entry in pairs(queue) do
 			if entry.subGroup then
@@ -934,21 +883,29 @@ do
 
 		if unit == "player"	and doTradeEntry and spellID == doTradeEntry.recipeID then
 			if doTradeEntry.manualEntry then
-				doTradeEntry.count = doTradeEntry.count - 1
---print("tickDown")
-				if doTradeEntry.count == 0 then
-					DeleteQueueEntry(self.data.queueData[queuePlayer], doTradeEntry)
+				local entry = doTradeEntry
 
-					doTradeEntry = nil
-					GnomeWorks.processSpell = nil
+				if doTradeEntry.control then
+					entry = doTradeEntry.control[1]
+				end
 
-					GnomeWorks.IsProcessing = false
-					self:SendMessageDispatch("GnomeWorksProcessing")
+				entry.count = entry.count - 1
+
+				if entry.count == 0 then
+					DeleteQueueEntry(self.data.queueData[queuePlayer], entry)
+					table.remove(doTradeEntry.control,1)
+
+					if #doTradeEntry.control == 0 then
+						doTradeEntry = nil
+						GnomeWorks.processSpell = nil
+
+						GnomeWorks.IsProcessing = false
+						self:SendMessageDispatch("GnomeWorksProcessing")
+					end
 				end
 			else
 				if doTradeEntry.count < 1 then
 					StopTradeSkillRepeat()
---print("STOP REPEAT")
 				end
 			end
 
@@ -1074,7 +1031,21 @@ do
 		local buttons = {}
 
 		local function ConfigureButton(button)
-			local entry = FirstCraftableEntry(GnomeWorks.data.queueData[queuePlayer])
+			local entry, craftable
+
+			if GnomeWorksDB.config.queueLayoutFlat then
+				if not GnomeWorks.data.flatQueue or not GnomeWorks.data.flatQueue[queuePlayer] then
+					return
+				end
+
+				entry, craftable = FirstCraftableEntry(GnomeWorks.data.flatQueue[queuePlayer])
+
+				if entry then
+					entry.numCraftable = craftable
+				end
+			else
+				entry, craftable = FirstCraftableEntry(GnomeWorks.data.queueData[queuePlayer])
+			end
 
 			if GnomeWorks.IsProcessing then
 				button:SetFormattedText("Processing...")
@@ -1375,23 +1346,23 @@ do
 
 
 
-
-
 	local function OpDeleteQueueEntry(button,entry)
 		CloseDropDownMenus()
-		local entryNum
+		local deleted
 
 		local queue = GnomeWorks.data.queueData[queuePlayer]
 
-		for k,v in ipairs(queue) do
-			if v == entry then
-				entryNum = k
+		if entry.control then
+			for k,v in ipairs(entry.control) do
+				if DeleteQueueEntry(queue, v) then
+					deleted = true
+				end
 			end
+		else
+			deleted = DeleteQueueEntry(queue, entry)
 		end
 
-		if entryNum then
-			table.remove(queue, entryNum)
-
+		if deleted then
 			GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
 			GnomeWorks:SendMessageDispatch("GnomeWorksSkillListChanged")
 			GnomeWorks:SendMessageDispatch("GnomeWorksDetailsChanged")

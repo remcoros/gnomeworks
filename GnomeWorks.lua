@@ -23,12 +23,12 @@ do
 	local executionHoldFrame = CreateFrame("Frame",nil,UIParent)
 	executionHoldFrame.hold = {}
 
---	executionHoldFrame:RegisterAllEvents()
+	executionHoldFrame:RegisterAllEvents()
 
 	executionHoldFrame:SetScript("OnEvent", function(frame, event, ...)
---if string.find(event,"UNIT_SPELL") then
---	print("execution hold system",event)
---end
+if string.find(event,"AUCTION") then
+	print("execution hold system",event)
+end
 		if frame.hold[event] then
 			for method, params in pairs(frame.hold[event]) do
 				GnomeWorks[method](GnomeWorks, event, ...)
@@ -458,7 +458,7 @@ print(arg1)
 
 
 		GnomeWorks:RegisterEvent("AUCTION_HOUSE_SHOW")
-		GnomeWorks:RegisterEvent("AUCTION_HOUSE_CLOSE")
+		GnomeWorks:RegisterEvent("AUCTION_HOUSE_CLOSED")
 
 		GnomeWorks:RegisterEvent("PLAYER_LOGOUT")
 		return true
