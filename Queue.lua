@@ -792,8 +792,6 @@ do
 
 --			BuildSourceQueues(player, self.data.queueData[player])
 
-
-
 			if not self.data.flatQueue then
 				self.data.flatQueue = {}
 			end
@@ -1038,7 +1036,7 @@ do
 
 			if GnomeWorksDB.config.queueLayoutFlat then
 				if not GnomeWorks.data.flatQueue or not GnomeWorks.data.flatQueue[queuePlayer] then
---					return
+					return
 				end
 
 				entry, craftable = FirstCraftableEntry(GnomeWorks.data.flatQueue[queuePlayer])
