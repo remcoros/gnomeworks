@@ -792,7 +792,7 @@ do
 
 --			BuildSourceQueues(player, self.data.queueData[player])
 
-			self:SendMessageDispatch("GnomeWorksQueueCountsChanged")
+
 
 			if not self.data.flatQueue then
 				self.data.flatQueue = {}
@@ -802,6 +802,9 @@ do
 
 
 			BuildFlatQueue(self.data.flatQueue[player], self.data.queueData[player])
+
+
+			self:SendMessageDispatch("GnomeWorksQueueCountsChanged")
 
 
 			if GnomeWorksDB.config.queueLayoutFlat then
@@ -1035,7 +1038,7 @@ do
 
 			if GnomeWorksDB.config.queueLayoutFlat then
 				if not GnomeWorks.data.flatQueue or not GnomeWorks.data.flatQueue[queuePlayer] then
-					return
+--					return
 				end
 
 				entry, craftable = FirstCraftableEntry(GnomeWorks.data.flatQueue[queuePlayer])
@@ -1118,6 +1121,11 @@ do
 --				print(macroText)
 			else
 				button:Disable()
+
+				if not InCombatLockdown() then
+					button.secure:Hide()
+				end
+
 				button:SetText("Nothing To Process")
 			end
 		end
@@ -1125,7 +1133,7 @@ do
 
 		local buttonConfig = {
 --			{ text = "Process", operation = ProcessQueue, width = 250, validate = SetProcessLabel, lineBreak = true, template = "SecureActionButtonTemplate" },
-			{ text = "Process", name = "GWProcess", width = 250, validate = ConfigureButton, lineBreak = true, addSecure=true, template = "SecureActionButtonTemplate" },
+			{ text = "Nothing To Process", name = "GWProcess", width = 250, validate = ConfigureButton, lineBreak = true, addSecure=true, template = "SecureActionButtonTemplate" },
 			{ text = "Stop", operation = StopProcessing, width = 125 },
 			{ text = "Clear", operation = ClearQueue, width = 125 },
 		}
@@ -1156,8 +1164,8 @@ do
 					newButton.secure:HookScript("OnEnter", function(b) newButton.state.Highlight:Show() end)
 					newButton.secure:HookScript("OnLeave", function(b) newButton.state.Highlight:Hide() end)
 
-					newButton.secure:HookScript("OnMouseDown", function(b) if newButton:IsEnabled()>0 then newButton.state.Down:Show() newButton.state.Up:Hide() end end)
-					newButton.secure:HookScript("OnMouseUp", function(b) if newButton:IsEnabled()>0 then newButton.state.Down:Hide() newButton.state.Up:Show() end end)
+					newButton.secure:HookScript("OnMouseDown", function(b) if newButton:IsEnabled() then newButton.state.Down:Show() newButton.state.Up:Hide() end end)
+					newButton.secure:HookScript("OnMouseUp", function(b) if newButton:IsEnabled() then newButton.state.Down:Hide() newButton.state.Up:Show() end end)
 				end
 
 
@@ -1186,7 +1194,7 @@ do
 
 
 				if newButton.validate then
-					newButton:validate()
+--					newButton:validate()
 				end
 
 
@@ -1532,7 +1540,8 @@ do
 			draw =	function (rowFrame,cellFrame,entry)
 --print(entry.manualEntry,entry.command, entry.recipeID or entry.itemID, entry.count, entry.numAvailable)
 
-							if entry.command ~= "options" then
+
+							if entry.command == "create" then
 								if entry.numCraftable then
 									if entry.numCraftable == 0 then
 										cellFrame.text:SetTextColor(1,0,0)
@@ -1541,6 +1550,8 @@ do
 									else
 										cellFrame.text:SetTextColor(1,1,1)
 									end
+								else
+									cellFrame.text:SetTextColor(1,1,1)
 								end
 							else
 								cellFrame.text:SetTextColor(1,1,1)
@@ -1896,6 +1907,15 @@ do
 			end
 
 			if entry.command == "create" then
+
+				if entry.control then
+					entry.numCraftable = 0
+
+					for k,v in ipairs(entry.control) do
+						entry.numCraftable = v.numCraftable
+					end
+				end
+
 				if not entry.numCraftable then
 					entry.numCraftable = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "bag queue")
 				end
