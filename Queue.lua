@@ -894,9 +894,18 @@ do
 
 				if entry.count == 0 then
 					DeleteQueueEntry(self.data.queueData[queuePlayer], entry)
-					table.remove(doTradeEntry.control,1)
 
-					if #doTradeEntry.control == 0 then
+					if doTradeEntry.control then
+						table.remove(doTradeEntry.control,1)
+
+						if #doTradeEntry.control == 0 then
+							doTradeEntry = nil
+							GnomeWorks.processSpell = nil
+
+							GnomeWorks.IsProcessing = false
+							self:SendMessageDispatch("GnomeWorksProcessing")
+						end
+					else
 						doTradeEntry = nil
 						GnomeWorks.processSpell = nil
 

@@ -865,6 +865,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 	function GnomeWorks:ScanCategoryGroups(mainGroup)
 		local groupList = {}
+		local gotNil
 
 --		self:UnregisterEvent("TRADE_SKILL_UPDATE")
 
@@ -879,6 +880,11 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 				local slotName = TradeSkillSlots[i]
 
 				local invSlot
+
+				if not slotName then
+					slotName = "slot "..i
+					gotNil = true
+				end
 
 				if groupList[slotName] then
 					groupList[slotName] = groupList[slotName]+1
@@ -920,6 +926,10 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		end
 
 		SetTradeSkillSubClassFilter(0,1,1)
+
+		if gotNil then
+			self:ScheduleTimer("ScanTrade",5)
+		end
 
 --		self:RegisterEvent("TRADE_SKILL_UPDATE")
 	end

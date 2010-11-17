@@ -8,20 +8,20 @@ do
 
 	local millingResults = {
 		[3818] = { -- Fadeleaf
-			[43105] = 0.5, --Indigo Pigment
+			[43105] = 0.265, --Indigo Pigment
 			[39339] = 2.5, --Emerald Pigment
 		},
 		[3821] = { -- Goldthorn
-			[43105] = 0.5, --Indigo Pigment
+			[43105] = 0.265, --Indigo Pigment
 			[39339] = 2.5, --Emerald Pigment
 		},
 
 		[3358] = { -- Khadgar\'s Whisker
-			[43105] = 1, --Indigo Pigment
+			[43105] = .53, --Indigo Pigment
 			[39339] = 3, --Emerald Pigment
 		},
 		[3819] = { -- Wintersbite
-			[43105] = 1, --Indigo Pigment
+			[43105] = .53, --Indigo Pigment
 			[39339] = 3, --Emerald Pigment
 		},
 
@@ -39,111 +39,111 @@ do
 
 		[8831] = { -- Purple Lotus
 			[39340] = 2.5, --Violet Pigment
-			[43106] = 0.5, --Ruby Pigment
+			[43106] = 0.265, --Ruby Pigment
 		},
 		[8836] = { -- Arthas\' Tears
 			[39340] = 2.5, --Violet Pigment
-			[43106] = 0.5, --Ruby Pigment
+			[43106] = 0.265, --Ruby Pigment
 		},
 		[8838] = { -- Sungrass
 			[39340] = 2.5, --Violet Pigment
-			[43106] = 0.5, --Ruby Pigment
+			[43106] = 0.265, --Ruby Pigment
 		},
 		[4625] = { -- Firebloom
 			[39340] = 2.5, --Violet Pigment
-			[43106] = 0.5, --Ruby Pigment
+			[43106] = 0.265, --Ruby Pigment
 		},
 		[8839] = { -- Blindweed
 			[39340] = 3, --Violet Pigment
-			[43106] = 1, --Ruby Pigment
+			[43106] = .53, --Ruby Pigment
 		},
 		[8845] = { -- Ghost Mushroom
 			[39340] = 3, --Violet Pigment
-			[43106] = 1, --Ruby Pigment
+			[43106] = .53, --Ruby Pigment
 		},
 		[8846] = { -- Gromsblood
 			[39340] = 3, --Violet Pigment
-			[43106] = 1, --Ruby Pigment
+			[43106] = .53, --Ruby Pigment
 		},
 
 		[785] = { -- Mageroyal
-			[43103] = 0.5, --Verdant Pigment
+			[43103] = 0.265, --Verdant Pigment
 			[39334] = 2.5, --Dusky Pigment
 		},
 		[2453] = { -- Bruiseweed
-			[43103] = 1, --Verdant Pigment
+			[43103] = .53, --Verdant Pigment
 			[39334] = 3, --Dusky Pigment
 		},
 		[3820] = { -- Stranglekelp
-			[43103] = 1, --Verdant Pigment
+			[43103] = .53, --Verdant Pigment
 			[39334] = 3, --Dusky Pigment
 		},
 		[2450] = { -- Briarthorn
-			[43103] = 0.5, --Verdant Pigment
+			[43103] = 0.265, --Verdant Pigment
 			[39334] = 3, --Dusky Pigment
 		},
 		[2452] = { -- Swiftthistle
-			[43103] = 0.5, --Verdant Pigment
+			[43103] = 0.265, --Verdant Pigment
 			[39334] = 3, --Dusky Pigment
 		},
 
 
 		[13463] = { -- Dreamfoil
 			[39341] = 2.5, --Silvery Pigment
-			[43107] = 0.5, --Sapphire Pigment
+			[43107] = 0.265, --Sapphire Pigment
 		},
 		[13464] = { -- Golden Sansam
 			[39341] = 2.5, --Silvery Pigment
-			[43107] = 0.5, --Sapphire Pigment
+			[43107] = 0.265, --Sapphire Pigment
 		},
 		[13465] = { -- Mountain Silversage
 			[39341] = 3, --Silvery Pigment
-			[43107] = 1, --Sapphire Pigment
+			[43107] = .53, --Sapphire Pigment
 		},
 		[13466] = { -- Plaguebloom
 			[39341] = 3, --Silvery Pigment
-			[43107] = 1, --Sapphire Pigment
+			[43107] = .53, --Sapphire Pigment
 		},
 		[13467] = { -- Icecap
 			[39341] = 3, --Silvery Pigment
-			[43107] = 1, --Sapphire Pigment
+			[43107] = .53, --Sapphire Pigment
 		},
 
 
 		[39969] = { -- Fire Seed
-			[43109] = 0.5, --Icy Pigment
+			[43109] = 0.265, --Icy Pigment
 			[39343] = 2.5, --Azure Pigment
 		},
 		[36901] = { -- Goldclover
-			[43109] = 0.5, --Icy Pigment
+			[43109] = 0.265, --Icy Pigment
 			[39343] = 2.5, --Azure Pigment
 		},
 		[36907] = { -- Talandra\'s Rose
-			[43109] = 0.5, --Icy Pigment
+			[43109] = 0.265, --Icy Pigment
 			[39343] = 2.5, --Azure Pigment
 		},
 		[39970] = { -- Fire Leaf
-			[43109] = 0.5, --Icy Pigment
+			[43109] = 0.265, --Icy Pigment
 			[39343] = 2.5, --Azure Pigment
 		},
 		[37921] = { -- Deadnettle
-			[43109] = 0.5, --Icy Pigment
+			[43109] = 0.265, --Icy Pigment
 			[39343] = 3, --Azure Pigment
 		},
 		[36904] = { -- Tiger Lily
-			[43109] = 0.5, --Icy Pigment
+			[43109] = 0.265, --Icy Pigment
 			[39343] = 3, --Azure Pigment
 		},
 		[36905] = { -- Lichbloom
-			[43109] = 1, --Icy Pigment
+			[43109] = .53, --Icy Pigment
 			[39343] = 3, --Azure Pigment
 		},
 		[36906] = { -- Icethorn
-			[43109] = 1, --Icy Pigment
+			[43109] = .53, --Icy Pigment
 			[39343] = 3, --Azure Pigment
 		},
 		[36903] = { -- Adder\'s Tongue
-			[43109] = 1.25, --Icy Pigment
+			[43109] = .53, --Icy Pigment
 			[39343] = 3, --Azure Pigment
 		},
 
@@ -151,54 +151,54 @@ do
 
 		[22789] = { -- Terocone
 			[39342] = 2.5, --Nether Pigment
-			[43108] = 0.5, --Ebon Pigment
+			[43108] = 0.265, --Ebon Pigment
 		},
 		[22786] = { -- Dreaming Glory
 			[39342] = 2.5, --Nether Pigment
-			[43108] = 0.5, --Ebon Pigment
+			[43108] = 0.265, --Ebon Pigment
 		},
 		[22787] = { -- Ragveil
 			[39342] = 2.5, --Nether Pigment
-			[43108] = 0.5, --Ebon Pigment
+			[43108] = 0.265, --Ebon Pigment
 		},
 		[22785] = { -- Felweed
 			[39342] = 3, --Nether Pigment
-			[43108] = 0.5, --Ebon Pigment
+			[43108] = 0.265, --Ebon Pigment
 		},
 		[22790] = { -- Ancient Lichen
 			[39342] = 3, --Nether Pigment
-			[43108] = 1, --Ebon Pigment
+			[43108] = .53, --Ebon Pigment
 		},
 		[22792] = { -- Nightmare Vine
 			[39342] = 3, --Nether Pigment
-			[43108] = 1, --Ebon Pigment
+			[43108] = .53, --Ebon Pigment
 		},
 		[22793] = { -- Mana Thistle
 			[39342] = 3, --Nether Pigment
-			[43108] = 1, --Ebon Pigment
+			[43108] = .53, --Ebon Pigment
 		},
 		[22791] = { -- Netherbloom
 			[39342] = 3, --Nether Pigment
-			[43108] = 1, --Ebon Pigment
+			[43108] = .53, --Ebon Pigment
 		},
 
 
 
 		[3355] = { -- Wild Steelbloom
-			[43104] = 0.5, --Burnt Pigment
+			[43104] = 0.265, --Burnt Pigment
 			[39338] = 2.5, --Golden Pigment
 		},
 		[3369] = { -- Grave Moss
-			[43104] = 0.5, --Burnt Pigment
+			[43104] = 0.265, --Burnt Pigment
 			[39338] = 2.5, --Golden Pigment
 		},
 		[3357] = { -- Liferoot
-			[43104] = 1, --Burnt Pigment
+			[43104] = .53, --Burnt Pigment
 			[39338] = 3, --Golden Pigment
 		},
 
 		[3356] = { -- Kingsblood
-			[43104] = 1, --Burnt Pigment
+			[43104] = .53, --Burnt Pigment
 			[39338] = 3, --Golden Pigment
 		},
 	}
