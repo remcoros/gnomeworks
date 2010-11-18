@@ -454,7 +454,9 @@ do
 
 				entry.cost = (LSW:GetSkillCost(entry.recipeID) or 0) * (entry.count)
 
-				totalQueueValue = totalQueueValue + entry.cost
+				if entry.manualEntry then
+					totalQueueValue = totalQueueValue + entry.cost
+				end
 			else
 				entry.cost = 0
 
@@ -462,9 +464,11 @@ do
 					if GnomeWorks:VendorSellsItem(entry.itemID) then
 						local name,_,_,_,_,_,_,_,_,tex,sellCost = GetItemInfo(entry.itemID)
 
-						entry.cost = sellCost*4 * (entry.count)
+						if sellCost then
+							entry.cost = sellCost*4 * (entry.count)
+						end
 					else
-						entry.cost = LSW.auctionCost(entry.itemID) * (entry.count)
+						entry.cost = (LSW.auctionCost(entry.itemID) or 0) * (entry.count)
 					end
 				end
 

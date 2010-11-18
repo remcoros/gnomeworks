@@ -172,6 +172,29 @@ local function ttAdd(
 
 
 
+			hooksecurefunc(GameTooltip,"SetHyperlink", function(self, link)
+				if ARL.DisplayAcquireData then
+					local recipeID = string.match(link,"spell:(%d+)") or string.match(link,"enchant:(%d+)")
+
+					if recipeID then
+						recipeID = tonumber(recipeID)
+
+						arlAddedData = nil
+
+						leftInfoText = "ARL Recipe Source:\n"
+						rightInfoText = "\n"
+
+						ARL:DisplayAcquireData(recipeID, nil, nil, constructInfoText)
+
+						self:AddDoubleLine(leftInfoText,rightInfoText)
+					end
+				end
+			end)
+
+
+
+
+
 
 			if ARL.InitializeLookups then
 				ARL:InitializeLookups()
