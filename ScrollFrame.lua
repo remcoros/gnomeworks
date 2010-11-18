@@ -889,6 +889,10 @@ do
 				local columnFrame = scrollFrame.columnFrames[i]
 
 				if columnFrame and columnFrame:IsShown() then
+
+					rowFrame.cols[i].text:SetJustifyH((rowFrame.rowIndex==0 and headers[i].headerAlign) or headers[i].align or "LEFT")
+
+
 					if rowFrame.rowIndex == 0 then
 						if headers[i].button then
 							rowFrame.cols[i].text:SetPoint("LEFT",rowFrame.cols[i],"LEFT",16,0)
@@ -923,8 +927,6 @@ do
 							rowFrame.cols[i].button:Hide()
 						end
 					end
-
-					rowFrame.cols[i].text:SetJustifyH((rowFrame.rowIndex==0 and headers[i].headerAlign) or headers[i].align or "LEFT")
 
 					rowFrame.cols[i]:Show()
 				else

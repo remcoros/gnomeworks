@@ -27,6 +27,9 @@ do
 
 		local itemCache
 
+		local totalQueueCost = 0
+		local totalQueueValue = 0
+
 
 		local itemFateColor={
 			["d"]="ff008000",
@@ -380,11 +383,13 @@ do
 				return (a.cost or 0) - (b.cost or 0)
 			end,
 			draw = function (rowFrame, cellFrame, entry)
---				if not entry.subGroup then
+				if entry.command == "collect" then
+					cellFrame.text:SetText((LSW:FormatMoney(entry.cost,false) or "??"))
+					cellFrame.text:SetJustifyH("LEFT")
+				else
 					cellFrame.text:SetText((LSW:FormatMoney(entry.cost,true) or "??"))
---				else
-	--				cellFrame.text:SetText("")
-	--			end
+					cellFrame.text:SetJustifyH("RIGHT")
+				end
 			end,
 			OnClick = function (cellFrame, button, source)
 				if cellFrame:GetParent().rowIndex>0 then
@@ -392,7 +397,7 @@ do
 	--				cellFrame:SetID(entry.skillIndex)
 	--				LSW.buttonScripts.costButton.OnClick(cellFrame, button)
 				else
-					columnControl(cellFrame,button,source)
+	--				columnControl(cellFrame,button,source)
 				end
 			end,
 			OnEnter = function (cellFrame)
@@ -404,7 +409,14 @@ do
 	--				cellFrame:SetID(entry.skillIndex)
 	--				LSW.buttonScripts.costButton.OnEnter(cellFrame)
 				else
-					columnTooltip(cellFrame, "LSW Item Cost")
+					GameTooltip:SetOwner(cellFrame, "ANCHOR_TOPLEFT")
+					GameTooltip:ClearLines()
+					GameTooltip:AddLine("LSW Entry Cost",1,1,1,true)
+
+					GameTooltip:AddDoubleLine("|cffffffffTotal Reagent Value:",LSW:FormatMoney(totalQueueValue,true))
+					GameTooltip:AddDoubleLine("|cffffffffOut-of-Pocket Cost:",LSW:FormatMoney(totalQueueCost,true))
+
+					GameTooltip:Show()
 				end
 			end,
 			OnLeave = function (cellFrame)
@@ -432,12 +444,31 @@ do
 
 
 		local function updateQueueData(scrollFrame, entry)
+			if entry == scrollFrame.data.entries[1] then
+				totalQueueCost = 0
+				totalQueueValue = 0
+			end
+
 			if entry.command == "create" then
 				LSW.UpdateSingleRecipePrice(entry.recipeID)
 
 				entry.cost = (LSW:GetSkillCost(entry.recipeID) or 0) * (entry.count)
+
+				totalQueueValue = totalQueueValue + entry.cost
 			else
-				entry.cost = LSW:GetItemCost(entry.itemID) * (entry.count)
+				entry.cost = 0
+
+				if not entry.source then
+					if GnomeWorks:VendorSellsItem(entry.itemID) then
+						local name,_,_,_,_,_,_,_,_,tex,sellCost = GetItemInfo(entry.itemID)
+
+						entry.cost = sellCost*4 * (entry.count)
+					else
+						entry.cost = LSW.auctionCost(entry.itemID) * (entry.count)
+					end
+				end
+
+				totalQueueCost = totalQueueCost + entry.cost
 			end
 		end
 

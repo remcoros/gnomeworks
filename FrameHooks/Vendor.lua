@@ -6,6 +6,23 @@
 do
 	local vendorThrottle
 
+-- queries periodic table for vendor info for a particular itemID
+	function GnomeWorks:VendorSellsItem(itemID)
+
+		if itemID>0 then
+			if GnomeWorksDB.vendorItems[itemID] then
+				return true
+			end
+
+			if self.libPT then
+				if self.libPT:ItemInSet(itemID,"Tradeskill.Mat.BySource.Vendor") then
+					return true
+				end
+			end
+		end
+	end
+
+
 
 	local function RecordMerchantItem(itemID, i)
 		if GnomeWorks.data.reagentUsage[itemID] and not GnomeWorksDB.vendorItems[itemID] then -- and not GnomeWorksDB.results[spoofedRecipeID] then

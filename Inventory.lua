@@ -26,23 +26,6 @@ do
 	local bagThrottleTimer
 
 
-	-- queries periodic table for vendor info for a particual itemID
-	function GnomeWorks:VendorSellsItem(itemID)
-
-		if itemID>0 then
-			if GnomeWorksDB.vendorItems[itemID] then
-				return true
-			end
-
-			if self.libPT then
-				if self.libPT:ItemInSet(itemID,"Tradeskill.Mat.BySource.Vendor") then
-					return true
-				end
-			end
-		end
-	end
-
-
 	function GnomeWorks:BAG_UPDATE(event,bag)
 		if bagThrottleTimer then
 			self:CancelTimer(bagThrottleTimer, true)

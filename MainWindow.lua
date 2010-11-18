@@ -799,6 +799,52 @@ do
 								GameTooltip:AddLine("Right-click to Adjust Filterings")
 
 								GameTooltip:Show()
+							else
+								local entry = cellFrame:GetParent().data
+
+								GameTooltip:SetOwner(cellFrame.scrollFrame, "ANCHOR_NONE")
+								GameTooltip:ClearLines()
+								GameTooltip:SetPoint("TOPRIGHT",cellFrame.scrollFrame, "TOPLEFT")
+
+
+								if not entry.subGroup then
+									if true or entry.recipeID > 0 then
+										local spellLink = GetSpellLink(entry.recipeID)
+
+										if spellLink then
+											GameTooltip:SetHyperlink(spellLink)
+										else
+											local results, reagents, tradeID = GnomeWorks:GetRecipeData(entry.recipeID)
+
+											GameTooltip:AddLine(GnomeWorks:GetRecipeName(entry.recipeID))
+
+											GameTooltip:AddLine("Reagents:",1,1,1)
+
+											for itemID, numMade in pairs(reagents) do
+												local _,link = GetItemInfo(itemID)
+
+												GameTooltip:AddDoubleLine("    "..(link or "item:"..itemID), numMade)
+											end
+
+											GameTooltip:AddLine(" ")
+
+											GameTooltip:AddLine("Results:",1,1,1)
+
+											for itemID, numMade in pairs(results) do
+												local _,link = GetItemInfo(itemID)
+
+												GameTooltip:AddDoubleLine("    "..(link or "item:"..itemID), numMade)
+											end
+
+										end
+									else
+										GameTooltip:SetHyperlink("item:"..(-entry.recipeID))
+									end
+								end
+
+
+								GameTooltip:Show()
+
 							end
 						end,
 			OnLeave = 	function()
