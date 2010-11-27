@@ -19,7 +19,7 @@ do
 			local entry = list.segments[1]
 
 			if entry then
-				if entry.func() then
+				if entry.func() or entry.retry > 30 then
 					table.remove(list.segments,1)
 
 					if not list.segments[1] then
@@ -27,6 +27,8 @@ do
 					end
 				else
 					list.delay = entry.delay or 1
+
+					entry.retry = entry.retry + 1
 				end
 			else
 				frame:Hide()
@@ -37,7 +39,7 @@ do
 
 
 	local function AddSegment(list, func, delay)
-		local entry = { func = func, delay = delay }
+		local entry = { func = func, delay = delay, retry = 0 }
 
 		if func then
 			list.segments[#list.segments+1] = entry

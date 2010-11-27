@@ -26,16 +26,18 @@ do
 	local itemColorCrafted = "|cff40a0ff"
 	local itemColorNormal = "|cffffffff"
 
-	local inventoryIndex = { "bag", "bank", "guildBank", "alt" }
+	local inventoryIndex = { "bag", "bank", "mail", "guildBank", "alt" }
 
 	local inventoryColors = {
 		bag = "|cffffff80",
 		vendor = "|cff80ff80",
 		bank =  "|cffffa050",
 		guildBank = "|cff5080ff",
+		mail = "|cff60fff0",
 		alt = "|cffff80ff",
 	}
 
+	local inventoryFormat = {}
 	local inventoryTags = {}
 
 	for k,v in pairs(inventoryColors) do
@@ -176,13 +178,14 @@ do
 								GameTooltip:Show()
 							else
 								local entry = cellFrame:GetParent().data
-
+--[[
 								if entry then
 									GameTooltip:SetOwner(cellFrame, "ANCHOR_TOPLEFT")
 									GameTooltip:ClearLines()
 									GameTooltip:AddLine(GnomeWorks.player.."'s inventory")
 
 									local prevCount = 0
+
 
 									for i,key in pairs(inventoryIndex) do
 										local count = entry[key] or 0
@@ -192,6 +195,61 @@ do
 												GameTooltip:AddDoubleLine(inventoryTags[key],count)
 											end
 											prevCount = count
+										end
+									end
+]]
+
+								if entry  then
+									GameTooltip:SetOwner(cellFrame, "ANCHOR_TOPLEFT")
+									GameTooltip:ClearLines()
+									GameTooltip:AddLine(GnomeWorks.player.."'s inventory")
+
+									local itemID = entry.itemID
+
+									local prev = 0
+									for i,key in pairs(inventoryIndex) do
+										if key ~= "vendor" then
+											local count = entry[key] or 0
+--print(key,count)
+											if prev ~= count and count ~= 0 then
+
+												if false and key == "alt" then
+													GameTooltip:AddDoubleLine(inventoryTags[key], inventoryColors[key]..count)
+
+													GameTooltip:AddLine("    ")
+
+													GameTooltip:AddLine("alt item locations:",.8,.8,.8)
+													for inventoryName, containers in pairs(GnomeWorks.data.inventoryData) do
+
+														if inventoryName ~= "auctionHouse" then
+
+--					print(inventoryName, containers.craftedBag and containers.craftedBag[itemID])
+--					print("hello",GnomeWorks.data.inventoryData[inventoryName].craftedBag)
+
+															local bag = 0
+															if containers.craftedBag and containers.craftedBag[itemID] then
+																GameTooltip:AddDoubleLine("   "..inventoryColors.alt..inventoryName.."/bag",inventoryColors.alt..containers.craftedBag[itemID])
+
+																bag = containers.craftedBag[itemID]
+															end
+															if containers.craftedBank and containers.craftedBank[itemID] and containers.craftedBank[itemID] > bag then
+																if string.find(inventoryName,"GUILD:") then
+																	local guildName = string.match(inventoryName,"GUILD:(.+)")
+																	if guildName ~= GnomeWorks.data.playerData[GnomeWorks.player].guild then
+																		GameTooltip:AddDoubleLine("   "..inventoryColors.alt..guildName.."/guildBank",inventoryColors.alt..(containers.craftedBank[itemID] - bag))
+																	end
+																else
+																	GameTooltip:AddDoubleLine("   "..inventoryColors.alt..inventoryName.."/bank",inventoryColors.alt..(containers.craftedBank[itemID] - bag))
+																end
+															end
+														end
+													end
+												else
+													GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..count)
+												end
+											end
+
+											prev = count
 										end
 									end
 
@@ -209,63 +267,44 @@ do
 						end,
 
 			draw =	function (rowFrame,cellFrame,entry)
---[[
-						local bag = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "craftedBag queue")
-						local bank = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "craftedBank queue")
-						local guildBank = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "craftedGuildBank queue")
-						local alt = GnomeWorks:GetInventoryCount(entry.id, "faction", "craftedBank queue")
-]]
+						local display = "|cffff00000"
+						local low, hi
+						local lowKey, hiKey
+						local lowValue, hiValue
 
-						local bag, bank, guildBank, alt = entry.bag, entry.bank, entry.guildBank, entry.alt
-
-						if alt > 0 then
-							local display = ""
-	--[[
-							if bag > 0 then
-								display = string.format("%s%d|r",inventoryColors.bag,bag)
-							elseif bank > 0 then
-								display = string.format("%s%d|r",inventoryColors.bank,bank)
-							elseif guildBank > 0 then
-								display = string.format("%s%d|r",inventoryColors.guildBank,guildBank)
-							elseif alt > 0 then
-								display = string.format("%s%d|r",inventoryColors.alt,alt)
+						for k,inv in ipairs(inventoryIndex) do
+							local value = entry[inv]
+							if value>0 then
+								low = k
+								lowKey = inv
+								lowValue = value
+								break
 							end
-
-							if alt > bank then
-								if bank ~= 0 then
-									display = string.format("%s/%s%s", display, inventoryColors.alt, alt)
-								end
-							elseif bank > bag then
-								display = string.format("%s/%s%s", display, inventoryColors.bank, bank)
-							end
-	]]
-
-							if bag > 0 then
-								display = string.format("%s%d|r",inventoryColors.bag,bag)
-							elseif bank > 0 then
-								display = string.format("%s%d|r",inventoryColors.bank,bank)
-							elseif guildBank > 0 then
-								display = string.format("%s%d|r",inventoryColors.guildBank,guildBank)
-							elseif alt > 0 then
-								display = string.format("%s%d|r",inventoryColors.alt,alt)
-							end
-
-							if alt > guildBank and guildBank > 0 then
-								display = string.format("%s/%s%d", display, inventoryColors.alt, alt)
-							elseif guildBank > bank and bank > 0 then
-								display = string.format("%s/%s%d", display, inventoryColors.guildBank, guildBank)
-							elseif bank > bag and bag > 0 then
-								display = string.format("%s/%s%d", display, inventoryColors.bank, bank)
-							end
-
-							if entry.reserved>0 then
-								display = string.format("%s %s-%d",display, "|cffff0000", entry.reserved)
-							end
-
-							cellFrame.text:SetText(display)
-						else
-							cellFrame.text:SetText("|cffff00000")
 						end
+
+						if low then
+							for i=#inventoryIndex,low+1,-1 do
+								local key = inventoryIndex[i]
+
+								if entry[key] > entry[inventoryIndex[i-1]] then
+									hi = i
+									hiKey = key
+									hiValue = entry[key]
+									break
+								end
+							end
+
+							if hi and lowValue < hiValue then
+								local lowString = string.format(inventoryFormat[lowKey],lowValue)
+								local hiString = string.format(inventoryFormat[hiKey],hiValue)
+
+								display = lowString.."/"..hiString
+							else
+								display = string.format(inventoryFormat[lowKey],lowValue)
+							end
+						end
+
+						cellFrame.text:SetText(display)
 					end,
 		}, -- [3]
 	}
@@ -379,15 +418,16 @@ do
 
 			local bag = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "craftedBag queue")
 			local bank = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "craftedBank queue")
+			local mail = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "craftedMail queue")
 			local guildBank = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "craftedGuildBank queue")
 			local alt = GnomeWorks:GetInventoryCount(entry.id, "faction", "craftedBank queue")
-
 
 			entry.reserved = math.abs(math.min(0,GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "queue")))
 
 			entry.bag = bag + entry.reserved
 			entry.bank = bank + entry.reserved
 			entry.guildBank = guildBank + entry.reserved
+			entry.mail = mail + entry.reserved
 			entry.alt = alt + entry.reserved
 
 
@@ -803,7 +843,7 @@ do
 
 --			detailIconList[1]:SetNormalTexture(self:GetTradeSkillIcon(index))
 
-			local results = self:GetRecipeData(recipeID, self.player)
+			local results,reagents,tradeID = self:GetRecipeData(recipeID, self.player)
 
 			local resultCount = 1
 
@@ -862,7 +902,7 @@ do
 
 			if not isPseudoTrade and results then
 				local id = next(results)
-				local rank, maxRank = GnomeWorks:GetTradeSkillRank()
+				local rank, maxRank, estimatedRank = GnomeWorks:GetTradeSkillRank()
 
 				local orange, yellow, green, gray = GetSkillLevels(id)
 
@@ -880,7 +920,11 @@ do
 				detailFrame.levelsBar.orange:SetValue(yellow)
 				detailFrame.levelsBar.red:SetValue(orange)
 
-				detailFrame.levelsBar.current:SetValue(rank)
+				if estimatedRank then
+					detailFrame.levelsBar.current:SetValue(estimatedRank)
+				else
+					detailFrame.levelsBar.current:SetValue(rank)
+				end
 
 				detailFrame.levelsBar.bg:Show()
 			else
@@ -893,6 +937,16 @@ do
 		GnomeWorks:RegisterMessageDispatch("GnomeWorksDetailsChanged", function()
 			self:ShowDetails(self.selectedSkill)
 		end)
+
+		for k,v in pairs(inventoryColors) do
+--			inventoryTags[k] = v..k
+
+			if ( ENABLE_COLORBLIND_MODE == "1" ) then
+				inventoryFormat[k] = string.format("%%d|cffa0a0a0%s|r", inventoryColorBlindTag[k])
+			else
+				inventoryFormat[k] = string.format("%s%%d|r",v)
+			end
+		end
 
 		return detailFrame
 	end

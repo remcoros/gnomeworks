@@ -104,6 +104,7 @@ do
 
 
 
+	local recipeIsCached = {}
 
 
 	local skillIndexLookup = {}
@@ -310,6 +311,25 @@ DebugSpam("done parsing skill list")
 	end
 
 
+	function SelectEntryByIndex(data,index)
+		if data then
+			for k,v in ipairs(data.entries) do
+
+				if v.index == index then
+					return v
+				end
+
+				if v.subGroup then
+					local entry = SelectEntryByIndex(v.subGroup, index)
+
+					if entry then
+						return entry
+					end
+				end
+			end
+		end
+	end
+
 
 	function GnomeWorks:SelectSkill(index)
 		self.selectedSkill = index
@@ -330,6 +350,8 @@ DebugSpam("done parsing skill list")
 					self:ShowDetails(index)
 					self:ShowReagents(index)
 					self:SkillListDraw(index)
+
+					self.selectedEntry = SelectEntryByIndex(GnomeWorks.skillFrame.scrollFrame.data, index)
 
 	--				self:ShowSkillList()
 
@@ -543,11 +565,6 @@ DebugSpam("SCAN BUSY!")
 		self.scanInProgress = true
 
 
-		if not recacheRecipe then
-			recacheRecipe = {}
-		end
-
-
 	-- Unregsiter all frames from reacitng to update events since we're likely to generate a number of them in the scan
 --		UnregisterUpdateEvents()
 
@@ -585,6 +602,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		local results = GnomeWorksDB.results
 		local tradeIDs = GnomeWorksDB.tradeIDs
 		local reagents = GnomeWorksDB.reagents
+		local skillUps = GnomeWorksDB.skillUps
 
 
 		local lastHeader = nil
@@ -705,7 +723,13 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 						skillIndexLookup[recipeID] = i
 
-						if not results[recipeID] or recacheRecipe[recipeID] then
+						if numSkillUps and numSkillUps > 1 then
+							skillUps[recipeID] = numSkillUps
+						else
+							skillUps[recipeID] = nil
+						end
+
+						if not results[recipeID] or not recipeIsCached[recipeID] then
 							local itemLink = GetTradeSkillItemLink(i)
 
 							if not itemLink then
@@ -760,9 +784,11 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 							results[recipeID] = { [itemID] = numMade }
 
 							if gotNil then
-								recacheRecipe[recipeID] = true
+								recipeIsCached[recipeID] = nil
 								results[recipeID] = nil
 							end
+
+							recipeIsCached[recipeID] = true
 						else
 							for itemID in pairs(results[recipeID]) do
 								knownItems[itemID] = true
@@ -775,7 +801,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 			until true
 
 			if gotNil and recipeID then
-				recacheRecipe[recipeID] = true
+				recipeIsCached[recipeID] = nil
 				results[recipeID] = nil
 			end
 		end
@@ -1001,13 +1027,13 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		if not IsTradeSkillLinked() then
 			local skill, rank, maxRank = self:GetTradeSkillLine()
 
-			return rank, maxRank
+			return rank, maxRank, self.data.skillUpRanks[tradeID or self.tradeID]
 		end
 
 		tradeID = tradeID or self.tradeID
 		player = player or self.player
 
-
+--[[
 		if not player then
 			print("player is nil")
 		end
@@ -1015,7 +1041,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		if not tradeID then
 			print("tradeID is nil")
 		end
-
+]]
 
 		local link = (self.data.playerData[player] and self.data.playerData[player].links[tradeID])
 
@@ -1026,7 +1052,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		if link then
 			local rank, maxRank = string.match(link,"trade:%d+:(%d+):(%d+)")
 
-			return tonumber(rank), tonumber(maxRank)
+			return tonumber(rank), tonumber(maxRank), self.data.skillUpRanks[tradeID]
 		end
 
 		return 0, 0

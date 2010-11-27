@@ -364,7 +364,9 @@ do
 	api.GetTradeSkillRecipeLink = function(index)
 		local recipeID = skillList[index]
 
-		return "|cff80a0ff|Henchant:"..recipeID.."|h["..deNames[recipeID].."]|h|r"
+		if recipeID then
+			return "|cff80a0ff|Henchant:"..recipeID.."|h["..deNames[recipeID].."]|h|r"
+		end
 	end
 
 

@@ -190,6 +190,8 @@ do
 
 
 	local function InitializeData()
+		local clientVersion, clientBuild = GetBuildInfo()
+
 		GnomeWorks:print("Initializing (r"..VERSION..")")
 
 		local player = UnitName("player")
@@ -220,12 +222,10 @@ do
 				if ... then
 					InitDBTables(...)
 				end
-
---				GnomeWorks.data[var] = GnomeWorksDB[var]
 			end
 		end
 
-		InitDBTables("config", "serverData", "vendorItems", "results", "names", "reagents", "tradeIDs", "vendorOnly")
+		InitDBTables("config", "serverData", "vendorItems", "results", "names", "reagents", "tradeIDs", "skillUps", "vendorOnly")
 
 
 		for k,v in pairs(defaultConfig) do
@@ -248,13 +248,13 @@ do
 				GnomeWorks.data[var] = GnomeWorksDB.serverData[server][var]
 
 				if ... then
-					InitServerDBTables(server, player, ...)
+					InitServerDBTables(server, ...)
 				end
 			end
 		end
 
 
-		InitServerDBTables(factionServer, "auctionData")
+--		InitServerDBTables(factionServer, "auctionData")
 
 
 		local function InitServerPlayerDBTables(server, player, var, ...)
@@ -280,8 +280,15 @@ do
 		end
 
 		for k, player in pairs({ player, "All Recipes" } ) do
-			InitServerPlayerDBTables(factionServer, player, "playerData", "inventoryData", "queueData", "recipeGroupData", "cooldowns", "vendorQueue","bankQueue","guildBankQueue","auctionQueue","altQueue", "knownSpells", "knownItems")
+			InitServerPlayerDBTables(factionServer, player, "playerData", "inventoryData", "queueData", "recipeGroupData", "cooldowns", "vendorQueue","bankQueue","guildBankQueue","auctionQueue","altQueue","mailQueue","auctionQueue","knownSpells", "knownItems")
 		end
+
+		GnomeWorks.data.auctionData = {}
+
+		InitServerPlayerDBTables(factionServer, "auctionHouse", "inventoryData")
+--		GnomeWorks.data.inventoryData.auctionHouse = {}
+
+		GnomeWorks.data.skillUpRanks = {}
 
 
 		for player, spellList in pairs(GnomeWorks.data.knownSpells) do
@@ -397,9 +404,11 @@ do
 	function GnomeWorks:PLAYER_LOGOUT()
 		for inventoryName,inventoryData in pairs(self.data.inventoryData) do
 			for container, containerData in pairs(inventoryData) do
-				for itemID, num in pairs(containerData) do
-					if num == 0 then
-						containerData[itemID] = nil
+				if inventoryName ~= "auctionHouse" then
+					for itemID, num in pairs(containerData) do
+						if num == 0 then
+							containerData[itemID] = nil
+						end
 					end
 				end
 			end
@@ -461,6 +470,15 @@ print(arg1)
 		GnomeWorks:RegisterEvent("AUCTION_HOUSE_CLOSED")
 
 		GnomeWorks:RegisterEvent("PLAYER_LOGOUT")
+
+
+		GnomeWorks:RegisterEvent("MAIL_SHOW")
+		GnomeWorks:RegisterEvent("MAIL_INBOX_UPDATE")
+		GnomeWorks:RegisterEvent("MAIL_CLOSE")
+
+
+		GnomeWorks:ScheduleRepeatingTimer(function() GnomeWorks:SendMessageDispatch("HeartBeat") end, 5)
+
 		return true
 	end
 

@@ -10,38 +10,514 @@ do
 	local reagentName
 	local reagentScanAbort
 
-	local callBack
-
 	local reagentList
 
 	local auctionData
 
+	local buyoutList = {}
+
+	local sf
+	local frame
+
+	local purchaseEntry
 
 
-	local function RecordAuctionEntry(reagentID, count, buyOut, seller)
---		print((GetItemInfo(reagentID)), count, math.floor(buyOut/100)/100)
-		local newEntry = { count = count, buyOut = buyOut, seller = seller }
 
-		if not auctionData[reagentID] then
-			auctionData[reagentID] = { newEntry }
-		else
-			auctionData[#auctionData + 1] = newEntry
+	local function QuickMoneyFormat(copper)
+		local silver = copper/100
+		local gold = silver/100
+		local kgold = gold/1000
+
+
+		if kgold >= 1 then
+			return "|cffffd100"..math.floor(kgold*10+.5)/10 .."k"
 		end
+
+		if gold >= 1 then
+			return "|Cffffd100"..math.floor(gold*100+.5)/100 .."g"
+		end
+
+		if silver >= 1 then
+			return "|cffe6e6e6"..math.floor(silver*100+.5)/100 .."s"
+		end
+
+		return "|cffc8602c"..copper .. "c"
 	end
 
+
+	local timeOutTimer
 
 
 	local function SendQuery()
+	end
+
+	function SendQuery(eventHandler)
 		if not reagentScanAbort then
-			QueryAuctionItems(reagentName, nil, nil, 0, 0, 0, page, 0, nil, nil)
+			if CanSendAuctionQuery() then
+
+				QueryAuctionItems(reagentName, nil, nil, 0, 0, 0, page, 0, nil, nil)
 --print("query", reagentName, reagentID)
 
-			GnomeWorks:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
+				if eventHandler then
+					GnomeWorks:RegisterEvent("AUCTION_ITEM_LIST_UPDATE", eventHandler)
+				else
+					GnomeWorks:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
+				end
+			else
+				timeOutTimer = GnomeWorks:ScheduleTimer(SendQuery,.1,eventHandler)
+			end
+		else
+--			print("abort?")
 		end
 	end
 
 
+
+	local function EntryIsCurrent(entry)
+		local num, totalNum = GetNumAuctionItems("list")
+
+		local numPages = math.ceil(totalNum / 50)
+
+
+		for i=1,num do
+			local name, texture, count, _, _, _, _, _, buyOut, _, _, seller = GetAuctionItemInfo("list",i)
+
+			if name == reagentName and count == entry.count and buyOut == entry.buyOut then
+				return i
+			end
+		end
+	end
+
+
+	local function FindEntry()
+		local num, totalNum = GetNumAuctionItems("list")
+		GnomeWorks:UnregisterEvent("AUCTION_ITEM_LIST_UPDATE")
+		local entry = purchaseEntry
+
+		local found = EntryIsCurrent(entry)
+
+		if not found then
+			page = page + 1
+
+			local numPages = math.ceil(totalNum / 50)
+
+
+			if page < numPages then
+				SendQuery(FindEntry)
+			else
+				print("can't find it")
+			end
+		else
+			sf:Refresh()
+		end
+	end
+
+
+
+
+
+	local function BuyAuctionEntry(entry)
+		local num, totalNum = GetNumAuctionItems("list")
+
+		local numPages = math.ceil(totalNum / 50)
+
+		local found = EntryIsCurrent(entry)
+
+		reagentID = frame.reagentButton.itemID
+
+		if found then
+			GnomeWorks:print("buying %s x %d for %s",(GetItemInfo(reagentID)),entry.count,QuickMoneyFormat(entry.buyOut))
+
+			PlaceAuctionBid("list", found, entry.buyOut)
+			table.remove(sf.data.entries, entry.dataIndex)
+
+			GnomeWorks.data.inventoryData.auctionHouse[reagentID] = GnomeWorks.data.inventoryData.auctionHouse[reagentID] - entry.count
+
+			GnomeWorks.data.inventoryData[GnomeWorks.player].mail[reagentID] = (GnomeWorks.data.inventoryData[GnomeWorks.player].mail[reagentID] or 0) + entry.count
+
+			GnomeWorks:InventoryScan()
+			sf:Refresh()
+		else
+			page = 0
+
+			purchaseEntry = entry
+			SendQuery(FindEntry)
+		end
+	end
+
+
+
+	local function AuctionFrame_OnClick(cellFrame, button, source)
+		local rowFrame = cellFrame:GetParent()
+
+		if rowFrame.rowIndex>0 then
+			local entry = rowFrame.data
+
+			BuyAuctionEntry(entry)
+		end
+
+		GameTooltip:Hide()
+	end
+
+
+	local function AuctionFrame_OnEnter(cellFrame, button)
+		local rowFrame = cellFrame:GetParent()
+
+		if rowFrame.rowIndex>0 then
+			local entry = rowFrame.data
+
+			GameTooltip:SetOwner(cellFrame.scrollFrame,"ANCHOR_NONE")
+			GameTooltip:SetPoint("TOPRIGHT",cellFrame,"TOPLEFT")
+
+			if EntryIsCurrent(entry) then
+				GameTooltip:AddLine("Click To Buy")
+				GameTooltip:Show()
+			else
+				GameTooltip:AddLine("Click to Search")
+				GameTooltip:Show()
+			end
+		end
+	end
+
+
+	local columnHeaders = {
+		{
+--			font = "GameFontHighlight",
+			buttonX = {
+				normalTexture = "Interface\\Icons\\INV_Misc_Bag_10",
+				highlightTexture = "Interface\\InventoryItems\\WoWUnknownItem01",
+				width = 14,
+				height = 14,
+			},
+			align = "CENTER",
+			name = "Cost Per",
+			width = 90,
+			OnEnter = AuctionFrame_OnEnter,
+			OnLeave = function()
+							GameTooltip:Hide()
+						end,
+			draw =	function (rowFrame,cellFrame,entry)
+						cellFrame.text:SetPoint("LEFT", cellFrame, "LEFT", 16, 0)
+						cellFrame.text:SetText(QuickMoneyFormat(entry.buyOut/entry.count))
+
+						local alpha
+
+						if EntryIsCurrent(entry) then
+							alpha = 1
+						else
+							alpha = .5
+						end
+
+						if entry.buyIt then
+							cellFrame.text:SetTextColor(0,1,0,alpha)
+						else
+							cellFrame.text:SetTextColor(1,0,0,alpha)
+						end
+					end,
+			OnClick = AuctionFrame_OnClick,
+		}, -- [1]
+		{
+			name = "Count",
+			align = "CENTER",
+			width = 50,
+			font = "GameFontHighlightSmall",
+			OnEnter = AuctionFrame_OnEnter,
+			OnLeave = function()
+							GameTooltip:Hide()
+						end,
+			draw =	function (rowFrame,cellFrame,entry)
+						cellFrame.text:SetText(entry.count)
+
+						local alpha
+
+						if EntryIsCurrent(entry) then
+							alpha = 1
+						else
+							alpha = .5
+						end
+
+						if entry.buyIt then
+							cellFrame.text:SetTextColor(0,1,0,alpha)
+						else
+							cellFrame.text:SetTextColor(1,0,0,alpha)
+						end
+					end,
+			OnClick = AuctionFrame_OnClick,
+		}, -- [2]
+
+		{
+--			font = "GameFontHighlight",
+			name = "Total Buyout",
+			width = 90,
+			align = "CENTER",
+			draw =	function (rowFrame,cellFrame,entry)
+						cellFrame.text:SetText(QuickMoneyFormat(entry.buyOut))
+
+						local alpha
+
+						if EntryIsCurrent(entry) then
+							alpha = 1
+						else
+							alpha = .5
+						end
+
+
+						if entry.buyIt then
+							cellFrame.text:SetTextColor(0,1,0,alpha)
+						else
+							cellFrame.text:SetTextColor(1,0,0,alpha)
+						end
+					end,
+			OnClick = AuctionFrame_OnClick,
+			OnEnter = AuctionFrame_OnEnter,
+			OnLeave = function()
+							GameTooltip:Hide()
+						end,
+		}, -- [3]
+	}
+
+
+
+	local function BuildScrollingFrame()
+
+		local function ResizeFrame(scrollFrame,width,height)
+			if scrollFrame then
+				scrollFrame.columnWidth[2] = scrollFrame.columnWidth[2] + width - scrollFrame.headerWidth
+				scrollFrame.headerWidth = width
+
+				local x = 0
+
+				for i=1,#scrollFrame.columnFrames do
+					scrollFrame.columnFrames[i]:SetPoint("LEFT",scrollFrame, "LEFT", x,0)
+					scrollFrame.columnFrames[i]:SetPoint("RIGHT",scrollFrame, "LEFT", x+scrollFrame.columnWidth[i],0)
+
+					x = x + scrollFrame.columnWidth[i]
+				end
+			end
+		end
+
+		local ScrollPaneBackdrop  = {
+				bgFile = "Interface\\AddOns\\GnomeWorks\\Art\\frameInsetSmallBackground.tga",
+				edgeFile = "Interface\\AddOns\\GnomeWorks\\Art\\frameInsetSmallBorder.tga",
+				tile = true, tileSize = 16, edgeSize = 16,
+				insets = { left = 9.5, right = 9.5, top = 9.5, bottom = 11.5 }
+			}
+
+
+		local auctionFrame = CreateFrame("Frame",nil,frame)
+		auctionFrame:SetPoint("LEFT",20,0)
+		auctionFrame:SetPoint("BOTTOM",frame,"BOTTOM",0,20)
+		auctionFrame:SetPoint("TOP", frame, 0, -80)
+		auctionFrame:SetPoint("RIGHT", frame, -20,0)
+
+
+--		GnomeWorks.auctionFrame = auctionFrame
+
+		sf = GnomeWorks:CreateScrollingTable(auctionFrame, ScrollPaneBackdrop, columnHeaders, ResizeFrame)
+
+
+--		sf.childrenFirst = true
+
+		sf.IsEntryFiltered = function(self, entry)
+			return false
+		end
+
+
+		local function UpdateRowData(scrollFrame,entry)
+		end
+
+		sf:RegisterRowUpdate(UpdateRowData)
+	end
+
+
+
+	function GnomeWorks:CreateAuctionWindow()
+		local function ResizeWindow()
+		end
+
+
+
+		frame = self.Window:CreateResizableWindow("GnomeWorksAuctionFrame", "Auctions", 300, 300, ResizeWindow, GnomeWorksDB.config)
+
+--		frame:DockWindow(self.MainWindow)
+
+
+		frame:SetMaxResize(300,1000)
+		frame:SetMinResize(300,200)
+
+		BuildScrollingFrame()
+
+		frame:Hide()
+
+
+		local button = CreateFrame("Button", "GWAuctionItemIcon", frame, "ActionButtonTemplate")
+
+		button:SetAlpha(0.8)
+
+		button:SetPoint("TOPLEFT", 20, -20)
+		button:SetWidth(32)
+		button:SetHeight(32)
+
+		button:EnableMouse(true)
+
+		GWAuctionItemIconNormalTexture:SetAllPoints(button)			-- for some reason they added an offset in the template in 4.0.1
+
+		button:SetScript("OnEnter", function(b)
+			GameTooltip:SetOwner(b,"ANCHOR_NONE")
+			GameTooltip:SetHyperlink("item:"..(b.itemID or 0))
+			GameTooltip:SetPoint("TOPRIGHT", frame, "TOPLEFT")
+			GameTooltip:Show()
+		end)
+
+		button:SetScript("OnLeave", function() GameTooltip:Hide() end)
+		button:SetScript("OnClick", function(b) GnomeWorks:BeginSingleReagentScan(b.itemID) end )
+
+		button:Show()
+
+		button:SetFrameLevel(button:GetFrameLevel()+1)
+
+
+		local text = button:CreateFontString(nil,"OVERLAY", "GameFontHighlight")
+
+		text:SetJustifyH("LEFT")
+		text:SetPoint("LEFT",button,"RIGHT",5,10)
+		text:SetPoint("RIGHT",frame,"RIGHT",-20,10)
+		text:SetHeight(16)
+
+		button.count = text
+
+
+		local text = button:CreateFontString(nil,"OVERLAY", "GameFontHighlight")
+
+		text:SetJustifyH("LEFT")
+		text:SetPoint("LEFT",button,"RIGHT",5,-10)
+		text:SetPoint("RIGHT",frame,"RIGHT",-20,-10)
+		text:SetHeight(16)
+
+		button.needed = text
+
+
+
+		frame.reagentButton = button
+
+
+		return frame
+	end
+
+
+	function GnomeWorks:ShowAuctionWindow()
+		if not frame then
+			self:CreateAuctionWindow()
+
+			sf.data = {}
+
+			sf.selectedIndex = 1
+		end
+
+		if reagentID then
+			local icon = GetItemIcon(reagentID)
+
+			frame.reagentButton.itemID = reagentID
+
+			if icon then
+				frame.reagentButton:SetNormalTexture(icon)
+				frame.reagentButton:SetPushedTexture(icon)
+
+
+				frame.reagentButton.count:SetFormattedText("%d %s (%d pages)",self.data.inventoryData.auctionHouse[reagentID] or 0,(GetItemInfo(reagentID)),page)
+--print(self.data.auctionQueue[self.player][reagentID], self.player, reagentID)
+
+				if self.data.auctionQueue[self.player] and self.data.auctionQueue[self.player][reagentID] then
+					frame.reagentButton.needed:SetFormattedText("%d Needed",self.data.auctionQueue[self.player][reagentID] or 0)
+					frame.reagentButton.needed:Show()
+				else
+					frame.reagentButton.needed:Hide()
+				end
+
+				frame.reagentButton:Show()
+			else
+				frame.reagentButton:Hide()
+			end
+
+			sf.data.entries = self.data.auctionData[reagentID]
+
+			sf:Refresh()
+			frame:Show()
+			frame.title:Show()
+		end
+	end
+
+
+
+	local function RecordAuctionEntry(reagentID, count, buyOut, seller,page)
+--		print((GetItemInfo(reagentID)), count, math.floor(buyOut/100)/100)
+		if count>0 then
+			local newEntry = { count = count, buyOut = buyOut, seller = seller, page = page}
+
+
+			GnomeWorks.data.inventoryData.auctionHouse[reagentID] = (GnomeWorks.data.inventoryData.auctionHouse[reagentID] or 0) + count
+
+			if not auctionData[reagentID] then
+				auctionData[reagentID] = { newEntry }
+			else
+				local list = auctionData[reagentID]
+				list[#list + 1] = newEntry
+			end
+		end
+	end
+
+
+
+
+
+	local function SortAuctionData(a,b)
+		local aPer,bPer =  a.buyOut/a.count, b.buyOut/b.count
+
+		if aPer == bPer then
+			if a.count == b.count then
+				return a.page < b.page
+			else
+				return a.count < b.count
+			end
+		else
+			return aPer < bPer
+		end
+	end
+
+	local function FlagCheapest(data, start, count)
+		for i=start,#data do
+			if data[i].count <= count then
+				data[i].buyIt = true
+				count = count - data[i].count
+			else
+				data[i].buyIt = true
+				count = count - data[i].count
+			end
+
+			if count <= 0 then
+				break
+			end
+		end
+	end
+
+
+	local function FlagForPurchase(itemID, count)
+		local data = GnomeWorks.data.auctionData[itemID]
+
+		if data then
+			local stillNeeded = count
+			FlagCheapest(data, 1, count)
+		end
+	end
+
+
+
 	function GnomeWorks:AUCTION_ITEM_LIST_UPDATE(...)
+		if timeOutTimer then
+			GnomeWorks:CancelTimer(timeOutTimer, true)
+			timeOutTimer = nil
+		end
+
 		GnomeWorks:UnregisterEvent("AUCTION_ITEM_LIST_UPDATE")
 
 		local num, totalNum = GetNumAuctionItems("list")
@@ -51,40 +527,88 @@ do
 		for i=1,num do
 			local name, texture, count, _, _, _, _, _, buyOut, _, _, seller = GetAuctionItemInfo("list",i)
 
-			if name == reagentName and buyOut then
-				RecordAuctionEntry(reagentID, count, buyOut, seller)
+
+			if name == reagentName and buyOut>0 then
+--print(GetAuctionItemInfo("list",i))
+				RecordAuctionEntry(reagentID, count, buyOut, seller, page)
 			end
 		end
+
+		GnomeWorks:ShowAuctionWindow()
 
 		page = page + 1
 
 		if page < numPages then
-			self:ScheduleTimer(SendQuery, .5)
+			self:ScheduleTimer(SendQuery, .3)
 		else
+
+			if auctionData[reagentID] then
+				table.sort(auctionData[reagentID], SortAuctionData)
+			end
+
+			if GnomeWorks.data.auctionQueue[self.player] then
+				FlagForPurchase(reagentID, GnomeWorks.data.auctionQueue[self.player][reagentID] or 0)
+			end
+
+			GnomeWorks:ShowAuctionWindow()
+
 			page = 0
 			reagentID = next(reagentList, reagentID)
 			if reagentID and reagentID > 0 then
 				reagentName = GetItemInfo(reagentID)
 
-				self:ScheduleTimer(SendQuery, .5)
+				self:ScheduleTimer(SendQuery, .3)
 			else
-				if callBack then
-					callBack()
-				end
+				self.auctionScanning = nil
+				self:SendMessageDispatch("GnomeWorksAuctionScan GnomeWorksQueueChanged")
 			end
 		end
 	end
 
 
-	function GnomeWorks:BeginReagentScan(reagents, func)
+	local function AddReagentsToReagentList(queue, reagents)
+		for k,v in ipairs(queue) do
+			if v.command == "collect" then
+				reagents[v.itemID] = true
+			elseif v.command == "create" then
+				AddReagentsToReagentList(v.subGroup.entries, reagents)
+			end
+		end
+	end
+
+
+	function GnomeWorks:BeginReagentScan(player)
+		local queueData = GnomeWorks.data.queueData[player]
+
+		SortAuctionItems("list", "buyout")
+
+		if not IsAuctionSortReversed("list", "buyout") then
+			SortAuctionItems("list", "buyout")
+		end
+
+		reagentScanAbort = nil
+
+		local reagents = {}
+
+		AddReagentsToReagentList(queueData, reagents)
+
+		self:ShowAuctionWindow()
+
 		auctionData = self.data.auctionData
 
+		if not GnomeWorks.data.inventoryData.auctionHouse then
+			GnomeWorks.data.inventoryData.auctionHouse = {}
+		end
+
+
 		reagentList = reagents
-		callBack = func
+
 
 		for id in pairs(reagents) do
 			if auctionData[id] then
 				table.wipe(auctionData[id])
+
+				GnomeWorks.data.inventoryData.auctionHouse[id] = nil
 			end
 		end
 
@@ -95,6 +619,10 @@ do
 			reagentName = GetItemInfo(reagentID)
 
 			SendQuery()
+
+			self.auctionScanning = true
+
+			self:SendMessageDispatch("GnomeWorksAuctionScan")
 		end
 	end
 
@@ -103,7 +631,9 @@ do
 		if itemID then
 			auctionData = self.data.auctionData
 
-			callback = nil
+			self:ShowAuctionWindow()
+
+
 
 			reagentList = { [itemID] = 1 }
 
@@ -111,19 +641,29 @@ do
 				table.wipe(auctionData[itemID])
 			end
 
+			GnomeWorks.data.inventoryData.auctionHouse[itemID] = nil
+
+
 			page = 0
 			reagentID = next(reagentList)
 			if reagentID then
 				reagentName = GetItemInfo(reagentID)
 
 				SendQuery()
+
+				self.auctionScanning = true
+				self:SendMessageDispatch("GnomeWorksAuctionScan")
 			end
 		end
 	end
 
 
+
 	function GnomeWorks:StopReagentScan()
 		reagentScanAbort = true
+		self.auctionScanning = nil
+
+		self:SendMessageDispatch("GnomeWorksAuctionScan GnomeWorksQueueChanged")
 	end
 
 
@@ -132,20 +672,62 @@ do
 		self.atAuctionHouse = true
 --		self:BeginReagentScan(GnomeWorks.data.inventoryData[(UnitName("player"))].queue, function() print("DONE WITH SCAN") end)
 
+		if not self.player then
+			self.player = UnitName("player")
+		end
 
-		local auctionQueue = self.data.auctionQueue[(UnitName("player"))]
+		local auctionQueue = self.data.auctionQueue[self.player]
 
 		if auctionQueue and next(auctionQueue) then
-			self:ShoppingListShow((UnitName("player")))
+			self:ShoppingListShow(self.player)
 		end
+
+		self:SendMessageDispatch("GnomeWorksAuctionScan")
 	end
 
 
 	function GnomeWorks:AUCTION_HOUSE_CLOSED(...)
 		self.atAuctionHouse = false
+
+		if frame then
+			frame:Hide()
+			frame.title:Hide()
+		end
+
 		self:StopReagentScan()
 	end
 
 
 
+	function GnomeWorks:GetAuctionCost(itemID, count, skip)
+		local data = self.data.auctionData[itemID]
+
+		if data then
+			skip = skip or 0
+
+			local stillNeeded = count
+			local cost = 0
+
+			for k,v in pairs(data) do
+				if skip < 1 then
+					cost = cost + v.buyOut
+					stillNeeded = stillNeeded - v.count
+
+					if stillNeeded <= 0 then
+						break
+					end
+				elseif v.count < skip then
+					skip = skip - v.count
+				else
+					-- no cost since we've got some left over
+					stillNeeded = stillNeeded - (v.count - skip)
+					skip = 0
+				end
+			end
+
+			return cost
+		end
+
+		return 10000000
+	end
 end

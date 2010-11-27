@@ -84,6 +84,8 @@ FrameHooks\AuctionHouse.lua
 FrameHooks\Bank.lua
 FrameHooks\GuildBank.lua
 FrameHooks\TradeWindow.lua
+FrameHooks\Mail.lua
+
 
 
 

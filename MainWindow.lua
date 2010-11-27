@@ -130,12 +130,13 @@ do
 
 	local containerIndex = { "bag", "bank" }
 
-	local inventoryIndex = { "bag", "vendor", "bank", "guildBank", "alt" }
+	local inventoryIndex = { "bag", "vendor", "bank", "mail", "guildBank", "alt" }
 
 	local inventoryColorBlindTag = {
 		bag = "",
 		vendor = "v",
 		bank = "b",
+		mail = "m",
 		guildBank = "g",
 		alt = "a",
 	}
@@ -145,6 +146,7 @@ do
 		vendor = "|cff80ff80",
 		bank =  "|cffffa050",
 		guildBank = "|cff5080ff",
+		mail = "|cff60fff0",
 		alt = "|cffff80ff",
 	}
 
@@ -804,8 +806,16 @@ do
 
 								GameTooltip:SetOwner(cellFrame.scrollFrame, "ANCHOR_NONE")
 								GameTooltip:ClearLines()
-								GameTooltip:SetPoint("TOPRIGHT",cellFrame.scrollFrame, "TOPLEFT")
 
+
+								local spaceLeft = cellFrame.scrollFrame:GetLeft()
+								local spaceRight = GetScreenWidth() - cellFrame.scrollFrame:GetRight()
+
+								if spaceRight > spaceLeft then
+									GameTooltip:SetPoint("TOPLEFT",cellFrame.scrollFrame, "TOPRIGHT")
+								else
+									GameTooltip:SetPoint("TOPRIGHT",cellFrame.scrollFrame, "TOPLEFT")
+								end
 
 								if not entry.subGroup then
 									if true or entry.recipeID > 0 then
@@ -881,10 +891,41 @@ do
 									cellFrame.text:SetText("\226\136\158")
 								end
 							else
-								local bag,vendor,bank,guildBank,alt = entry.bag or -1, entry.vendor or -1, entry.bank or -1 , entry.guildBank or -1, entry.alt or -1
+								local display = ""
+								local low, hi
+								local lowKey, hiKey
 
-								if alt+guildBank > 0 then
-									local display = ""
+								for k,inv in ipairs(inventoryIndex) do
+									if entry[inv]>0 then
+										low = k
+										lowKey = inv
+										break
+									end
+								end
+
+								if low then
+									for i=#inventoryIndex,low+1,-1 do
+										local key = inventoryIndex[i]
+
+										if entry[key] > entry[inventoryIndex[i-1]] then
+											hi = i
+											hiKey = key
+											break
+										end
+									end
+
+									if hi and entry[lowKey] < entry[hiKey] then
+										local lowString = string.format(inventoryFormat[lowKey],entry[lowKey])
+										local hiString = string.format(inventoryFormat[hiKey],entry[hiKey])
+
+										display = lowString.."/"..hiString
+									else
+										display = string.format(inventoryFormat[lowKey],entry[lowKey])
+									end
+								end
+
+--[[
+									local bag,vendor,bank,guildBank,alt = entry.bag or -1, entry.vendor or -1, entry.bank or -1 , entry.guildBank or -1, entry.alt or -1
 
 									if bag > 0 then
 										display = string.format(inventoryFormat.bag,bag)
@@ -907,12 +948,9 @@ do
 									elseif vendor > bag and bag > 0 then
 										display = string.format("%s/%s", display, string.format(inventoryFormat.vendor,vendor))
 									end
+]]
 
-
-									cellFrame.text:SetText(display)
-								else
-									cellFrame.text:SetText("")
-								end
+								cellFrame.text:SetText(display)
 							end
 						end,
 
@@ -994,6 +1032,46 @@ do
 								return
 							end
 
+							local display = ""
+							local low, hi
+							local lowKey, hiKey
+							local lowValue, hiValue
+
+							for k,inv in ipairs(inventoryIndex) do
+								local value = entry.inventory[inv]
+								if value>0 then
+									low = k
+									lowKey = inv
+									lowValue = value
+									break
+								end
+							end
+
+							if low then
+								for i=#inventoryIndex,low+1,-1 do
+									local key = inventoryIndex[i]
+
+									if entry.inventory[key] > entry.inventory[inventoryIndex[i-1]] then
+										hi = i
+										hiKey = key
+										hiValue = entry.inventory[key]
+										break
+									end
+								end
+
+								if hi and lowValue < hiValue then
+									local lowString = string.format(inventoryFormat[lowKey],lowValue)
+									local hiString = string.format(inventoryFormat[hiKey],hiValue)
+
+									display = lowString.."/"..hiString
+								else
+									display = string.format(inventoryFormat[lowKey],lowValue)
+								end
+							end
+
+							cellFrame.text:SetText(display)
+
+--[[
 							local bag,bank,guildBank,alt = entry.bagInventory or -1, entry.bankInventory or -1, entry.guildBankInventory or -1, entry.altInventory or -1
 
 							if alt+guildBank > 0 then
@@ -1021,6 +1099,7 @@ do
 							else
 								cellFrame.text:SetText("")
 							end
+]]
 						end,
 
 			OnEnter =	function (cellFrame)
@@ -1037,7 +1116,7 @@ do
 								local entry = cellFrame:GetParent().data
 
 								if entry and entry.recipeID then
-									if entry.altInventory and entry.altInventory + entry.guildBankInventory > 0 then
+									if entry.inventory.alt and entry.inventory.alt + entry.inventory.guildBank > 0 then
 										GameTooltip:SetOwner(cellFrame, "ANCHOR_TOPLEFT")
 										GameTooltip:ClearLines()
 										GameTooltip:AddLine(GnomeWorks.player.."'s inventory")
@@ -1047,7 +1126,7 @@ do
 										local prev = 0
 										for i,key in pairs(inventoryIndex) do
 											if key ~= "vendor" then
-												local count = entry[key.."Inventory"] or 0
+												local count = entry.inventory[key] or 0
 
 												if prev ~= count and count ~= 0 then
 
@@ -1179,26 +1258,40 @@ do
 			local player = GnomeWorks.player
 
 			if not entry.subGroup then
+				local results, reagents = GnomeWorks:GetRecipeData(entry.recipeID, player)
 
-				local onHand = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "bag")
+				if next(reagents) then
+					local onHand = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "bag")
 
-				local bag = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "craftedBag queue")
-				local vendor = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedBag queue")
-				local bank = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedBank queue")
-				local guildBank = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedGuildBank queue")
-				local alt = GnomeWorks:InventoryRecipeIterations(entry.recipeID, "faction", "vendor craftedGuildBank queue")
+					local bag = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "craftedBag queue")
+					local vendor = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedBag queue")
+					local bank = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedBank queue")
+					local mail = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedMail queue")
+					local guildBank = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedGuildBank queue")
+					local alt = GnomeWorks:InventoryRecipeIterations(entry.recipeID, "faction", "vendor craftedGuildBank queue")
 
-				if onHand > 0 then
-					entry.craftable = true
+					if onHand > 0 then
+						entry.craftable = true
+					else
+						entry.craftable = nil
+					end
+
+					entry.bag = bag
+					entry.vendor = vendor
+					entry.bank = bank
+					entry.mail = mail
+					entry.guildBank = guildBank
+					entry.alt = math.max(alt, guildBank)
 				else
+					entry.bag = 0
+					entry.vendor = 0
+					entry.bank = 0
+					entry.guildBank = 0
+					entry.alt = 0
+					entry.mail = 0
+
 					entry.craftable = nil
 				end
-
-				entry.bag = bag
-				entry.vendor = vendor
-				entry.bank = bank
-				entry.guildBank = guildBank
-				entry.alt = math.max(alt, guildBank)
 
 				local itemLink = (entry.index and GnomeWorks:GetTradeSkillItemLink(entry.index))
 
@@ -1225,10 +1318,13 @@ do
 					entry.itemColor = itemColor
 				end
 
-				entry.bagInventory = 0
-				entry.bankInventory = 0
-				entry.guildBankInventory = 0
-				entry.altInventory = 0
+				if not entry.inventory then
+					entry.inventory = {}
+				end
+
+				for k,inv in ipairs(inventoryIndex) do
+					entry.inventory[inv] = 0
+				end
 
 				if itemLink then
 
@@ -1237,12 +1333,15 @@ do
 					entry.itemID = itemID
 
 					if itemID then
-						entry.altInventory = GnomeWorks:GetInventoryCount(itemID, "faction", "bank")
-						entry.guildBankInventory = GnomeWorks:GetInventoryCount(itemID, player, "guildBank")
-						entry.bankInventory = GnomeWorks:GetInventoryCount(itemID, player, "bank")
-						entry.bagInventory  = GnomeWorks:GetInventoryCount(itemID, player, "bag")
+						for k,inv in ipairs(inventoryIndex) do
+							if inv == "alt" then
+								entry.inventory[inv] = GnomeWorks:GetInventoryCount(itemID, "faction", "bank")
+							else
+								entry.inventory[inv] = GnomeWorks:GetInventoryCount(itemID, player, inv)
+							end
+						end
 
-						entry.altInventory = math.max(entry.altInventory, entry.guildBankInventory)
+						entry.inventory.alt = math.max(entry.inventory.alt, entry.inventory.guildBank)
 					end
 				end
 			end
@@ -1376,9 +1475,16 @@ do
 	function GnomeWorks:ShowStatus()
 		local rank, maxRank = self:GetTradeSkillRank()
 		self.levelStatusBar:SetMinMaxValues(0,maxRank)
+		self.levelStatusBar.estimatedLevel:SetMinMaxValues(0,maxRank)
 		self.levelStatusBar:SetValue(rank)
+		self.levelStatusBar.estimatedLevel:SetValue(rank)
 		self.levelStatusBar:Show()
 
+		local estimatedSkillUp = GnomeWorks.data.skillUpRanks[GnomeWorks.tradeID]
+
+		if estimatedSkillUp then
+			self.levelStatusBar.estimatedLevel:SetValue(estimatedSkillUp)
+		end
 
 		self.playerNameFrame:SetFormattedText("%s - %s", self.player or "??", self:GetTradeName(self.tradeID) or "??")
 	end
@@ -1745,7 +1851,7 @@ do
 		end)
 
 
-		GnomeWorks:RegisterMessageDispatch("GnomeWorksDetailsChanged", function()
+		GnomeWorks:RegisterMessageDispatch("GnomeWorksDetailsChanged HeartBeat", function()
 			for i, b in pairs(buttons) do
 				if b.validate then
 					b:validate()
@@ -1990,38 +2096,67 @@ do
 
 
 
-		local level = CreateFrame("StatusBar", nil, frame)
+		local estimatedLevel = CreateFrame("StatusBar", nil, frame)
+		local level = CreateFrame("StatusBar", nil, estimatedLevel)
+
 
 		level:SetPoint("TOPRIGHT",frame,"TOPRIGHT",-20,-34)
---		level:SetWidth(rightSideWidth)
 		level:SetPoint("LEFT",tradeButtonFrame)
 		level:SetHeight(8)
 
---		level:SetMinMaxValues(1,10)
---		level:SetValue(5)
+
 		level:SetOrientation("HORIZONTAL")
 		level:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
-		level:SetStatusBarColor(.05,.05,1,.75)
+		level:SetStatusBarColor(.05,.05,.75,1)
 
-		self.Window:SetBetterBackdrop(level, levelBackDrop)
-		self.Window:SetBetterBackdropColor(level, 1,1,1,.5)
+
+		estimatedLevel:SetAllPoints(level)
+
+		estimatedLevel:SetOrientation("HORIZONTAL")
+		estimatedLevel:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
+		estimatedLevel:SetStatusBarColor(.05,.5,1,1)
+
+
+
+		self.Window:SetBetterBackdrop(estimatedLevel, levelBackDrop)
+		self.Window:SetBetterBackdropColor(estimatedLevel, 1,1,1,.5)
 
 		local levelText = level:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 		levelText:SetPoint("CENTER",0,1)
 		levelText:SetHeight(13)
-		levelText:SetWidth(50)
+		levelText:SetWidth(100)
 		levelText:SetJustifyH("CENTER")
 
 		level.text = levelText
 
+		level.estimatedLevel = estimatedLevel
+		estimatedLevel.level = level
+
+
+		estimatedLevel:SetScript("OnValueChanged", function(frame, value)
+			local minValue, maxValue = frame:GetMinMaxValues()
+			local level = frame.level:GetValue()
+
+			if value ~= level then
+				levelText:SetFormattedText("%d(%d)/%d",value,level,maxValue)
+			end
+		end)
+
+
 		level:SetScript("OnValueChanged", function(frame, value)
 			local minValue, maxValue = frame:GetMinMaxValues()
+
+			frame.estimatedLevel:SetValue(value)
 
 			levelText:SetFormattedText("%d/%d",value,maxValue)
 		end)
 
 
+
+
+
 		self.levelStatusBar = level
+
 
 
 		local playerName = CreateFrame("Button", nil, frame)
@@ -2066,6 +2201,13 @@ do
 
 			self:SendMessageDispatch("GnomeWorksDetailsChanged")
 		end)
+
+
+		self:RegisterMessageDispatch("SkillRanksChanged", function()
+			self:ShowSkillList()
+			self:ShowStatus()
+		end)
+
 
 
 		for k,v in pairs(inventoryColors) do

@@ -193,7 +193,6 @@ do
 		else -- faction-wide materials
 			local count = 0
 
-
 			for k,container in pairs(StringIterator(containerList)) do -- string.gmatch(containerList, "%a+") do
 				if container == "vendor" then
 					if self:VendorSellsItem(itemID) then
@@ -201,16 +200,20 @@ do
 					end
 				end
 
+				if container == "auctionHouse" then
+					count = count + (self.data.inventoryData.auctionHouse[itemID] or 0)
+				else
 
-				for inv, inventoryData in pairs(self.data.inventoryData) do
-					local c = container
+					for inv, inventoryData in pairs(self.data.inventoryData) do
+						local c = container
 
-					if container == "craftedGuildBank" and self.data.playerData[inv] and not self.data.playerData[inv].guild then
-						c = "craftedBank"
-					end
+						if container == "craftedGuildBank" and self.data.playerData[inv] and not self.data.playerData[inv].guild then
+							c = "craftedBank"
+						end
 
-					if inventoryData[c] then
-						count = count + (inventoryData[c][itemID] or 0)
+						if inventoryData[c] then
+							count = count + (inventoryData[c][itemID] or 0)
+						end
 					end
 				end
 
@@ -310,6 +313,22 @@ do
 				inventory["bank"] = {}
 			end
 
+			if not inventory["mail"] then
+				inventory["mail"] = {}
+			end
+
+			if not inventory["craftedMail"] then
+				inventory["craftedMail"] = {}
+			end
+--[[
+			if not inventory["auction"] then
+				inventory["auction"] = {}
+			end
+
+			if not inventory["craftedAuction"] then
+				inventory["craftedAuction"] = {}
+			end
+]]
 			if not inventory["craftedBag"] then
 				inventory["craftedBag"] = {}
 			end
@@ -354,6 +373,9 @@ do
 			local craftedBag = table.wipe(inventory["craftedBag"])
 			local craftedBank = table.wipe(inventory["craftedBank"])
 			local craftedGuildBank = inventory["craftedGuildBank"] and table.wipe(inventory["craftedGuildBank"])
+			local craftedMail = table.wipe(inventory["craftedMail"])
+--			local craftedAuction = table.wipe(inventory["craftedAuction"])
+
 
 			for reagentID, count in pairs(inventory["bag"]) do
 				craftedBag[reagentID] = count
@@ -361,10 +383,24 @@ do
 
 			for reagentID, count in pairs(inventory["bank"]) do
 				craftedBank[reagentID] = count
+			end
+
+			for reagentID, count in pairs(inventory["mail"]) do
+				craftedMail[reagentID] = count
+
 				if craftedGuildBank then
-					craftedGuildBank[reagentID] = count
+					craftedGuildBank[reagentID] = craftedMail[reagentID]
 				end
 			end
+--[[
+			for reagentID, count in pairs(inventory["auction"]) do
+				craftedAuction[reagentID] = count
+
+				if craftedGuildBank then
+					craftedGuildBank[reagentID] = craftedAuction[reagentID]
+				end
+			end
+]]
 
 			if craftedGuildBank then
 				local key = "GUILD:"..self.data.playerData[player].guild
@@ -384,6 +420,8 @@ do
 			for itemID in pairs(GnomeWorks.data.itemSource) do
 				self:InventoryReagentCraftability(craftedBag, itemID, player, "craftedBag queue")
 				self:InventoryReagentCraftability(craftedBank, itemID, player, "craftedBank queue")
+				self:InventoryReagentCraftability(craftedMail, itemID, player, "craftedMail queue")
+--				self:InventoryReagentCraftability(craftedAuction, itemID, player, "craftedAuction queue")
 				if craftedGuildBank then
 					self:InventoryReagentCraftability(craftedGuildBank, itemID, player, "craftedGuildBank queue")
 				end
@@ -394,7 +432,7 @@ do
 			for name, container in pairs(inventory) do
 				for itemID, count in pairs(container) do
 					if count == 0 then
-						craftedBag[itemID] = nil
+						container[itemID] = nil
 					end
 				end
 			end

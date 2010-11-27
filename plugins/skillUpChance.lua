@@ -7,6 +7,8 @@ do
 
 	local scrollFrame
 
+	local rank, maxRank, estimatedRank
+
 
 	local skillColors = {
 		["unknown"]			= { r = 1.00, g = 0.00, b = 0.00, level = 5, alttext="???", cstring = "|cffff0000"},
@@ -184,22 +186,19 @@ do
 			end,
 
 			enabled = function()
+				rank,maxRank,estimatedRank = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, GnomeWorks.tradeID)
+				rank = estimatedRank or rank
+
 				if not plugin.enabled then
 					return
 				end
 
 				if scrollFrame:IsVisible() then
-					local show
-
-					local rank,maxRank = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, GnomeWorks.tradeID)
-
-					if rank < maxRank then
+					if rank and maxRank and rank < maxRank then
 						if not GnomeWorks.data.pseudoTradeData[GnomeWorks.tradeID] then
 							return true
 						end
 					end
-
-					return show
 				end
 			end,
 		}
@@ -210,15 +209,13 @@ do
 			if GnomeWorks.tradeID and GnomeWorks.player then
 				local skillName, skillType = GetTradeSkillInfo(entry.index)
 
-				local rank,maxRank = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, GnomeWorks.tradeID)
-
 				if skillType ~= "header" and entry.recipeID then
 					local itemLink = GnomeWorks:GetTradeSkillItemLink(entry.index)
 
 					if itemLink then
 						local itemID = tonumber(string.match(itemLink,"item:(%d+)"))
 
-						entry.skillUp = GetSkillUpChance(itemID or -entry.recipeID, rank)
+						entry.skillUp = GetSkillUpChance(itemID or -entry.recipeID, rank) * (GnomeWorksDB.skillUps[entry.recipeID] or 1)
 					end
 				end
 			end

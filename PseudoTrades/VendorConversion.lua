@@ -91,9 +91,15 @@ do
 					local merchantItemID = tonumber(string.match(itemLink,"item:(%d+)"))
 
 					if merchantItemID == itemID then
-						BuyMerchantItem(i,count)
+						local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount = GetItemInfo(itemID)
 
-						return true						-- return true will delete the entry
+						if itemStackCount < count then
+							BuyMerchantItem(i,itemStackCount)
+						else
+							BuyMerchantItem(i,count)
+
+							return true						-- return true will delete the entry
+						end
 					end
 				end
 			end

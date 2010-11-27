@@ -8,7 +8,8 @@ do
 	local shoppingListFrame
 	local shoppingListPlayer
 
-	local queueList = { "bank", "guildBank", "alt", "vendor", "auction" }
+
+	local queueList = { "bank", "mail", "guildBank", "alt", "vendor", "auction" }
 
 	local inventoryColors = {
 --		queue = "|cffff0000",
@@ -18,7 +19,31 @@ do
 		guildBank = "|cff5080ff",
 		alt = "|cffff80ff",
 		auction = "|cffb0b000",
+		mail = "|cff60fff0",
 	}
+
+
+	local function QuickMoneyFormat(copper)
+		local silver = copper/100
+		local gold = silver/100
+		local kgold = gold/1000
+
+
+		if kgold > 1 then
+			return "|cffffd100"..math.floor(kgold*10+.5)/10 .."k"
+		end
+
+		if gold > 1 then
+			return "|Cffffd100"..math.floor(gold*100+.5)/100 .."g"
+		end
+
+		if silver > 1 then
+			return "|cffe6e6e6"..math.floor(silver*100+.5)/100 .."s"
+		end
+
+		return "|cffc8602c"..copper .. "c"
+	end
+
 
 
 	local columnHeaders = {
@@ -42,6 +67,27 @@ do
 			},
 			name = "Reagent",
 			width = 250,
+			OnLeave = function()
+						GameTooltip:Hide()
+					end,
+			OnEnter = function(cellFrame, button)
+							local rowFrame = cellFrame:GetParent()
+							if rowFrame.rowIndex>0 then
+								local entry = rowFrame.data
+
+								if false and entry.subGroup then
+									GameTooltip:SetOwner(rowFrame, "ANCHOR_TOPRIGHT")
+									GameTooltip:ClearLines()
+
+									GameTooltip:AddLine(cellFrame:GetText())
+									GameTooltip:AddLine("click to collect all")
+
+									GameTooltip:Show()
+								else
+
+								end
+							end
+						end,
 			OnClick = function(cellFrame, button, source)
 							if cellFrame:GetParent().rowIndex>0 then
 								local entry = cellFrame:GetParent().data
@@ -115,6 +161,20 @@ do
 						end
 					end,
 		}, -- [2]
+		{
+			name = "Cost",
+			align = "CENTER",
+			width = 60,
+			font = "GameFontHighlightSmall",
+			draw =	function (rowFrame,cellFrame,entry)
+						if entry.cost and entry.cost > 0 then
+							cellFrame.text:SetTextColor(1,1,1)
+							cellFrame.text:SetText(QuickMoneyFormat(entry.cost))
+						else
+							cellFrame.text:SetText("")
+						end
+					end,
+		}, -- [3]
 	}
 
 
@@ -138,27 +198,45 @@ do
 				local data = sf.data.entries[k].subGroup.entries
 
 				if self.data[queue.."Queue"][player] then
+					local totalCost = 0
+
 					for itemID,count in pairs(self.data[queue.."Queue"][player]) do
+						local reagentCost
+
+						if queue == "vendor" then
+							if GnomeWorks:VendorSellsItem(itemID) then
+								local name,_,_,_,_,_,_,_,_,tex,sellCost = GetItemInfo(itemID)
+								reagentCost = ((sellCost or 0)) * 4 * count
+								totalCost = totalCost + reagentCost
+							end
+						elseif queue == "auction" then
+							reagentCost = GnomeWorks:GetAuctionCost(itemID, count)
+							totalCost = totalCost + reagentCost
+						end
+
 						if count then
 							itemCount = itemCount + 1
-
-	--print((GetItemInfo(itemID)),"x",count)
 
 							if data[itemCount] then
 								data[itemCount].itemID = itemID
 								data[itemCount].count = count
 								data[itemCount].index = itemCount
+								data[itemCount].cost = reagentCost
 							else
-								data[itemCount] = { itemID = itemID, count = count, index = itemCount, color = inventoryColors[queue], source = queue }
+								data[itemCount] = { itemID = itemID, count = count, index = itemCount, color = inventoryColors[queue], source = queue, cost = reagentCost }
 							end
 						end
 					end
+
+					sf.data.entries[k].cost = totalCost
 				end
 
 				sf.data.entries[k].subGroup.numEntries = itemCount
 			end
 
 			sf:Refresh()
+		else
+print("WTF?")
 		end
 	end
 
@@ -237,40 +315,22 @@ do
 			end
 		end
 ]]
+
 --[[
 		local function UpdateRowData(scrollFrame,entry,firstCall)
-			local player = shoppingListPlayer
+			local player = GnomeWorks.player
 --print("update row data", entry.command, entry.recipeID and GetSpellLink(entry.recipeID) or entry.itemID and GetItemInfo(entry.itemID))
 
-			local itemID = entry.itemID
-			local recipeID = entry.recipeID
-
-			if itemID then
-				entry.inQueue = GnomeWorks:GetInventoryCount(itemID, player, "queue")
-
-				entry.bag = GnomeWorks:GetInventoryCount(itemID, player, "bag")
-				entry.bank = GnomeWorks:GetInventoryCount(itemID, player, "bank")
-				entry.guildBank = GnomeWorks:GetInventoryCount(itemID, player, "guildBank")
-				entry.alt = GnomeWorks:GetInventoryCount(itemID, "faction", "bank")
-			end
-
-			if entry.command == "create" then
-				if entry.numCraftable >= entry.count then
-					if entry.subGroup then
-						entry.subGroup.expanded = false
-					end
-				end
-
-				if entry.count > 0 then
-					entry.noHide = true
-				else
-					entry.noHide = false
-				end
+			if entry.source == vendor then
+				local name,_,_,_,_,_,_,_,_,tex,sellCost = GetItemInfo(itemID)
+				enrty.cost = ((sellCost or 0)) * 4 * entry.count
+			else
+				local name,_,_,_,_,_,_,_,_,tex,sellCost = GetItemInfo(itemID)
+				enrty.cost = ((sellCost or 0)) * 4 * entry.count
 			end
 
 --print("done updating")
 		end
-
 
 		sf:RegisterRowUpdate(UpdateRowData)
 ]]
