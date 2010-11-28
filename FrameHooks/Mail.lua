@@ -24,9 +24,14 @@ do
 
 	function GnomeWorks:MAIL_INBOX_UPDATE()
 		numItems, totalItems = GetInboxNumItems()
+		local player = UnitName("player")
 
-		local invData = self.data.inventoryData[(UnitName("player"))].mail
-		local bankData = self.data.inventoryData[(UnitName("player"))].bank
+		GnomeWorks.player = player
+
+		GnomeWorks:InventoryScan()
+
+		local invData = self.data.inventoryData[player].mail
+		local bankData = self.data.inventoryData[player].bank
 
 		for itemID,count in pairs(invData) do
 			invData[itemID] = 0
