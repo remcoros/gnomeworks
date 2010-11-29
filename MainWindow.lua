@@ -875,7 +875,7 @@ do
 			width = 60,
 			align = "CENTER",
 			sortCompare = function(a,b)
-				return (a.alt or 0) - (b.alt or 0)
+				return (a.totalInventory or 0) - (b.totalInventory or 0)
 			end,
 			enabled = function()
 				return GnomeWorks.tradeID ~= 53428
@@ -894,9 +894,9 @@ do
 
 							if GnomeWorksDB.vendorOnly[entry.recipeID] then
 								if entry.bag and entry.bag ~= 0 then
-									cellFrame.text:SetFormattedText("%s|r/\226\136\158",string.format(inventoryFormat.bag,entry.bag))
+									cellFrame.text:SetFormattedText("%s|r+%s\226\136\158",string.format(inventoryFormat.bag,entry.bag),GnomeWorks.system.inventoryColors.vendor)
 								else
-									cellFrame.text:SetText("\226\136\158")
+									cellFrame.text:SetText(GnomeWorks.system.inventoryColors.vendor.."\226\136\158")
 								end
 							else
 								local display = ""
@@ -922,11 +922,11 @@ do
 										end
 									end
 
-									if hi and entry[lowKey] < entry[hiKey] then
+									if hi  then
 										local lowString = string.format(inventoryFormat[lowKey],entry[lowKey])
-										local hiString = string.format(inventoryFormat[hiKey],entry[hiKey])
+										local hiString = string.format(inventoryFormat[hiKey],entry[hiKey]-entry[lowKey])
 
-										display = lowString.."/"..hiString
+										display = lowString.."+"..hiString
 									else
 										display = string.format(inventoryFormat[lowKey],entry[lowKey])
 									end
@@ -999,12 +999,21 @@ do
 										for i,key in pairs(inventoryIndex) do
 											local count = entry[key] or 0
 
+
+											if count > prevCount then
+												GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..(count-prevCount))
+											end
+
+											prevCount = count
+
+--[[
 											if count ~= prevCount then
 												if count ~= 0 then
 													GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..count)
 												end
 												prevCount = count
 											end
+]]
 										end
 
 
@@ -1059,7 +1068,7 @@ do
 								for i=#inventoryIndex,low+1,-1 do
 									local key = inventoryIndex[i]
 
-									if entry.inventory[key] > entry.inventory[inventoryIndex[i-1]] then
+									if entry.inventory[key] > 0 then
 										hi = i
 										hiKey = key
 										hiValue = entry.inventory[key]
@@ -1067,11 +1076,11 @@ do
 									end
 								end
 
-								if hi and lowValue < hiValue then
+								if hi then
 									local lowString = string.format(inventoryFormat[lowKey],lowValue)
 									local hiString = string.format(inventoryFormat[hiKey],hiValue)
 
-									display = lowString.."/"..hiString
+									display = lowString.."+"..hiString
 								else
 									display = string.format(inventoryFormat[lowKey],lowValue)
 								end
@@ -1124,7 +1133,7 @@ do
 								local entry = cellFrame:GetParent().data
 
 								if entry and entry.recipeID then
-									if entry.inventory.alt and entry.inventory.alt + entry.inventory.guildBank > 0 then
+									if entry.totalInventory > 0 then
 										GameTooltip:SetOwner(cellFrame, "ANCHOR_TOPLEFT")
 										GameTooltip:ClearLines()
 										GameTooltip:AddLine(GnomeWorks.player.."'s inventory")
@@ -1136,7 +1145,7 @@ do
 											if key ~= "vendor" then
 												local count = entry.inventory[key] or 0
 
-												if prev ~= count and count ~= 0 then
+												if count ~= 0 then -- prev ~= count and count ~= 0 then
 
 													if key == "alt" then
 														GameTooltip:AddDoubleLine(inventoryTags[key], inventoryColors[key]..(count-prev))
@@ -1165,7 +1174,7 @@ do
 															end
 														end
 													else
-														GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..(count-prev))
+														GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..count)
 													end
 												end
 
@@ -1334,6 +1343,8 @@ do
 					entry.inventory[inv] = 0
 				end
 
+				entry.totalInventory = 0
+
 				if itemLink then
 
 					local itemID = tonumber(string.match(itemLink,"item:(%d+)"))
@@ -1347,9 +1358,9 @@ do
 							else
 								entry.inventory[inv] = GnomeWorks:GetInventoryCount(itemID, player, inv)
 							end
-						end
 
-						entry.inventory.alt = math.max(entry.inventory.alt, entry.inventory.guildBank)
+							entry.totalInventory = entry.totalInventory + entry.inventory[inv]
+						end
 					end
 				end
 			end

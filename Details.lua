@@ -264,7 +264,7 @@ do
 														end
 													end
 												else
-													GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..count)
+													GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..(count-prev))
 												end
 											end
 
@@ -315,9 +315,9 @@ do
 
 							if hi and lowValue < hiValue then
 								local lowString = string.format(inventoryFormat[lowKey],lowValue)
-								local hiString = string.format(inventoryFormat[hiKey],hiValue)
+								local hiString = string.format(inventoryFormat[hiKey],hiValue-lowValue)
 
-								display = lowString.."/"..hiString
+								display = lowString.."+"..hiString
 							else
 								display = string.format(inventoryFormat[lowKey],lowValue)
 							end
