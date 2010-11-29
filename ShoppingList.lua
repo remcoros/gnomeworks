@@ -11,6 +11,10 @@ do
 
 	local queueList = { "bank", "mail", "guildBank", "alt", "vendor", "auction" }
 
+
+
+	local inventoryColors = GnomeWorks.system.inventoryColors
+--[[
 	local inventoryColors = {
 --		queue = "|cffff0000",
 		bag = "|cffffff80",
@@ -21,7 +25,7 @@ do
 		auction = "|cffb0b000",
 		mail = "|cff60fff0",
 	}
-
+]]
 
 	local function QuickMoneyFormat(copper)
 		local silver = copper/100

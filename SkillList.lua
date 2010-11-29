@@ -104,6 +104,7 @@ do
 
 
 
+
 	local recipeIsCached = {}
 
 
@@ -113,11 +114,11 @@ do
 	local tradeIDByName = {}
 
 	for index, id in pairs(tradeIDList) do
-		local tradeName = GnomeWorks:GetTradeName(id)
+		local tradeName = string.lower(GnomeWorks:GetTradeName(id))
 		tradeIDByName[tradeName] = id
 	end
 
-	tradeIDByName[GetSpellInfo(2575)] = 2656	-- special case for mining/smelting
+	tradeIDByName[string.lower(GetSpellInfo(2575))] = 2656	-- special case for mining/smelting
 
 
 	GnomeWorks.data = { skillDB = {}, linkDB = {} }
@@ -164,6 +165,10 @@ do
 	end
 
 
+	function GnomeWorks:GetTradeIDByName(name)
+		return tradeIDByName[string.lower(name)]
+	end
+
 
 	function GnomeWorks:CacheTradeSkillLink(link)
 		if link and string.match(link,"trade:") then
@@ -178,7 +183,7 @@ do
 
 				if not GnomeWorks.data.playerData[player] then
 
-					local tradeID = tradeIDByName[GetTradeSkillLine()]
+					local tradeID = self:GetTradeIDByName(GetTradeSkillLine())
 
 					if not linkDB[player] then
 						linkDB[player] = {}
@@ -490,8 +495,7 @@ DebugSpam("done parsing skill list")
 DebugSpam("GetTradeSkill: "..(tradeName or "nil").." "..rank)
 
 		-- get the tradeID from the tradeName name (data collected earlier).
-		tradeID = tradeIDByName[tradeName]
-
+		tradeID = self:GetTradeIDByName(tradeName)
 
 		if tradeID == 2656 then				-- stuff the rank info into the fake smelting link for this character
 			self.data.playerData[UnitName("player")].links[tradeID] = "|cffffd000|Htrade:2656:"..rank..":"..maxRank..":0:/|h["..GetSpellInfo(tradeID) .."]|h|r"			-- fake link for data collection purposes
@@ -606,8 +610,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 
 		local lastHeader = nil
-		local gotNil = false
-
+		local gotNil
 
 
 		local currentGroup = nil
@@ -659,12 +662,14 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		local numHeaders = 0
 
 		for i = 1, numSkills, 1 do
+			local localNil
+
 			repeat
 				local subSpell, extra
 
 				local skillName, skillType, numAvailable, isExpanded, altVerb, numSkillUps = GetTradeSkillInfo(i)
 
-				gotNil = false
+				localNil = nil
 
 
 				if skillName then
@@ -691,6 +696,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 						if not recipeID then
 							gotNil = true
+							localNil = true
 							break
 						end
 
@@ -734,6 +740,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 							if not itemLink then
 								gotNil = true
+								localNil = true
 								break
 							end
 
@@ -769,6 +776,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 									reagentID = GetIDFromLink(reagentLink)
 								else
+									localNil = true
 									gotNil = true
 									break
 								end
@@ -783,7 +791,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 							tradeIDs[recipeID] = tradeID
 							results[recipeID] = { [itemID] = numMade }
 
-							if gotNil then
+							if localNil then
 								recipeIsCached[recipeID] = nil
 								results[recipeID] = nil
 							end
@@ -800,7 +808,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 				end
 			until true
 
-			if gotNil and recipeID then
+			if localNil and recipeID then
 				recipeIsCached[recipeID] = nil
 				results[recipeID] = nil
 			end
@@ -832,10 +840,10 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 		collectgarbage("collect")
 
-		if numHeaders > 0 then
+		if numHeaders > 0 and not gotNil then
 			dataScanned[key] = true
 		else
-			self:ScheduleTimer("ScanTrade",5)
+			self:ScheduleTimer("ScanTrade",2)
 		end
 
 

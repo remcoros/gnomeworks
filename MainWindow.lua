@@ -130,6 +130,7 @@ do
 
 	local containerIndex = { "bag", "bank" }
 
+--[[
 	local inventoryIndex = { "bag", "vendor", "bank", "mail", "guildBank", "alt" }
 
 	local inventoryColorBlindTag = {
@@ -157,6 +158,13 @@ do
 	for k,v in pairs(inventoryColors) do
 		inventoryTags[k] = v..k
 	end
+]]
+
+	local inventoryIndex = GnomeWorks.system.inventoryIndex
+	local inventoryColors = GnomeWorks.system.inventoryColors
+	local inventoryFormat = GnomeWorks.system.inventoryFormat
+	local inventoryTags = GnomeWorks.system.inventoryTags
+
 
 
 	local selectedRows = {}
@@ -716,7 +724,7 @@ do
 								if entry.subGroup and source == "button" then
 									entry.subGroup.expanded = not entry.subGroup.expanded
 									sf:Refresh()
-								else
+								elseif not entry.subGroup then
 									GnomeWorks:SelectEntry(entry)
 									sf:Draw()
 								end
@@ -1268,7 +1276,7 @@ do
 					local bank = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedBank queue")
 					local mail = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedMail queue")
 					local guildBank = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedGuildBank queue")
-					local alt = GnomeWorks:InventoryRecipeIterations(entry.recipeID, "faction", "vendor craftedGuildBank queue")
+					local alt = GnomeWorks:InventoryRecipeIterations(entry.recipeID, "faction", "vendor craftedMail queue")
 
 					if onHand > 0 then
 						entry.craftable = true
@@ -1335,7 +1343,7 @@ do
 					if itemID then
 						for k,inv in ipairs(inventoryIndex) do
 							if inv == "alt" then
-								entry.inventory[inv] = GnomeWorks:GetInventoryCount(itemID, "faction", "bank")
+								entry.inventory[inv] = GnomeWorks:GetInventoryCount(itemID, "faction", "mail")
 							else
 								entry.inventory[inv] = GnomeWorks:GetInventoryCount(itemID, player, inv)
 							end
@@ -2209,16 +2217,6 @@ do
 		end)
 
 
-
-		for k,v in pairs(inventoryColors) do
---			inventoryTags[k] = v..k
-
-			if ( ENABLE_COLORBLIND_MODE == "1" ) then
-				inventoryFormat[k] = string.format("%%d|cffa0a0a0%s|r", inventoryColorBlindTag[k])
-			else
-				inventoryFormat[k] = string.format("%s%%d|r",v)
-			end
-		end
 
 
 		return frame

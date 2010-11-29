@@ -58,6 +58,7 @@ GetTradeSkill.lua
 LinkDecode.lua
 ShoppingList.lua
 Guild.lua
+Commands.lua
 
 
 PseudoTrades\CommonSkills.lua

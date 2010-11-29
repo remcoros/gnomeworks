@@ -126,14 +126,14 @@ do
 		reagentID = frame.reagentButton.itemID
 
 		if found then
-			GnomeWorks:print("buying %s x %d for %s",(GetItemInfo(reagentID)),entry.count,QuickMoneyFormat(entry.buyOut))
+			GnomeWorks:printf("buying %s x %d for %s",(GetItemInfo(reagentID)),entry.count,QuickMoneyFormat(entry.buyOut))
 
 			PlaceAuctionBid("list", found, entry.buyOut)
 			table.remove(sf.data.entries, entry.dataIndex)
 
 			GnomeWorks.data.inventoryData.auctionHouse[reagentID] = GnomeWorks.data.inventoryData.auctionHouse[reagentID] - entry.count
 
-			GnomeWorks.data.inventoryData[GnomeWorks.player].mail[reagentID] = (GnomeWorks.data.inventoryData[GnomeWorks.player].mail[reagentID] or 0) + entry.count
+			GnomeWorks.data.inventoryData[UnitName("player")].mail[reagentID] = (GnomeWorks.data.inventoryData[UnitName("player")].mail[reagentID] or 0) + entry.count
 
 			GnomeWorks:InventoryScan()
 			sf:Refresh()

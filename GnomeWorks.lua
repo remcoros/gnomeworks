@@ -91,6 +91,7 @@ do
 
 	function GnomeWorks:SendMessageDispatch(messageList)
 		for message in string.gmatch(messageList, "%a+") do
+--print("sending",message)
 			if dispatchTable[message] then
 				t = dispatchTable[message]
 
@@ -118,6 +119,63 @@ do
 				end
 			end
 		end
+	end
+end
+
+
+
+do
+	GnomeWorks.system = {
+		inventoryIndex = { "bag", "vendor", "bank", "mail", "guildBank", "alt" },
+
+		inventoryColorBlindTag = {
+			bag = "",
+			vendor = "v",
+			bank = "b",
+			mail = "m",
+			guildBank = "g",
+			alt = "a",
+			auction = "$",
+		},
+
+		inventoryColors = {
+			bag = "|cffffff80",
+			vendor = "|cff80ff80",
+			bank =  "|cffffa050",
+			guildBank = "|cff5080ff",
+			alt = "|cffff80ff",
+			auction = "|cffb0b000",
+			mail = "|cff60fff0",
+		},
+
+		inventoryFormat = {},
+
+		inventoryTags = {},
+	}
+
+
+	for k,v in pairs(GnomeWorks.system.inventoryColors) do
+		GnomeWorks.system.inventoryTags[k] = v..k
+
+		if ( ENABLE_COLORBLIND_MODE == "1" ) then
+			GnomeWorks.system.inventoryFormat[k] = string.format("%%d|cffa0a0a0%s|r", GnomeWorks.system.inventoryColorBlindTag[k])
+		else
+			GnomeWorks.system.inventoryFormat[k] = string.format("%s%%d|r",v)
+		end
+	end
+
+
+
+	function GnomeWorks:SetUpColorBlindMode(state)
+		for k,v in pairs(GnomeWorks.system.inventoryColors) do
+			if ( state == "1" ) then
+				GnomeWorks.system.inventoryFormat[k] = string.format("%%d|cffa0a0a0%s|r", GnomeWorks.system.inventoryColorBlindTag[k])
+			else
+				GnomeWorks.system.inventoryFormat[k] = string.format("%s%%d|r",v)
+			end
+		end
+
+		GnomeWorks:SendMessageDispatch("GnomeWorksSkillListChanged")
 	end
 end
 
@@ -169,6 +227,10 @@ do
 		end
 
 		return bytes + size * 40
+	end
+
+	function GnomeWorks:printf(format,...)
+		self:print(string.format(format,...))
 	end
 
 	function GnomeWorks:print(...)
@@ -281,6 +343,12 @@ do
 
 		for k, player in pairs({ player, "All Recipes" } ) do
 			InitServerPlayerDBTables(factionServer, player, "playerData", "inventoryData", "queueData", "recipeGroupData", "cooldowns", "vendorQueue","bankQueue","guildBankQueue","auctionQueue","altQueue","mailQueue","auctionQueue","knownSpells", "knownItems")
+
+			for k, container in pairs({ "bag", "bank", "mail", "craftedBag", "craftedBank", "craftedMail", "craftedGuildBank"}) do
+				if not GnomeWorks.data.inventoryData[player][container] then
+					GnomeWorks.data.inventoryData[player][container] = {}
+				end
+			end
 		end
 
 		GnomeWorks.data.auctionData = {}
@@ -474,7 +542,7 @@ print(arg1)
 
 		GnomeWorks:RegisterEvent("MAIL_SHOW")
 		GnomeWorks:RegisterEvent("MAIL_INBOX_UPDATE")
-		GnomeWorks:RegisterEvent("MAIL_CLOSE")
+		GnomeWorks:RegisterEvent("MAIL_CLOSED")
 
 
 		GnomeWorks:ScheduleRepeatingTimer(function() GnomeWorks:SendMessageDispatch("HeartBeat") end, 5)
@@ -486,6 +554,28 @@ print(arg1)
 	local function ParseTradeLinks()
 		return GnomeWorks:ParseSkillList()
 	end
+
+
+	local function RegisterSlashCommands()
+		SLASH_GNOMEWORKS1 = "/gw"
+
+
+		local function SlashHandler(message, editbox)
+			if message then
+				local command, args = string.lower(message):match("^(%S*)%s*(.-)$")
+
+				if GnomeWorks.commands[command] then
+					GnomeWorks.commands[command](args)
+				else
+					GnomeWorks:warning("unrecognized command:",command,args)
+				end
+			end
+		end
+
+		SlashCmdList["GNOMEWORKS"] = SlashHandler
+
+	end
+
 
 
 	local function CreateUI()
@@ -528,6 +618,8 @@ print(arg1)
 
 			GnomeWorks:ScheduleTimer("TRADE_SKILL_UPDATE", 0.01)
 
+			RegisterSlashCommands()
+
 			return true
 		end
 	end
@@ -542,6 +634,7 @@ print(arg1)
 
 
 
+
 	function GnomeWorks:OnTradeSkillShow()
 		self:Initialize()
 
@@ -552,6 +645,12 @@ print(arg1)
 	local initList = LibStagedExecution:NewList()
 
 
+
+	GnomeWorks:RegisterEvent("CVAR_UPDATE", function(event,cvar,state)
+		if cvar == "USE_COLORBLIND_MODE" then
+			GnomeWorks:SetUpColorBlindMode(state)
+		end
+	end)
 
 
 	if not IsAddOnLoaded("AddOnLoader") then

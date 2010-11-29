@@ -6,6 +6,7 @@
 
 
 do
+--[[
 	local frame = CreateFrame("Frame")
 
 	frame:SetScript("OnEvent",function(frame,event,...)
@@ -14,33 +15,31 @@ do
 		end
 	end)
 
---	frame:RegisterAllEvents()
-	frame:Hide()
+	frame:RegisterAllEvents()
+--	frame:Hide()
+]]
+
+
+
 
 	function GnomeWorks:MAIL_SHOW()
+		GnomeWorks.atMail = true
 		CheckInbox()
 	end
 
 
-	function GnomeWorks:MAIL_INBOX_UPDATE()
+
+	function GnomeWorks:DoMailUpdate()
 		numItems, totalItems = GetInboxNumItems()
 		local player = UnitName("player")
 
 		GnomeWorks.player = player
 
-		GnomeWorks:InventoryScan()
-
 		local invData = self.data.inventoryData[player].mail
-		local bankData = self.data.inventoryData[player].bank
 
 		for itemID,count in pairs(invData) do
 			invData[itemID] = 0
 		end
-
-		for itemID, count in pairs(bankData) do
-			invData[itemID] = bankData[itemID]
-		end
-
 
 		for i=1,numItems do
 			local packageIcon, stationeryIcon, sender, subject, money, CODAmount, daysLeft, hasItem, wasRead, wasReturned, textCreated, canReply, isGM = GetInboxHeaderInfo(i)
@@ -62,10 +61,49 @@ do
 		end
 
 		GnomeWorks:InventoryScan()
+
+		GnomeWorks:SendMessageDispatch("MailUpdated")
 	end
 
-	function GnomeWorks:MAIL_CLOSE()
+
+	local updateTimer
+	function GnomeWorks:MAIL_INBOX_UPDATE()
+		if updateTimer then
+			GnomeWorks:CancelTimer(updateTimer, true)
+			updateTimer = nil
+		end
+
+		updateTimer = GnomeWorks:ScheduleTimer("DoMailUpdate", .1)
 	end
+
+
+	function GnomeWorks:MAIL_CLOSED()
+		GnomeWorks.atMail = false
+--		self:DoMailUpdate() -- just in case
+	end
+
+
+	local function CheckForAltNeeds()
+		local player = UnitName("player")
+
+		for alt, queue in pairs(GnomeWorks.data.altQueue) do
+			if alt ~= player then
+				for itemID, numNeeded in pairs(queue) do
+					local itemName, itemLink = GetItemInfo(itemID)
+
+					local numOnHand = GetItemCount(itemID)
+					local numAvailable = GnomeWorks:GetInventoryCount(itemID,player,"craftedGuildBank queue")
+
+					if numAvailable then
+						GnomeWorks:printf("%s needs %d x [%s].  you have %d on hand (%d total available)", alt, numNeeded, itemName or "item:"..itemID, numOnHand, numAvailable)
+					end
+				end
+			end
+		end
+	end
+
+
+	GnomeWorks:RegisterMessageDispatch("MailUpdated", CheckForAltNeeds)
 end
 
 

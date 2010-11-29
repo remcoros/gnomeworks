@@ -28,6 +28,9 @@ do
 
 	local inventoryIndex = { "bag", "bank", "mail", "guildBank", "alt" }
 
+--[[
+
+
 	local inventoryColors = {
 		bag = "|cffffff80",
 		vendor = "|cff80ff80",
@@ -37,12 +40,28 @@ do
 		alt = "|cffff80ff",
 	}
 
+	local inventoryColorBlindTag = {
+		bag = "",
+		vendor = "v",
+		bank = "b",
+		mail = "m",
+		guildBank = "g",
+		alt = "a",
+	}
+
+
 	local inventoryFormat = {}
 	local inventoryTags = {}
 
 	for k,v in pairs(inventoryColors) do
 		inventoryTags[k] = v..k
 	end
+]]
+
+--	local inventoryIndex = GnomeWorks.system.inventoryIndex
+	local inventoryColors = GnomeWorks.system.inventoryColors
+	local inventoryFormat = GnomeWorks.system.inventoryFormat
+	local inventoryTags = GnomeWorks.system.inventoryTags
 
 
 	local tooltipScanner =  _G["GWParsingTooltip"] or CreateFrame("GameTooltip", "GWParsingTooltip", getglobal("ANCHOR_NONE"), "GameTooltipTemplate")
@@ -420,7 +439,7 @@ do
 			local bank = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "craftedBank queue")
 			local mail = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "craftedMail queue")
 			local guildBank = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "craftedGuildBank queue")
-			local alt = GnomeWorks:GetInventoryCount(entry.id, "faction", "craftedBank queue")
+			local alt = GnomeWorks:GetInventoryCount(entry.id, "faction", "craftedMail queue")
 
 			entry.reserved = math.abs(math.min(0,GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "queue")))
 
@@ -934,19 +953,10 @@ do
 		end
 
 
+
 		GnomeWorks:RegisterMessageDispatch("GnomeWorksDetailsChanged", function()
 			self:ShowDetails(self.selectedSkill)
 		end)
-
-		for k,v in pairs(inventoryColors) do
---			inventoryTags[k] = v..k
-
-			if ( ENABLE_COLORBLIND_MODE == "1" ) then
-				inventoryFormat[k] = string.format("%%d|cffa0a0a0%s|r", inventoryColorBlindTag[k])
-			else
-				inventoryFormat[k] = string.format("%s%%d|r",v)
-			end
-		end
 
 		return detailFrame
 	end
