@@ -399,7 +399,7 @@ end
 
 	function GnomeWorks:InventoryScan(playerOverride)
 		local scanTime = GetTime()
-	DEFAULT_CHAT_FRAME:AddMessage("InventoryScan "..invscan)
+--	DEFAULT_CHAT_FRAME:AddMessage("InventoryScan "..invscan)
 		invscan = invscan + 1
 		local player = playerOverride or self.player
 		local inventory = self.data.inventoryData[player]
