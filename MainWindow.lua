@@ -974,7 +974,7 @@ do
 										GameTooltip:AddLine("Recipe Craftability",1,1,1,true)
 										GameTooltip:AddLine(GnomeWorks.player.."'s inventory")
 
-										local checkGuildBank = GnomeWorks.data.playerData[GnomeWorks.player].guild
+										local checkGuildBank = GnomeWorks.data.playerData[GnomeWorks.player] and GnomeWorks.data.playerData[GnomeWorks.player].guild
 
 										local prevCount = 0
 										for i,key in pairs(inventoryIndex) do
@@ -1093,7 +1093,7 @@ do
 										local itemID = entry.itemID
 
 										local prev = 0
-										local checkGuildBank = GnomeWorks.data.playerData[GnomeWorks.player].guild
+										local checkGuildBank = GnomeWorks.data.playerData[GnomeWorks.player] and GnomeWorks.data.playerData[GnomeWorks.player].guild
 
 										for i,key in pairs(inventoryIndex) do
 											if key ~= "vendor" and (key ~= "guildBank" or checkGuildBank) then

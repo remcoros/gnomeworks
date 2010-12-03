@@ -404,7 +404,6 @@ do
 		if knownSpells then
 			for i = 1, #skillList, 1 do
 				local recipeID = skillList[i]
-
 				knownSpells[recipeID] = i
 			end
 		else

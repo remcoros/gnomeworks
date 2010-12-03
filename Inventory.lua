@@ -174,23 +174,30 @@ end
 
 	local reCache = {}
 
-	function GnomeWorks:UncacheReagentCounts(inventory, reagentUsage)
+	function GnomeWorks:UncacheReagentCounts(player, inventory, reagentUsage)
 		for recipeID in pairs(reagentUsage) do
-			for k,inv in ipairs(inventoryList) do
+			if self.data.knownSpells[player][recipeID] then
 
-				local invData = inventory[inv]
+				for k,inv in ipairs(inventoryList) do
 
-				if invData then
-					for itemID in pairs(GnomeWorksDB.reagents[recipeID]) do
-						reCache[itemID] = true
+					local invData = inventory[inv]
 
-						if invData[itemID] then
-							invData[itemID] = nil
+					if invData then
+						local results, reagents = self:GetRecipeData(recipeID)
 
-							local subUsage = self.data.reagentUsage[itemID]
+						for itemID in pairs(reagents) do
+							if not reCache[itemID] then
+								reCache[itemID] = true
 
-							if subUsage then
-								self:UncacheReagentCounts(inventory, subUsage)
+								if invData[itemID] then
+									invData[itemID] = nil
+
+									local subUsage = self.data.reagentUsage[itemID]
+
+									if subUsage then
+										self:UncacheReagentCounts(player, inventory, subUsage)
+									end
+								end
 							end
 						end
 					end
@@ -205,7 +212,7 @@ end
 
 		table.wipe(reCache)
 
-		self:UncacheReagentCounts(inventory, reagentUsage)
+		self:UncacheReagentCounts(player, inventory, reagentUsage)
 
 
 		for k,inv in ipairs(inventoryList) do

@@ -198,7 +198,7 @@ do
 									local itemID = entry.id
 
 									local prev = 0
-									local checkGuildBank = GnomeWorks.data.playerData[GnomeWorks.player].guild
+									local checkGuildBank = GnomeWorks.data.playerData[GnomeWorks.player] and GnomeWorks.data.playerData[GnomeWorks.player].guild
 
 									for i,key in pairs(inventoryIndex) do
 										if key ~= "vendor" and (key ~= "guildBank" or checkGuildBank) then
@@ -334,7 +334,7 @@ do
 
 									local prev = 0
 
-									local checkGuildBank = GnomeWorks.data.playerData[GnomeWorks.player].guild
+									local checkGuildBank = GnomeWorks.data.playerData[GnomeWorks.player] and GnomeWorks.data.playerData[GnomeWorks.player].guild
 
 									for i,key in pairs(inventoryIndex) do
 										if key ~= "vendor" and (key ~= "guildBank" or checkGuildBank) then
