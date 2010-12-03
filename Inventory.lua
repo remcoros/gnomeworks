@@ -172,12 +172,78 @@ end
 	end
 
 
+	local reCache = {}
+
+	function GnomeWorks:UncacheReagentCounts(inventory, reagentUsage)
+		for recipeID in pairs(reagentUsage) do
+			for k,inv in ipairs(inventoryList) do
+
+				local invData = inventory[inv]
+
+				if invData then
+					for itemID in pairs(GnomeWorksDB.reagents[recipeID]) do
+						reCache[itemID] = true
+
+						if invData[itemID] then
+							invData[itemID] = nil
+
+							local subUsage = self.data.reagentUsage[itemID]
+
+							if subUsage then
+								self:UncacheReagentCounts(inventory, subUsage)
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+
+
+	function GnomeWorks:RecalculateDependentRecipes(player, reagentUsage)
+		local inventory = self.data.inventoryData[player]
+
+		table.wipe(reCache)
+
+		self:UncacheReagentCounts(inventory, reagentUsage)
+
+
+		for k,inv in ipairs(inventoryList) do
+			table.wipe(itemVisited)
+
+			local invData = inventory[inv]
+
+			if invData then
+				for itemID in pairs(reCache) do
+					self:InventoryReagentCraftability(invData, itemID, player, inventorySourceTable[inv])
+				end
+			end
+		end
+
+
+-- assign nil's to all 0 count items
+		for name, container in pairs(inventory) do
+			for itemID in pairs(reCache) do
+				if count == 0 then
+					container[itemID] = nil
+				end
+			end
+		end
+	end
+
+
 	function GnomeWorks:ReserveItemForQueue(player, itemID, count)
-		local inv = self.data.inventoryData[player]["queue"]
+		local inv = self.data.inventoryData[player].queue
 
 		inv[itemID] = (inv[itemID] or 0) - count					-- queue "inventory" is negative meaning that it requires these items
 
-		self:BAG_UPDATE()
+		local reagentUsage = self.data.reagentUsage[itemID]
+
+		if reagentUsage then
+			self:RecalculateDependentRecipes(player, reagentUsage)
+		end
+
+--		self:BAG_UPDATE()
 
 --		print(player, (GetItemInfo(itemID)), count, -inv[itemID])
 	end
@@ -333,7 +399,7 @@ end
 
 	function GnomeWorks:InventoryScan(playerOverride)
 		local scanTime = GetTime()
-	--DEFAULT_CHAT_FRAME:AddMessage("InventoryScan "..invscan)
+	DEFAULT_CHAT_FRAME:AddMessage("InventoryScan "..invscan)
 		invscan = invscan + 1
 		local player = playerOverride or self.player
 		local inventory = self.data.inventoryData[player]
@@ -368,6 +434,13 @@ end
 				end
 			end
 
+			if player == "Judithpriest" then
+				for itemID in pairs(GnomeWorks.data.trackedItems) do
+					inventory.bag[itemID] = mod(itemID, 20)
+					inventory.bank[itemID] = mod(itemID, 50)
+			--DebugSpam(inventoryData[reagentID])
+				end
+			end
 
 			local craftedBag = table.wipe(inventory["craftedBag"])
 			local craftedBank = table.wipe(inventory["craftedBank"])
