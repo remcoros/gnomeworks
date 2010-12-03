@@ -427,12 +427,11 @@ do
 	api.RecordKnownSpells = function(player)
 		local enchantingRank = GnomeWorks:GetTradeSkillRank(player, 7411)
 
---print("recording known de's")
+print("recording known de's")
 		if enchantingRank > 0 then
 			local knownItems = GnomeWorks.data.knownItems[player]
 			local knownSpells = GnomeWorks.data.knownSpells[player]
 
---print("known items",knownItems, #knownItems)
 			for i = 1, #skillList, 1 do
 				local recipeID = skillList[i]
 

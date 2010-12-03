@@ -1287,6 +1287,7 @@ do
 
 			UpdateQueue(player, self.data.queueData[player])
 
+
 --			BuildSourceQueues(player, self.data.queueData[player])
 
 			if not self.data.flatQueue then

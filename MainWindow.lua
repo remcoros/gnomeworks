@@ -914,15 +914,20 @@ do
 								if low then
 									for i=#inventoryIndex,low+1,-1 do
 										local key = inventoryIndex[i]
+										if key ~= "guildBank" or GnomeWorks.data.playerData[GnomeWorks.player].guild then
+											local key2 = inventoryIndex[i-1]
 
-										if entry[key] > entry[inventoryIndex[i-1]] then
-											hi = i
-											hiKey = key
-											break
+											if key2 ~= "guildBank" or GnomeWorks.data.playerData[GnomeWorks.player].guild then
+												if entry[key] > entry[key2] then
+													hi = i
+													hiKey = key
+													break
+												end
+											end
 										end
 									end
 
-									if hi  then
+									if hi and entry[hiKey] > entry[lowKey] then
 										local lowString = string.format(inventoryFormat[lowKey],entry[lowKey])
 										local hiString = string.format(inventoryFormat[hiKey],entry[hiKey]-entry[lowKey])
 
@@ -931,32 +936,6 @@ do
 										display = string.format(inventoryFormat[lowKey],entry[lowKey])
 									end
 								end
-
---[[
-									local bag,vendor,bank,guildBank,alt = entry.bag or -1, entry.vendor or -1, entry.bank or -1 , entry.guildBank or -1, entry.alt or -1
-
-									if bag > 0 then
-										display = string.format(inventoryFormat.bag,bag)
-									elseif vendor > 0 then
-										display = string.format(inventoryFormat.vendor,vendor)
-									elseif bank > 0 then
-										display = string.format(inventoryFormat.bank,bank)
-									elseif guildBank > 0 then
-										display = string.format(inventoryFormat.guildBank,guildBank)
-									elseif alt > 0 then
-										display = string.format(inventoryFormat.alt,alt)
-									end
-
-									if alt > guildBank and guildBank > 0 then
-										display = string.format("%s/%s", display, string.format(inventoryFormat.alt,alt))
-									elseif guildBank > bank and bank > 0 then
-										display = string.format("%s/%s", display, string.format(inventoryFormat.guildBank,guildBank))
-									elseif bank > vendor and vendor > 0 then
-										display = string.format("%s/%s", display, string.format(inventoryFormat.bank,bank))
-									elseif vendor > bag and bag > 0 then
-										display = string.format("%s/%s", display, string.format(inventoryFormat.vendor,vendor))
-									end
-]]
 
 								cellFrame.text:SetText(display)
 							end
@@ -995,16 +974,19 @@ do
 										GameTooltip:AddLine("Recipe Craftability",1,1,1,true)
 										GameTooltip:AddLine(GnomeWorks.player.."'s inventory")
 
+										local checkGuildBank = GnomeWorks.data.playerData[GnomeWorks.player].guild
+
 										local prevCount = 0
 										for i,key in pairs(inventoryIndex) do
-											local count = entry[key] or 0
+											if key ~= "guildBank" or checkGuildBank then
+												local count = entry[key] or 0
 
+												if count > prevCount then
+													GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..(count-prevCount))
+												end
 
-											if count > prevCount then
-												GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..(count-prevCount))
+												prevCount = count
 											end
-
-											prevCount = count
 
 --[[
 											if count ~= prevCount then
@@ -1087,36 +1069,6 @@ do
 							end
 
 							cellFrame.text:SetText(display)
-
---[[
-							local bag,bank,guildBank,alt = entry.bagInventory or -1, entry.bankInventory or -1, entry.guildBankInventory or -1, entry.altInventory or -1
-
-							if alt+guildBank > 0 then
-								local display = ""
-
-								if bag > 0 then
-									display = string.format(inventoryFormat.bag,bag)
-								elseif bank > 0 then
-									display = string.format(inventoryFormat.bank,bank)
-								elseif guildBank > 0 then
-									display = string.format(inventoryFormat.guildBank,guildBank)
-								elseif alt > 0 then
-									display = string.format(inventoryFormat.alt,alt)
-								end
-
-								if alt > guildBank and guildBank > 0 then
-									display = string.format("%s/%s", display, string.format(inventoryFormat.alt,alt))
-								elseif guildBank > bank and bank > 0 then
-									display = string.format("%s/%s", display, string.format(inventoryFormat.guildBank,guildBank))
-								elseif bank > bag and bag > 0 then
-									display = string.format("%s/%s", display, string.format(inventoryFormat.bank,bank))
-								end
-
-								cellFrame.text:SetText(display)
-							else
-								cellFrame.text:SetText("")
-							end
-]]
 						end,
 
 			OnEnter =	function (cellFrame)
@@ -1141,8 +1093,10 @@ do
 										local itemID = entry.itemID
 
 										local prev = 0
+										local checkGuildBank = GnomeWorks.data.playerData[GnomeWorks.player].guild
+
 										for i,key in pairs(inventoryIndex) do
-											if key ~= "vendor" then
+											if key ~= "vendor" and (key ~= "guildBank" or checkGuildBank) then
 												local count = entry.inventory[key] or 0
 
 												if count ~= 0 then -- prev ~= count and count ~= 0 then
@@ -1280,12 +1234,17 @@ do
 				if next(reagents) then
 					local onHand = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "bag")
 
-					local bag = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "craftedBag queue")
-					local vendor = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedBag queue")
-					local bank = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedBank queue")
-					local mail = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedMail queue")
-					local guildBank = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedGuildBank queue")
-					local alt = GnomeWorks:InventoryRecipeIterations(entry.recipeID, "faction", "vendor craftedMail queue")
+					local bag = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "craftedBag")
+					local vendor = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedBag")
+					local bank = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedBank")
+					local mail = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedMail")
+					local guildBank = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedGuildBank")
+					local alt = GnomeWorks:InventoryRecipeIterations(entry.recipeID, "faction", "vendor craftedMail")
+
+if entry.recipeID == 3915 then
+--					print("craftedMail iterations",GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "craftedMail"))
+--					print("craftedMail iterations",GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "craftedMail"))
+end
 
 					if onHand > 0 then
 						entry.craftable = true

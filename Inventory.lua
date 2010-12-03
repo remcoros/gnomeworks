@@ -32,9 +32,9 @@ do
 
 	local inventorySourceTable = {
 		craftedBag = "bag queue",
-		craftedBank = "craftedBag bank",
-		craftedMail = "craftedBank mail",
-		craftedGuildBank = "craftedMail guildBank",
+		craftedBank = "bag bank queue",
+		craftedMail = "bag bank mail queue",
+		craftedGuildBank = "bag bank mail guildBank queue",
 	}
 
 
@@ -46,7 +46,7 @@ do
 			self:CancelTimer(bagThrottleTimer, true)
 		end
 
-		bagThrottleTimer = self:ScheduleTimer("InventoryScan",.1)
+		bagThrottleTimer = self:ScheduleTimer("InventoryScan",.01)
 	end
 
 
@@ -72,6 +72,10 @@ do
 	-- utilizes all containers passed to it ("bag", "bank", "queue", "guildbank", "mail", etc)
 	function GnomeWorks:InventoryReagentCraftability(craftabilityTable, reagentID, player, containerList)
 		if craftabilityTable[reagentID] then
+if reagentID == 2996 then
+--	print("cached", containerList, craftabilityTable[reagentID])
+end
+
 			return craftabilityTable[reagentID]		-- return the cached value
 		end
 
@@ -99,6 +103,8 @@ do
 			end
 		end
 
+--		local inventoryCount = self:GetInventoryCount(reagentID, player, containerList) + numReagentsCraftable
+
 		local inventoryCount = self:GetInventoryCount(reagentID, player, containerList) + numReagentsCraftable
 
 		craftabilityTable[reagentID] = inventoryCount
@@ -110,8 +116,10 @@ do
 		end
 ]]
 
+if reagentID == 2996 then
+--	print(containerList, inventoryCount)
+end
 		itemVisited[reagentID] = false										-- okay to calculate this reagent again
-
 		return inventoryCount
 	end
 
@@ -169,12 +177,13 @@ do
 
 		inv[itemID] = (inv[itemID] or 0) - count					-- queue "inventory" is negative meaning that it requires these items
 
+		self:BAG_UPDATE()
 
 --		print(player, (GetItemInfo(itemID)), count, -inv[itemID])
 	end
 
 
-	function GnomeWorks:GetInventoryCount(itemID, player, containerList)
+	function GnomeWorks:GetInventoryCount(itemID, player, containerList, factionPlayer)
 		if player ~= "faction" then
 			local inventoryData = self.data.inventoryData[player]
 
@@ -207,6 +216,7 @@ do
 			return 0
 		else -- faction-wide materials
 			local count = 0
+			local checkGuildBank = string.find(containerList,"guildBank")
 
 			for k,container in pairs(StringIterator(containerList)) do -- string.gmatch(containerList, "%a+") do
 				if container == "vendor" then
@@ -217,19 +227,26 @@ do
 
 				if container == "auctionHouse" then
 					count = count + (self.data.inventoryData.auctionHouse[itemID] or 0)
-				else
+				elseif container == "guildBank" then
 
+				else
 					for inv, inventoryData in pairs(self.data.inventoryData) do
-						local c = container
---[[
-						if container == "craftedGuildBank" and self.data.playerData[inv] then -- and not self.data.playerData[inv].guild then
-							c = "craftedMail"
-						elseif container == "guildBank" then
-							c = "
-						end
-]]
-						if inventoryData[c] then
-							count = count + (inventoryData[c][itemID] or 0)
+						if inv ~= factionPlayer and not string.find(inv,"GUILD:") then
+							local c = container
+	--[[
+							if container == "craftedGuildBank" and self.data.playerData[inv] then -- and not self.data.playerData[inv].guild then
+								c = "craftedMail"
+							elseif container == "guildBank" then
+								c = "
+							end
+	]]
+							if inventoryData[c] then
+								count = count + (inventoryData[c][itemID] or 0)
+							end
+						elseif container=="guildBank" and string.find(inv,"GUILD:") then
+							if inventoryData.bank and inventoryData.bank[itemID] then
+								count = count + inventoryData.bank[itemID]
+							end
 						end
 					end
 				end
@@ -322,41 +339,6 @@ do
 		local inventory = self.data.inventoryData[player]
 
 		if inventory then
---[[
-			if not inventory["bag"] then
-				inventory["bag"] = {}
-			end
-
-			if not inventory["bank"] then
-				inventory["bank"] = {}
-			end
-
-			if not inventory["mail"] then
-				inventory["mail"] = {}
-			end
-
-
-			if not inventory["auction"] then
-				inventory["auction"] = {}
-			end
-
-			if not inventory["craftedMail"] then
-				inventory["craftedMail"] = {}
-			end
-
-			if not inventory["craftedAuction"] then
-				inventory["craftedAuction"] = {}
-			end
-
-			if not inventory["craftedBag"] then
-				inventory["craftedBag"] = {}
-			end
-
-			if not inventory["craftedBank"] then
-				inventory["craftedBank"] = {}
-			end
-]]
-
 			if self.data.playerData[player].guild then
 				if not inventory["craftedGuildBank"] then
 					inventory["craftedGuildBank"] = {}
@@ -385,8 +367,6 @@ do
 			--DebugSpam(inventoryData[reagentID])
 				end
 			end
-
-
 
 
 			local craftedBag = table.wipe(inventory["craftedBag"])
@@ -480,7 +460,6 @@ do
 		end
 
 		GnomeWorks:SendMessageDispatch("GnomeWorksInventoryScanComplete")
---		GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
 		GnomeWorks:SendMessageDispatch("GnomeWorksSkillListChanged")
 		GnomeWorks:SendMessageDispatch("GnomeWorksDetailsChanged")
 	end

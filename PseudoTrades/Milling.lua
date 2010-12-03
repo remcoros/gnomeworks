@@ -432,8 +432,9 @@ do
 				if type(skillList[i]) ~= "string" then
 
 					local recipeID = skillList[i]
+					local herbID = -recipeID
 
-					if millBrackets[-recipeID] <= inscriptionRank then
+					if millBrackets[herbID] <= inscriptionRank then
 						knownSpells[recipeID] = i
 					end
 				end
