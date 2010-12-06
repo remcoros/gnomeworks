@@ -1087,7 +1087,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		end
 ]]
 
-		local link = (self.data.playerData[player] and self.data.playerData[player].links[tradeID])
+		local link = (self.data.playerData[player] and self.data.playerData[player].links and self.data.playerData[player].links[tradeID])
 
 		if not link then
 			link = linkDB[player] and linkDB[player][tradeID]
