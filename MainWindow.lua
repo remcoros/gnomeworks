@@ -1241,10 +1241,6 @@ do
 					local guildBank = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedGuildBank")
 					local alt = GnomeWorks:InventoryRecipeIterations(entry.recipeID, "faction", "vendor craftedMail")
 
-if entry.recipeID == 3915 then
---					print("craftedMail iterations",GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "craftedMail"))
---					print("craftedMail iterations",GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "craftedMail"))
-end
 
 					if onHand > 0 then
 						entry.craftable = true
@@ -1451,14 +1447,14 @@ end
 	end
 
 	function GnomeWorks:ShowStatus()
-		local rank, maxRank = self:GetTradeSkillRank()
-		self.levelStatusBar:SetMinMaxValues(0,maxRank)
-		self.levelStatusBar.estimatedLevel:SetMinMaxValues(0,maxRank)
-		self.levelStatusBar:SetValue(rank)
-		self.levelStatusBar.estimatedLevel:SetValue(rank)
-		self.levelStatusBar:Show()
+		local rank, maxRank, estimatedSkillUp = self:GetTradeSkillRank()
 
-		local estimatedSkillUp = GnomeWorks.data.skillUpRanks[GnomeWorks.tradeID]
+		self.levelStatusBar:SetMinMaxValues(0,maxRank)
+		self.levelStatusBar:SetValue(rank)
+		self.levelStatusBar.estimatedLevel:SetMinMaxValues(0,maxRank)
+		self.levelStatusBar.estimatedLevel:SetValue(rank)
+--		self.levelStatusBar:Show()
+
 
 		if estimatedSkillUp then
 			self.levelStatusBar.estimatedLevel:SetValue(estimatedSkillUp)
@@ -2078,22 +2074,26 @@ end
 		local level = CreateFrame("StatusBar", nil, estimatedLevel)
 
 
-		level:SetPoint("TOPRIGHT",frame,"TOPRIGHT",-20,-34)
-		level:SetPoint("LEFT",tradeButtonFrame)
-		level:SetHeight(8)
+		estimatedLevel:SetPoint("TOPRIGHT",frame,"TOPRIGHT",-20,-34)
+		estimatedLevel:SetPoint("LEFT",tradeButtonFrame)
+		estimatedLevel:SetHeight(8)
+
+		estimatedLevel:SetOrientation("HORIZONTAL")
+		estimatedLevel:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
+		estimatedLevel:SetStatusBarColor(.05,.5,1,1)
+
+		estimatedLevel:SetMinMaxValues(1,75)
+		estimatedLevel:SetValue(75)
 
 
 		level:SetOrientation("HORIZONTAL")
 		level:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
 		level:SetStatusBarColor(.05,.05,.75,1)
 
+		level:SetMinMaxValues(1,75)
+		level:SetValue(75)
 
-		estimatedLevel:SetAllPoints(level)
-
-		estimatedLevel:SetOrientation("HORIZONTAL")
-		estimatedLevel:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
-		estimatedLevel:SetStatusBarColor(.05,.5,1,1)
-
+		level:SetAllPoints(estimatedLevel)
 
 
 		self.Window:SetBetterBackdrop(estimatedLevel, levelBackDrop)
@@ -2128,7 +2128,6 @@ end
 
 			levelText:SetFormattedText("%d/%d",value,maxValue)
 		end)
-
 
 
 

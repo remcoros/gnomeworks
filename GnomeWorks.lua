@@ -388,6 +388,7 @@ do
 
 		local trackedItems = {}
 
+		GnomeWorks.data.trainableSpells = {}
 
 		local itemSource = {}
 		GnomeWorks.data.itemSource = itemSource
@@ -520,6 +521,11 @@ print(arg1)
 		GnomeWorks:RegisterEvent("MERCHANT_UPDATE")
 		GnomeWorks:RegisterEvent("MERCHANT_SHOW")
 		GnomeWorks:RegisterEvent("MERCHANT_CLOSE")
+
+
+		GnomeWorks:RegisterEvent("TRAINER_UPDATE")
+		GnomeWorks:RegisterEvent("TRAINER_SHOW")
+		GnomeWorks:RegisterEvent("TRAINER_CLOSE")
 
 
 		GnomeWorks:RegisterEvent("BAG_UPDATE")

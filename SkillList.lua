@@ -223,6 +223,8 @@ DebugSpam("found ", link, tradeLink)
 						end
 
 						tradeLink = "|cffffd000|Htrade:"..id..":"..level..":0:/|h["..GnomeWorks:GetTradeName(id).."]|h|r"			-- fake link for data collection purposes
+
+						self:RecordKnownSpells(playerName, id)
 					elseif not tradeLink then
 						return false
 					end
@@ -485,6 +487,33 @@ DebugSpam("done parsing skill list")
 
 		updateEventFrames = nil
 	end
+
+
+	function GnomeWorks:AddTrainableSkills(player, tradeID)
+		local flatGroup = self:RecipeGroupFind(player,tradeID,"Flat")
+		local categoryGroup = self:RecipeGroupFind(player,tradeID,"By Category")
+		local slotGroup = self:RecipeGroupFind(player,tradeID,"By Slot")
+
+		local subCategoryGroup = self:RecipeGroupNew(self.player, self.tradeID, "By Category", "Trainable")
+
+		local subSlotGroup = self:RecipeGroupNew(self.player, self.tradeID, "By Slot", "Trainable")
+
+		local index = 2000
+
+		for recipeID,level in pairs(self.data.trainableSpells) do
+			if self:GetRecipeTradeID(recipeID) == tradeID then
+				GnomeWorks:RecipeGroupAddRecipe(subSlotGroup, recipeID, -recipeID, true)
+				GnomeWorks:RecipeGroupAddRecipe(subCategoryGroup, recipeID, -recipeID, true)
+				GnomeWorks:RecipeGroupAddRecipe(flatGroup, recipeID, -recipeID, true)
+
+				index = index + 1
+			end
+		end
+
+		self:RecipeGroupAddSubGroup(slotGroup, subSlotGroup, 1500, true)
+		self:RecipeGroupAddSubGroup(categoryGroup, subCategoryGroup, 1500, true)
+	end
+
 
 
 
@@ -842,6 +871,8 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 		if numHeaders > 0 and not gotNil then
 			dataScanned[key] = true
+
+			self:AddTrainableSkills(player, tradeID)
 		else
 			self:ScheduleTimer("ScanTrade",2)
 		end
@@ -1032,9 +1063,14 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 
 	function GnomeWorks:GetTradeSkillRank(player, tradeID)
-		if not IsTradeSkillLinked() then
+		if not tradeID and not IsTradeSkillLinked() then
 			local skill, rank, maxRank = self:GetTradeSkillLine()
 
+			if self.data.skillUpRanks[tradeID or self.tradeID] then
+				if self.data.skillUpRanks[tradeID or self.tradeID] > maxRank then
+					maxRank = self.data.skillUpRanks[tradeID or self.tradeID]
+				end
+			end
 			return rank, maxRank, self.data.skillUpRanks[tradeID or self.tradeID]
 		end
 
@@ -1060,7 +1096,15 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		if link then
 			local rank, maxRank = string.match(link,"trade:%d+:(%d+):(%d+)")
 
-			return tonumber(rank), tonumber(maxRank), self.data.skillUpRanks[tradeID]
+			rank = tonumber(rank)
+			maxRank = tonumber(maxRank)
+
+			if self.data.skillUpRanks[tradeID or self.tradeID] then
+				if self.data.skillUpRanks[tradeID or self.tradeID] > maxRank then
+					maxRank = self.data.skillUpRanks[tradeID or self.tradeID]
+				end
+			end
+			return rank, maxRank, self.data.skillUpRanks[tradeID or self.tradeID]
 		end
 
 		return 0, 0
@@ -1106,6 +1150,17 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		if self.data.knownSpells[player] and self.data.knownSpells[player][recipeID] then
 			return true
 		else
+			local skillNeeded = self.data.trainableSpells[recipeID]
+			if skillNeeded then
+				local tradeID = self:GetRecipeTradeID(recipeID)
+
+				local rank,maxRank,estimatedRank = self:GetTradeSkillRank(player, tradeID)
+
+				if (estimatedRank or rank ) >= skillNeeded then
+					return true
+				end
+			end
+
 			return false
 		end
 	end

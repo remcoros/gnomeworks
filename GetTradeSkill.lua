@@ -61,6 +61,9 @@ do
 	}
 
 
+	local OverRide = {}
+
+
 	function GnomeWorks:AddPseudoTrade(tradeID, api)
 		if not self.data.pseudoTradeData then
 			self.data.pseudoTradeData = {}
@@ -105,83 +108,6 @@ do
 		end
 	end
 
---[[
-	local PseudoTrade = {}
-
-	function PseudoTrade:GetNumTradeSkills()
-		return #GnomeWorks.data.pseudoTrade[self.tradeID]
-	end
-
-	function PseudoTrade:GetTradeSkillItemLink(index)
-		local recipeID = self.data.pseudoTrade[self.tradeID][index]
-
-		if recipeID then
-			if recipeID < 0 then
-				local _,link = GetItemInfo(-recipeID)
-
-				return link
-			else
-				local _,link = GetItemInfo(next(GnomeWorksDB.results[recipeID]))
-
-				return link
-			end
-		end
-	end
-
-
-	function PseudoTrade:GetTradeSkillRecipeLink(index)
-		local recipeID = self.data.pseudoTrade[self.tradeID][index]
-
-		if recipeID < 0 then
-			return "enchant:"..recipeID
-		else
-			return GetSpellLink(recipeID)
-		end
-	end
-
-
-
-	function PseudoTrade:GetTradeSkillLine()
-		return GnomeWorks:GetTradeName(self.tradeID), 1, 1
-	end
-
-	function PseudoTrade:GetTradeSkillInfo(index)
-		local recipeID = self.data.pseudoTrade[self.tradeID][index]
-
-		return self:GetRecipeName(recipeID) or "nil", "optimal"
-	end
-
-	function PseudoTrade:GetTradeSkillIcon(index)
-		local recipeID = self.data.pseudoTrade[self.tradeID][index]
-		if recipeID < 0 then
-			return GetItemIcon(-recipeID)
-		else
-			local _,_,icon = GetSpellInfo(recipeID)
-			return icon or ""
-		end
-	end
-
-	function PseudoTrade:IsTradeSkillLinked()
-		return true
-	end
-
-	function PseudoTrade:GetTradeSkillTools()
-		return
-	end
-
-	function PseudoTrade:GetTradeSkillCooldown()
-		return
-	end
-]]
---[[
-	function PseudoTrade:GetTradeSkillNumMade(index)
-		local recipeID = self.data.pseudoTrade[self.tradeID][index]
-		local itemID,count = next(GnomeWorksDB.results[recipeID])
-
-		return count,count
-	end
-]]
-
 
 	function GnomeWorks:GetTradeIcon(tradeID)
 		if tradeIcon[tradeID] then
@@ -193,6 +119,46 @@ do
 		return icon
 	end
 
+
+
+	function OverRide.GetTradeSkillIcon(index)
+		if index and index<0 then
+			local results = GnomeWorks:GetRecipeData(-index)
+
+			return GetItemIcon(next(results))
+		else
+			return GetTradeSkillIcon(index)
+		end
+	end
+
+	function OverRide.GetTradeSkillItemLink(index)
+		if index and index<0 then
+			local results = GnomeWorks:GetRecipeData(-index)
+
+			local _,itemLink = GetItemInfo(next(results))
+
+			return itemLink
+		else
+			return GetTradeSkillItemLink(index)
+		end
+	end
+
+	function OverRide.GetTradeSkillRecipeLink(index)
+		if index and index<0 then
+			return GetSpellLink(-index)
+		else
+			return GetTradeSkillRecipeLink(index)
+		end
+	end
+
+
+	function OverRide.GetTradeSkillInfo(index)
+		if index<0 then
+			return (GetSpellInfo(-index)), "unknown"
+		else
+			return GetTradeSkillInfo(index)
+		end
+	end
 
 
 
@@ -243,6 +209,10 @@ do
 					return
 				end
 
+				if OverRide[api] then
+					return OverRide[api](...)
+				end
+
 				return _G[api](...)
 			end
 --		else
@@ -261,4 +231,6 @@ do
 
 		return false
 	end
+
+
 end

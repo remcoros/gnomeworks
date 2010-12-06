@@ -680,13 +680,13 @@ do
 						local chance =  1-(rank-yellow+1)/(green-yellow+1)*.5
 						count = count - (1/chance)
 						if count >= 0 then
-							rank = rank + factor
+							rank = rank + 1
 						end
 					else
 						local chance = (1-(rank-green+1)/(gray-green+1))*.5
 						count = count - (1/chance)
 						if count >= 0 then
-							rank = rank + factor
+							rank = rank + 1
 						end
 					end
 

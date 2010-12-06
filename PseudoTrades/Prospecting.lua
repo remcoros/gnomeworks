@@ -356,8 +356,9 @@ do
 			else
 				local recipeID = skillList[i]
 
-				GnomeWorks:RecipeGroupAddRecipe(flatGroup, recipeID, i, true)
-
+				if GnomeWorks:IsSpellKnown(recipeID, player) then
+					GnomeWorks:RecipeGroupAddRecipe(flatGroup, recipeID, i, true)
+				end
 --[[
 				if currentGroup then
 					GnomeWorks:RecipeGroupAddRecipe(currentGroup, recipeID, i, true)

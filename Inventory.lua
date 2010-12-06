@@ -70,12 +70,8 @@ do
 
 	-- recursive reagent craftability check
 	-- utilizes all containers passed to it ("bag", "bank", "queue", "guildbank", "mail", etc)
-	function GnomeWorks:InventoryReagentCraftability(craftabilityTable, reagentID, player, containerList)
-		if craftabilityTable[reagentID] then
-if reagentID == 2996 then
---	print("cached", containerList, craftabilityTable[reagentID])
-end
-
+	function GnomeWorks:InventoryReagentCraftability(craftabilityTable, reagentID, player, containerList, forceRecache)
+		if not forceRecache and craftabilityTable[reagentID] then
 			return craftabilityTable[reagentID]		-- return the cached value
 		end
 
@@ -176,6 +172,7 @@ end
 
 	function GnomeWorks:UncacheReagentCounts(player, inventory, reagentUsage)
 		for recipeID in pairs(reagentUsage) do
+
 			if self.data.knownSpells[player][recipeID] then
 
 				for k,inv in ipairs(inventoryList) do
@@ -185,7 +182,7 @@ end
 					if invData then
 						local results, reagents = self:GetRecipeData(recipeID)
 
-						for itemID in pairs(reagents) do
+						for itemID in pairs(results) do
 							if not reCache[itemID] then
 								reCache[itemID] = true
 
@@ -207,7 +204,7 @@ end
 	end
 
 
-	function GnomeWorks:RecalculateDependentRecipes(player, reagentUsage)
+	function GnomeWorks:RecalculateDependentRecipesXX(player, reagentUsage)
 		local inventory = self.data.inventoryData[player]
 
 		table.wipe(reCache)
@@ -229,6 +226,7 @@ end
 
 
 -- assign nil's to all 0 count items
+--[[
 		for name, container in pairs(inventory) do
 			for itemID in pairs(reCache) do
 				if count == 0 then
@@ -236,18 +234,67 @@ end
 				end
 			end
 		end
+]]
 	end
 
 
+
+	function GnomeWorks:RecalculateDependentRecipes(player, reagentUsage, inventory, sourceInventory)
+
+--		table.wipe(itemVisited)
+
+		for recipeID in pairs(reagentUsage) do
+			if self.data.knownSpells[player][recipeID] then
+
+				local results = self:GetRecipeData(recipeID)
+
+				for itemID in pairs(results) do
+					if self.data.reagentUsage[itemID] then
+						local oldCount = inventory[itemID]
+
+						self:InventoryReagentCraftability(inventory, itemID, player, sourceInventory, true)
+
+						if oldCount ~= inventory[itemID] then
+							local reagentUsage = self.data.reagentUsage[itemID]
+
+							self:RecalculateDependentRecipes(player, reagentUsage, inventory, sourceInventory)
+						end
+					end
+				end
+			end
+		end
+
+
+-- assign nil's to all 0 count items
+--[[
+		for name, container in pairs(inventory) do
+			for itemID in pairs(reCache) do
+				if count == 0 then
+					container[itemID] = nil
+				end
+			end
+		end
+]]
+	end
+
 	function GnomeWorks:ReserveItemForQueue(player, itemID, count)
-		local inv = self.data.inventoryData[player].queue
+		local invData = self.data.inventoryData[player]
+		local inv = invData.queue
 
 		inv[itemID] = (inv[itemID] or 0) - count					-- queue "inventory" is negative meaning that it requires these items
 
 		local reagentUsage = self.data.reagentUsage[itemID]
 
 		if reagentUsage then
-			self:RecalculateDependentRecipes(player, reagentUsage)
+			for k,invLabel in pairs(inventoryList) do
+				table.wipe(itemVisited)
+
+				if invData[invLabel] then
+					self:RecalculateDependentRecipes(player, reagentUsage, invData[invLabel], inventorySourceTable[invLabel])
+					self:InventoryReagentCraftability(invData[invLabel], itemID, player, inventorySourceTable[invLabel], true)
+				end
+			end
+--			self:RecalculateDependentRecipes(player, reagentUsage)
 		end
 
 --		self:BAG_UPDATE()

@@ -501,12 +501,16 @@ do
 
 			local recipeID
 
-			if self.data.pseudoTradeData[self.tradeID] then
-				local trade = self.data.pseudoTradeData[self.tradeID]
-
-				recipeID = trade.skillList[index]
+			if index < 0 then
+				recipeID = -index
 			else
-				recipeID = self.data.skillDB[self.player..":"..self.tradeID] and self.data.skillDB[self.player..":"..self.tradeID].recipeID[index]
+				if self.data.pseudoTradeData[self.tradeID] then
+					local trade = self.data.pseudoTradeData[self.tradeID]
+
+					recipeID = trade.skillList[index]
+				else
+					recipeID = self.data.skillDB[self.player..":"..self.tradeID] and self.data.skillDB[self.player..":"..self.tradeID].recipeID[index]
+				end
 			end
 
 			reagentFrame:Show()
@@ -942,23 +946,8 @@ do
 
 
 		local function GetSkillLevels(id)
-			local levels = GnomeWorks.libPT:ItemInSet(id,"TradeskillLevels")
-
-			if not levels then
-				return 0,0,0,0
-			else
-				local a,b,c,d = string.split("/",levels)
-
-				a = tonumber(a) or 0
-				b = tonumber(b) or 0
-				c = tonumber(c) or 0
-				d = tonumber(d) or 0
-
-				return a, b, c, d
-			end
+			return RecipeSkillLevels[1][id] or 0, RecipeSkillLevels[2][id] or 0, RecipeSkillLevels[3][id] or 0, RecipeSkillLevels[4][id] or 0
 		end
-
-
 
 		function GnomeWorks:HideDetails()
 			detailFrame:Hide()
@@ -970,13 +959,17 @@ do
 			local recipeID
 			local isPseudoTrade
 
-			if self.data.pseudoTradeData[self.tradeID] then
-				local trade = self.data.pseudoTradeData[self.tradeID]
-
-				recipeID = trade.skillList[index]
-				isPseudoTrade = true
+			if index < 0 then
+				recipeID = -index
 			else
-				recipeID = self.data.skillDB[self.player..":"..self.tradeID] and self.data.skillDB[self.player..":"..self.tradeID].recipeID[index]
+				if self.data.pseudoTradeData[self.tradeID] then
+					local trade = self.data.pseudoTradeData[self.tradeID]
+
+					recipeID = trade.skillList[index]
+					isPseudoTrade = true
+				else
+					recipeID = self.data.skillDB[self.player..":"..self.tradeID] and self.data.skillDB[self.player..":"..self.tradeID].recipeID[index]
+				end
 			end
 
 			detailFrame:Show()
@@ -1048,10 +1041,9 @@ do
 			end
 
 			if not isPseudoTrade and results then
-				local id = next(results)
 				local rank, maxRank, estimatedRank = GnomeWorks:GetTradeSkillRank()
 
-				local orange, yellow, green, gray = GetSkillLevels(id)
+				local orange, yellow, green, gray = GetSkillLevels(recipeID)
 
 
 				detailFrame.levelsBar.green:SetMinMaxValues(1,maxRank)

@@ -20,27 +20,8 @@ do
 	}
 
 	local function Register()
-		local lib, minorVersion = LibStub:GetLibrary("LibPeriodicTable-3.1", true)
-
-		libPT = lib
-
-		if not libPT then return end
-
 		local function GetSkillLevels(id)
-			local levels = libPT:ItemInSet(id,"TradeskillLevels")
-
-			if not levels then
-				return 0,0,0,0
-			else
-				local a,b,c,d = string.split("/",levels)
-
-				a = tonumber(a) or 0
-				b = tonumber(b) or 0
-				c = tonumber(c) or 0
-				d = tonumber(d) or 0
-
-				return a, b, c, d
-			end
+			return RecipeSkillLevels[1][id] or 0, RecipeSkillLevels[2][id] or 0, RecipeSkillLevels[3][id] or 0, RecipeSkillLevels[4][id] or 0
 		end
 
 
@@ -64,7 +45,7 @@ do
 		local function GetSkillUpChance(id, rank)
 			local orange, yellow, green, gray  = GetSkillLevels(id)
 
-			if rank >= gray then
+			if rank < orange or rank >= gray then
 				return 0
 			elseif rank < yellow then
 				return 1
@@ -186,15 +167,15 @@ do
 			end,
 
 			enabled = function()
-				rank,maxRank,estimatedRank = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, GnomeWorks.tradeID)
-				rank = estimatedRank or rank
+				local realRank,maxRank,estimatedRank = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, GnomeWorks.tradeID)
+				rank = estimatedRank or realRank
 
 				if not plugin.enabled then
 					return
 				end
 
 				if scrollFrame:IsVisible() then
-					if rank and maxRank and rank < maxRank then
+					if rank and maxRank and realRank < maxRank then
 						if not GnomeWorks.data.pseudoTradeData[GnomeWorks.tradeID] then
 							return true
 						end
@@ -210,6 +191,14 @@ do
 				local skillName, skillType = GetTradeSkillInfo(entry.index)
 
 				if skillType ~= "header" and entry.recipeID then
+
+					entry.skillUp = GetSkillUpChance(entry.recipeID, rank)
+
+					if entry.skillUp == 1 then
+						entry.skillUp = entry.skillUp * (GnomeWorksDB.skillUps[entry.recipeID] or 1)
+					end
+
+--[[
 					local itemLink = GnomeWorks:GetTradeSkillItemLink(entry.index)
 
 					if itemLink then
@@ -217,6 +206,7 @@ do
 
 						entry.skillUp = GetSkillUpChance(itemID or -entry.recipeID, rank) * (GnomeWorksDB.skillUps[entry.recipeID] or 1)
 					end
+]]
 				end
 			end
 		end

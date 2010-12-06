@@ -488,12 +488,14 @@ do
 			else
 				local recipeID = skillList[i]
 
-				GnomeWorks:RecipeGroupAddRecipe(flatGroup, recipeID, i, true)
+				if GnomeWorks:IsSpellKnown(recipeID, player) then
+					GnomeWorks:RecipeGroupAddRecipe(flatGroup, recipeID, i, true)
 
-				if currentGroup then
-					GnomeWorks:RecipeGroupAddRecipe(currentGroup, recipeID, i, true)
-				else
-					GnomeWorks:RecipeGroupAddRecipe(mainGroup, recipeID, i, true)
+					if currentGroup then
+						GnomeWorks:RecipeGroupAddRecipe(currentGroup, recipeID, i, true)
+					else
+						GnomeWorks:RecipeGroupAddRecipe(mainGroup, recipeID, i, true)
+					end
 				end
 
 --				difficulty[i] = "optimal"
