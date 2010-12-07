@@ -1068,7 +1068,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 			if self.data.skillUpRanks[tradeID or self.tradeID] then
 				if self.data.skillUpRanks[tradeID or self.tradeID] > maxRank then
-					maxRank = self.data.skillUpRanks[tradeID or self.tradeID]
+					maxRank = math.ceil(self.data.skillUpRanks[tradeID or self.tradeID]/75)*75
 				end
 			end
 			return rank, maxRank, self.data.skillUpRanks[tradeID or self.tradeID]
@@ -1101,7 +1101,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 			if self.data.skillUpRanks[tradeID or self.tradeID] then
 				if self.data.skillUpRanks[tradeID or self.tradeID] > maxRank then
-					maxRank = self.data.skillUpRanks[tradeID or self.tradeID]
+					maxRank = math.ceil(self.data.skillUpRanks[tradeID or self.tradeID]/75)*75
 				end
 			end
 			return rank, maxRank, self.data.skillUpRanks[tradeID or self.tradeID]

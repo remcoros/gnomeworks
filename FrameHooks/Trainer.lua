@@ -8,15 +8,18 @@ do
 
 	function GnomeWorks:TrainerScan()
 		for i=1, GetNumTrainerServices() do
-			local itemLink = GetTrainerServiceItemLink(i)
+			local serviceName, serviceSubText, serviceType, texture, reqLevel = GetTrainerServiceInfo(i)
 
-			if itemLink then
-				local itemID = tonumber(string.match(itemLink,"item:(%d+)"))
+			local recipeID
 
-				local recipeList = GnomeWorks.data.itemSource[itemID]
+			for r in pairs(GnomeWorksDB.results) do
+				if GetSpellInfo(r) == serviceName then
+					recipeID = r
+					break
+				end
+			end
 
-				local recipeID = next(recipeList)
-
+			if recipeID then
 				local results, reagents, tradeID = GnomeWorks:GetRecipeData(recipeID)
 
 				local skill, level = GetTrainerServiceSkillReq(i)

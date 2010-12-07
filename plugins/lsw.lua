@@ -496,9 +496,6 @@ do
 	--		LSW:ChatMessage("LilSparky's Workshop plugging into Skillet (v"..Skillet.version..")");
 
 
-
-
-
 			scrollFrame = GnomeWorks:GetSkillListScrollFrame()
 
 			scrollFrame:RegisterRowUpdate(updateData, plugin)
@@ -557,6 +554,8 @@ do
 				return skillName, skillType, itemLink, recipeLink, itemID, recipeID
 			end
 
+
+
 			local function togglePlugin()
 				plugin.enabled = not plugin.enabled
 			end
@@ -595,6 +594,23 @@ do
 			f:RegisterEvent("TRADE_SKILL_SHOW")
 
 			f:SetScript("OnEvent", AddPseudoTradeRecipes)
+
+			LSW.recipeCache.results = GnomeWorksDB.results
+			LSW.recipeCache.reagents = GnomeWorksDB.reagents
+
+			for recipeID, resultsTable in pairs(GnomeWorksDB.results) do
+				for itemID, numMade in pairs(resultsTable) do
+					LSW.AddToItemCache(itemID, recipeID, numMade)
+				end
+			end
+
+			for recipeID, reagentsTable in pairs(GnomeWorksDB.reagents) do
+				for itemID, numMade in pairs(reagentsTable) do
+					LSW.AddToItemCache(itemID)
+				end
+			end
+
+
 		end
 
 

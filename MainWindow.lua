@@ -572,14 +572,32 @@ do
 
 	local recipeLevelParameters = {
 		{
-			name = "DifficultyOptimal",
+			name = "DifficultyUnknown",
 			text = "",
 			icon = "Interface\\AddOns\\GnomeWorks\\Art\\skill_colors.tga",
 			coords = {0,1,0,.25},
 			enabled = false,
 			func = function(entry)
-				local difficulty = GnomeWorks:GetSkillDifficultyLevel(entry.index)
-				if difficulty > 3 then
+				local difficulty = GnomeWorks:GetRecipeDifficulty(entry.recipeID)
+				if difficulty > 4 then
+					return false
+				else
+					return true
+				end
+			end,
+			notCheckable = true,
+			checked = false,
+			OnClick = adjustFilterIcon,
+		},
+		{
+			name = "DifficultyOptimal",
+			text = "",
+			icon = "Interface\\AddOns\\GnomeWorks\\Art\\skill_colors.tga",
+			coords = {0,1,.25,.5},
+			enabled = false,
+			func = function(entry)
+				local difficulty = GnomeWorks:GetRecipeDifficulty(entry.recipeID)
+				if difficulty > 3 and difficulty < 5 then
 					return false
 				else
 					return true
@@ -593,10 +611,10 @@ do
 			name = "DifficultyMedium",
 			text = "",
 			icon = "Interface\\AddOns\\GnomeWorks\\Art\\skill_colors.tga",
-			coords = {0,1,.25,.5},
+			coords = {0,1,.5,.75},
 			func = function(entry)
-				local difficulty = GnomeWorks:GetSkillDifficultyLevel(entry.index)
-				if difficulty > 2 then
+				local difficulty = GnomeWorks:GetRecipeDifficulty(entry.recipeID)
+				if difficulty > 2 and difficulty < 5 then
 					return false
 				else
 					return true
@@ -610,11 +628,11 @@ do
 			name = "DifficultyEasy",
 			text = "",
 			icon = "Interface\\AddOns\\GnomeWorks\\Art\\skill_colors.tga",
-			coords = {0,1,.5,.75},
+			coords = {0,1,.75,1.0},
 			enabled = false,
 			func = function(entry)
-				local difficulty = GnomeWorks:GetSkillDifficultyLevel(entry.index)
-				if difficulty > 1 then
+				local difficulty = GnomeWorks:GetRecipeDifficulty(entry.recipeID)
+				if difficulty > 1 and difficulty < 5 then
 					return false
 				else
 					return true
@@ -787,9 +805,9 @@ do
 						if entry.subGroup then
 							cr,cg,cb = 1,.82,0
 						else
-							if not entry.skillColor then
-								entry.skillColor = GnomeWorks:GetSkillColor(entry.index)
-							end
+--							if not entry.skillColor then
+							_,_,entry.skillColor = GnomeWorks:GetRecipeDifficulty(entry.recipeID)
+--							end
 
 							if entry.skillColor then
 								cr,cg,cb = entry.skillColor.r, entry.skillColor.g, entry.skillColor.b
@@ -904,7 +922,7 @@ do
 								local lowKey, hiKey
 
 								for k,inv in ipairs(inventoryIndex) do
-									if entry[inv]>0 then
+									if (entry[inv] or 0) >0 then
 										low = k
 										lowKey = inv
 										break

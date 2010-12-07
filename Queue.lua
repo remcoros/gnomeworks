@@ -2150,7 +2150,7 @@ do
 													local results,reagents,tradeID = GnomeWorks:GetRecipeData(subEntry.recipeID)
 
 													if subEntry.command == "create" then
-														menuEntry.text = math.ceil(entry.numNeeded / results[subEntry.itemID]).." x "..GnomeWorks:GetRecipeName(subEntry.recipeID)
+														menuEntry.text = math.ceil((entry.numNeeded or 0) / results[subEntry.itemID]).." x "..GnomeWorks:GetRecipeName(subEntry.recipeID)
 													else
 														local c = "|cffb0b000"
 

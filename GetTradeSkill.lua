@@ -152,9 +152,22 @@ do
 	end
 
 
+	local skillLevelNames = { "unknown", "optimal", "medium", "easy", "trivial" }
+
 	function OverRide.GetTradeSkillInfo(index)
 		if index<0 then
-			return (GetSpellInfo(-index)), "unknown"
+			local rank,maxRank,estimatedRank = GnomeWorks:GetTradeSkillRank()
+			rank = estimatedRank or rank
+
+			local spellName = GetSpellInfo(-index)
+
+			for i=1,#skillLevelNames-1 do
+				if rank<(RecipeSkillLevels[i][-index] or 0) then
+					return spellName, skillLevelNames[i]
+				end
+			end
+
+			return (GetSpellInfo(-index)), "trivial"
 		else
 			return GetTradeSkillInfo(index)
 		end

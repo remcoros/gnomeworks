@@ -659,10 +659,12 @@ do
 --			local r,g,b = SkilletSkillName:GetTextColor()
 --			GameTooltip:AddLine(SkilletSkillName:GetText(),r,g,b)
 
-			local gray = detailFrame.levelsBar.green:GetValue()
-			local green = detailFrame.levelsBar.yellow:GetValue()
-			local yellow = detailFrame.levelsBar.orange:GetValue()
-			local orange = detailFrame.levelsBar.red:GetValue()
+			recipeID = detailFrame.levelsBar.recipeID
+
+			local gray = RecipeSkillLevels[4][recipeID] or 1
+			local green = RecipeSkillLevels[3][recipeID] or 1
+			local yellow = RecipeSkillLevels[2][recipeID] or 1
+			local orange = RecipeSkillLevels[1][recipeID] or 1
 
 			GameTooltip:AddLine(COLORORANGE..orange.."|r/"..COLORYELLOW..yellow.."|r/"..COLORGREEN..green.."|r/"..COLORGRAY..gray)
 
@@ -1045,6 +1047,8 @@ do
 
 				local orange, yellow, green, gray = GetSkillLevels(recipeID)
 
+
+				detailFrame.levelsBar.recipeID = recipeID
 
 				detailFrame.levelsBar.green:SetMinMaxValues(1,maxRank)
 				detailFrame.levelsBar.yellow:SetMinMaxValues(1,maxRank)
