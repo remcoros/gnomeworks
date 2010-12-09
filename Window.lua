@@ -789,13 +789,17 @@ info.cancelFunc
 		newButton.Disable = function(b)
 			b.state.Up:Hide()
 			b.state.Disabled:Show()
-			b:origDisable()
+			if not InCombatLockdown() then
+				b:origDisable()
+			end
 		end
 
 		newButton.Enable = function(b)
 			b.state.Up:Show()
 			b.state.Disabled:Hide()
-			b:origEnable()
+			if not InCombatLockdown() then
+				b:origEnable()
+			end
 		end
 
 

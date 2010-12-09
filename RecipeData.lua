@@ -193,7 +193,51 @@ do
 			results = {
 				[41595] = 2
 			}
-		}
+		},
+	}
+
+	local recipeOverRide = {
+--[[
+-- shadowy tarot (demons deck)
+		[59491] = {
+			results = {
+				[44143] = .2,
+				[44155] = .2,
+				[44156] = .2,
+				[44157] = .2,
+				[44154] = .2,
+			},
+		},
+
+-- arcane tarot (mages deck)
+		[59487] = {
+			results = {
+				[44144] = .2,
+				[44145] = .2,
+				[44165] = .2,
+				[44146] = .2,
+				[44147] = .2,
+			},
+		},
+
+-- strange tarot (deck of swords)
+		[59480] = {
+			results = {
+				[37145] = .25,
+				[37147] = .25,
+				[37159] = .25,
+				[37160] = .25,
+			},
+		},
+-- mysterious tarot (rogues deck)
+		[48247] = {
+			results = {
+				[37140] = .333,
+				[37143] = .333,
+				[37156] = .333,
+			},
+		},
+]]
 	}
 
 
@@ -296,6 +340,8 @@ print("getTradeInfo", recipeID)
 			return pseudoTrade.GetRecipeData(recipeID)
 		end
 
+		local results,reagents = GnomeWorksDB.results[recipeID], GnomeWorksDB.reagents[recipeID]
+
 		player = player or self.player or (UnitName("player"))
 
 		local spec = specializations[recipeID]
@@ -303,11 +349,16 @@ print("getTradeInfo", recipeID)
 			local playerSpec = self.data.playerData[player].specializations
 
 			if playerSpec and playerSpec[spec.specID] then
-				return spec.results, GnomeWorksDB.reagents[recipeID], GnomeWorksDB.tradeIDs[recipeID]
+				results = spec.results
 			end
 		end
 
-		return GnomeWorksDB.results[recipeID], GnomeWorksDB.reagents[recipeID], GnomeWorksDB.tradeIDs[recipeID]
+		if recipeOverRide[recipeID] then
+			results = recipeOverRide[recipeID].results or results
+			reagents = recipeOverRide[recipeID].reagents or reagents
+		end
+
+		return results, reagents, GnomeWorksDB.tradeIDs[recipeID]
 	end
 end
 

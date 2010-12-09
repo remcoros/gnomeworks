@@ -184,6 +184,10 @@ do
 	local function Draw(scrollFrame)
 		local DrawRow = scrollFrame.DrawRow
 
+		if not scrollFrame:IsVisible() then
+			return
+		end
+
 		scrollFrame.numRows = math.floor(scrollFrame:GetHeight()/scrollFrame.rowHeight)
 
 		if scrollFrame.numRows < scrollFrame.numData then

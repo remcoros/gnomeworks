@@ -426,7 +426,9 @@ DebugSpam("done parsing skill list")
 
 		if tradeID ~= self.tradeID then
 			if player == (UnitName("player")) and not pseudoTrades[tradeID] then
-				CastSpellByName((GetSpellInfo(tradeID)))
+				if tradeID then
+					CastSpellByName((GetSpellInfo(tradeID)))
+				end
 			else
 				self:OpenTradeLink(self:GetTradeLink(tradeID, player), player)
 			end

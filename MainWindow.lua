@@ -1054,35 +1054,39 @@ do
 							local lowKey, hiKey
 							local lowValue, hiValue
 
-							for k,inv in ipairs(inventoryIndex) do
-								local value = entry.inventory[inv]
-								if value>0 then
-									low = k
-									lowKey = inv
-									lowValue = value
-									break
-								end
-							end
-
-							if low then
-								for i=#inventoryIndex,low+1,-1 do
-									local key = inventoryIndex[i]
-
-									if entry.inventory[key] > 0 then
-										hi = i
-										hiKey = key
-										hiValue = entry.inventory[key]
-										break
+							if entry.inventory then
+								if entry.inventory[inv] then
+									for k,inv in ipairs(inventoryIndex) do
+										local value = entry.inventory[inv]
+										if value>0 then
+											low = k
+											lowKey = inv
+											lowValue = value
+											break
+										end
 									end
-								end
 
-								if hi then
-									local lowString = string.format(inventoryFormat[lowKey],lowValue)
-									local hiString = string.format(inventoryFormat[hiKey],hiValue)
+									if low then
+										for i=#inventoryIndex,low+1,-1 do
+											local key = inventoryIndex[i]
 
-									display = lowString.."+"..hiString
-								else
-									display = string.format(inventoryFormat[lowKey],lowValue)
+											if entry.inventory[key] > 0 then
+												hi = i
+												hiKey = key
+												hiValue = entry.inventory[key]
+												break
+											end
+										end
+
+										if hi then
+											local lowString = string.format(inventoryFormat[lowKey],lowValue)
+											local hiString = string.format(inventoryFormat[hiKey],hiValue)
+
+											display = lowString.."+"..hiString
+										else
+											display = string.format(inventoryFormat[lowKey],lowValue)
+										end
+									end
 								end
 							end
 

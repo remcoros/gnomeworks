@@ -168,11 +168,8 @@ end
 	end
 
 
-	local reCache = {}
-
 	function GnomeWorks:UncacheReagentCounts(player, inventory, reagentUsage)
 		for recipeID in pairs(reagentUsage) do
-
 			if self.data.knownSpells[player][recipeID] then
 
 				for k,inv in ipairs(inventoryList) do
@@ -183,17 +180,13 @@ end
 						local results, reagents = self:GetRecipeData(recipeID)
 
 						for itemID in pairs(results) do
-							if not reCache[itemID] then
-								reCache[itemID] = true
+							if invData[itemID] then
+								invData[itemID] = nil
 
-								if invData[itemID] then
-									invData[itemID] = nil
+								local subUsage = self.data.reagentUsage[itemID]
 
-									local subUsage = self.data.reagentUsage[itemID]
-
-									if subUsage then
-										self:UncacheReagentCounts(player, inventory, subUsage)
-									end
+								if subUsage then
+									self:UncacheReagentCounts(player, inventory, subUsage)
 								end
 							end
 						end
@@ -277,7 +270,7 @@ end
 ]]
 	end
 
-	function GnomeWorks:ReserveItemForQueue(player, itemID, count)
+	function GnomeWorks:ReserveItemForQueueOLD(player, itemID, count)
 		local invData = self.data.inventoryData[player]
 		local inv = invData.queue
 
@@ -301,6 +294,26 @@ end
 
 --		print(player, (GetItemInfo(itemID)), count, -inv[itemID])
 	end
+
+
+	function GnomeWorks:ReserveItemForQueue(player, itemID, count)
+		local invData = self.data.inventoryData[player]
+		local inv = invData.queue
+
+		inv[itemID] = (inv[itemID] or 0) - count					-- queue "inventory" is negative meaning that it requires these items
+
+		local reagentUsage = self.data.reagentUsage[itemID]
+
+		for k,invLabel in pairs(inventoryList) do
+			if invData[invLabel] then
+				invData[invLabel][itemID] = nil
+				if reagentUsage then
+					self:UncacheReagentCounts(player, invData[invLabel], reagentUsage)
+				end
+			end
+		end
+	end
+
 
 
 	function GnomeWorks:GetInventoryCount(itemID, player, containerList, factionPlayer)
