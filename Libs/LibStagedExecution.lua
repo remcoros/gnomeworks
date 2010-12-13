@@ -19,16 +19,23 @@ do
 			local entry = list.segments[1]
 
 			if entry then
-				if entry.func() or entry.retry > 30 then
-					table.remove(list.segments,1)
+				local status, value = pcall(entry.func)
+				if status then
+					if value or entry.retry > 30 then
+						table.remove(list.segments,1)
 
-					if not list.segments[1] then
-						frame:Hide()
+						if not list.segments[1] then
+							frame:Hide()
+						end
+					else
+						list.delay = entry.delay or 1
+
+						entry.retry = entry.retry + 1
 					end
 				else
-					list.delay = entry.delay or 1
-
-					entry.retry = entry.retry + 1
+					entry.func()
+					print("ERROR: fatal error initializing",entry.name or tostring(entry))
+					table.remove(list.segments,1)
 				end
 			else
 				frame:Hide()
@@ -38,8 +45,8 @@ do
 
 
 
-	local function AddSegment(list, func, delay)
-		local entry = { func = func, delay = delay, retry = 0 }
+	local function AddSegment(list, func, name, delay)
+		local entry = { func = func, delay = delay, retry = 0, name = name }
 
 		if func then
 			list.segments[#list.segments+1] = entry

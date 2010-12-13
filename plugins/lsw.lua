@@ -6,7 +6,7 @@ do
 	local function RegisterWithLSW()
 		if not LSW then return end
 
-		if not LSW.buttonScripts then
+		if not LSW.rev or LSW.rev < 106 then
 			print("|cffff0000GnomeWorks LSW support requires an update to your local copy of LilSparky's Workshop")
 			return
 		end
@@ -188,7 +188,7 @@ do
 			end,
 
 			enabled = function()
-				return GnomeWorks.tradeID ~= 53428
+				return GnomeWorks.tradeID ~= 53428 and plugin.enabled
 			end,
 		}
 
@@ -240,7 +240,7 @@ do
 			end,
 
 			enabled = function()
-				return GnomeWorks.tradeID ~= 53428 and not LSWConfig.singleColumn
+				return GnomeWorks.tradeID ~= 53428 and not LSWConfig.singleColumn and plugin.enabled
 			end,
 		}
 
@@ -544,8 +544,8 @@ do
 					local scroll = LSW.scrollData[recipeID]
 
 					if scroll then
-						itemID = scroll.scrollID					-- for enchants, the item created is a scroll
-						scrollVellum = 38682
+
+						itemID = scroll								-- for enchants, the item created is a scroll
 					else
 						itemID = -recipeID
 					end
@@ -594,7 +594,7 @@ do
 			f:RegisterEvent("TRADE_SKILL_SHOW")
 
 			f:SetScript("OnEvent", AddPseudoTradeRecipes)
-
+--[[
 			LSW.recipeCache.results = GnomeWorksDB.results
 			LSW.recipeCache.reagents = GnomeWorksDB.reagents
 
@@ -609,7 +609,7 @@ do
 					LSW.AddToItemCache(itemID)
 				end
 			end
-
+]]
 
 		end
 

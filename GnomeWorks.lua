@@ -465,7 +465,8 @@ do
 		SetTradeSkillSubClassFilter(0, 1, 1)
 		SetTradeSkillItemNameFilter("")
 		SetTradeSkillItemLevelFilter(0,0)
-
+		TradeSkillOnlyShowSkillUps(false)
+		TradeSkillOnlyShowMakeable(false)
 		return true
 	end
 
@@ -610,7 +611,13 @@ print(arg1)
 
 			for name,plugin in pairs(GnomeWorks.plugins) do
 	--print("initializing",name)
-				plugin.loaded = plugin.initialize()
+				local status, returnValue = pcall(plugin.initialize)
+				if status then
+					plugin.loaded = returnValue
+				else
+					GnomeWorks:warning(name,"could not be initialized")
+					GnomeWorks:warning(returnValue)
+				end
 			end
 
 
@@ -667,11 +674,11 @@ print(arg1)
 
 
 
-				initList:AddSegment(InitializeData)
-				initList:AddSegment(ParseTradeLinks)
-				initList:AddSegment(ParseKnownRecipes)
-				initList:AddSegment(CreateUI)
-				initList:AddSegment(RegisterEvents)
+				initList:AddSegment(InitializeData, "GnomeWorks: InitializeData")
+				initList:AddSegment(ParseTradeLinks, "GnomeWorks: ParseTradeLinks")
+				initList:AddSegment(ParseKnownRecipes, "GnomeWorks: ParseKnownRecipes")
+				initList:AddSegment(CreateUI, "GnomeWorks: CreateUI")
+				initList:AddSegment(RegisterEvents, "GnomeWorks: RegisterEvents")
 
 
 				initList:Execute()
@@ -683,11 +690,11 @@ print(arg1)
 			if string.lower(name) == string.lower(modName) then
 				GnomeWorks:UnregisterEvent(event)
 
-				initList:AddSegment(InitializeData)
-				initList:AddSegment(ParseTradeLinks)
-				initList:AddSegment(ParseKnownRecipes)
-				initList:AddSegment(CreateUI)
-				initList:AddSegment(RegisterEvents)
+				initList:AddSegment(InitializeData, "GnomeWorks: InitializeData")
+				initList:AddSegment(ParseTradeLinks, "GnomeWorks: ParseTradeLinks")
+				initList:AddSegment(ParseKnownRecipes, "GnomeWorks: ParseKnownRecipes")
+				initList:AddSegment(CreateUI, "GnomeWorks: CreateUI")
+				initList:AddSegment(RegisterEvents, "GnomeWorks: RegisterEvents")
 
 
 				initList:Execute()

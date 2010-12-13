@@ -258,7 +258,7 @@ DebugSpam("found ", link, tradeLink)
 
 					local fullBitMap = string.rep("/",string.len(bitMap or ""))
 
-					playerData.links[id] = string.format("%s:450:450:%s%s%s",tradeID, guid, fullBitMap, tail)
+					playerData.links[id] = string.format("%s:525:525:%s%s%s",tradeID, guid, fullBitMap, tail)
 
 	--				print(playerData.links[id])
 				else

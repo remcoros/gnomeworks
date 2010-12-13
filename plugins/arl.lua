@@ -211,11 +211,11 @@ local function ttAdd(
 
 --			ARL.scan_button:Hide()
 
-			plugin:AddButton("Scan", function() ARL:Scan(false) end)
-			plugin:AddButton("Text Dump", function() ARL:Scan(true) end)
-			plugin:AddButton("Clear Waypoints", function() ARL:ClearWaypoints() end)
+			plugin:AddButton("Scan", function() ARL:Scan(false) end).notCheckable = true
+			plugin:AddButton("Text Dump", function() ARL:Scan(true) end).notCheckable = true
+			plugin:AddButton("Clear Waypoints", function() ARL:ClearWaypoints() end).notCheckable = true
 
-			plugin:AddButton("Add Waypoints", function() ARL:AddWaypoint() end)
+			plugin:AddButton("Add Waypoints", function() ARL:AddWaypoint() end).notCheckable = true
 
 
 			GWScrollFrame:RegisterRowUpdate(updateData, plugin)

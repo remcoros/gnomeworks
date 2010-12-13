@@ -1055,37 +1055,35 @@ do
 							local lowValue, hiValue
 
 							if entry.inventory then
-								if entry.inventory[inv] then
-									for k,inv in ipairs(inventoryIndex) do
-										local value = entry.inventory[inv]
-										if value>0 then
-											low = k
-											lowKey = inv
-											lowValue = value
+								for k,inv in ipairs(inventoryIndex) do
+									local value = entry.inventory[inv]
+									if (value or 0) >0 then
+										low = k
+										lowKey = inv
+										lowValue = value
+										break
+									end
+								end
+
+								if low then
+									for i=#inventoryIndex,low+1,-1 do
+										local key = inventoryIndex[i]
+
+										if (entry.inventory[key] or 0) > 0 then
+											hi = i
+											hiKey = key
+											hiValue = entry.inventory[key]
 											break
 										end
 									end
 
-									if low then
-										for i=#inventoryIndex,low+1,-1 do
-											local key = inventoryIndex[i]
+									if hi then
+										local lowString = string.format(inventoryFormat[lowKey],lowValue)
+										local hiString = string.format(inventoryFormat[hiKey],hiValue)
 
-											if entry.inventory[key] > 0 then
-												hi = i
-												hiKey = key
-												hiValue = entry.inventory[key]
-												break
-											end
-										end
-
-										if hi then
-											local lowString = string.format(inventoryFormat[lowKey],lowValue)
-											local hiString = string.format(inventoryFormat[hiKey],hiValue)
-
-											display = lowString.."+"..hiString
-										else
-											display = string.format(inventoryFormat[lowKey],lowValue)
-										end
+										display = lowString.."+"..hiString
+									else
+										display = string.format(inventoryFormat[lowKey],lowValue)
 									end
 								end
 							end
@@ -1289,7 +1287,6 @@ do
 
 				local itemLink = (entry.index and GnomeWorks:GetTradeSkillItemLink(entry.index))
 
-
 				if not entry.itemColor then
 
 					local _,itemRarity,reqLevel
@@ -1331,7 +1328,7 @@ do
 					if itemID then
 						for k,inv in ipairs(inventoryIndex) do
 							if inv == "alt" then
-								entry.inventory[inv] = GnomeWorks:GetInventoryCount(itemID, "faction", "mail")
+								entry.inventory[inv] = GnomeWorks:GetInventoryCount(itemID, "faction", "bag bank mail", player)
 							else
 								entry.inventory[inv] = GnomeWorks:GetInventoryCount(itemID, player, inv)
 							end
@@ -1877,6 +1874,7 @@ do
 
 					title.text = "Plugins"
 					title.fontObject = "GameFontNormal"
+					title.notCheckable = true
 
 					UIDropDownMenu_AddButton(title)
 
@@ -1888,6 +1886,7 @@ do
 							button.hasArrow = #data.menuList>0
 							button.value = data.menuList
 							button.disabled = false
+							button.notCheckable = true
 
 							UIDropDownMenu_AddButton(button)
 							count = count + 1
@@ -1897,6 +1896,7 @@ do
 					if count == 0 then
 						button.text = "No Plugins Found"
 						button.disabled = true
+						button.notCheckable = true
 
 						UIDropDownMenu_AddButton(button)
 					end

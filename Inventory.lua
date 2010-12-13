@@ -133,22 +133,19 @@ end
 
 
 		if reagents then													-- make sure that recipe is in the database before continuing
-			local numCraftable
+			local numCraftable = LARGE_NUMBER
 
 			local vendorOnly = true
 
 			for reagentID, numNeeded in pairs(reagents) do
-				local reagentAvailability = self:GetInventoryCount(reagentID, player, containerList)
 
+				local reagentAvailability = self:GetInventoryCount(reagentID, player, containerList)
+--print(GnomeWorks:GetRecipeName(recipeID), (GetItemInfo(reagentID)), containerList, reagentAvailability)
 				if not self:VendorSellsItem(reagentID) then
 					vendorOnly = nil
 				end
 
-				numCraftable = math.min(numCraftable or LARGE_NUMBER, math.floor(reagentAvailability/numNeeded))
-			end
-
-			if not numCraftable then
-				numCraftable = LARGE_NUMBER
+				numCraftable = math.min(numCraftable, math.floor(reagentAvailability/numNeeded))
 			end
 
 			GnomeWorksDB.vendorOnly[recipeID] = vendorOnly
@@ -337,8 +334,13 @@ end
 
 --						count = count + (inventoryData.bank[itemID] or 0)
 					else
-						if inventoryData[container] then
-							count = count + (inventoryData[container][itemID] or 0)
+						if inventoryData[container] and inventoryData[container][itemID] then
+							count = count + inventoryData[container][itemID]
+						else
+							if inventorySourceTable[container] and inventoryData[container] then
+								self:InventoryReagentCraftability(inventoryData[container], itemID, player, inventorySourceTable[container])
+								count = count + (inventoryData[container][itemID] or 0)
+							end
 						end
 					end
 				end
@@ -390,6 +392,25 @@ end
 		end
 
 		return 0
+	end
+
+
+
+
+	function GnomeWorks:GetFactionInventoryCount(itemID, factionPlayer)
+		local count = 0
+
+		for inv, inventoryData in pairs(self.data.inventoryData) do
+			if inv ~= factionPlayer and not string.find(inv,"GUILD:") then
+				local c = "craftedGuildBank"
+
+				if inventoryData[c] then
+					count = count + (inventoryData[c][itemID] or 0)
+				end
+			end
+		end
+
+		return count
 	end
 
 
@@ -573,13 +594,14 @@ end
 
 				if invData then
 					for itemID in pairs(GnomeWorks.data.itemSource) do
-						self:InventoryReagentCraftability(invData, itemID, player, inventorySourceTable[inv])
+--						self:InventoryReagentCraftability(invData, itemID, player, inventorySourceTable[inv])
 					end
 				end
 			end
 
 
 -- assign nil's to all 0 count items
+--[[
 			for name, container in pairs(inventory) do
 				for itemID, count in pairs(container) do
 					if count == 0 then
@@ -587,6 +609,7 @@ end
 					end
 				end
 			end
+]]
 		end
 
 

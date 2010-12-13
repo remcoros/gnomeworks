@@ -482,8 +482,11 @@ do
 				elseif reagent.command == "create" then
 					local itemID = reagent.itemID
 					local resultsReagent,reagentsReagent,tradeID = GnomeWorks:GetRecipeData(reagent.recipeID,player)
+					local numAvailable = 0
 
-					local numAvailable = GnomeWorks:InventoryRecipeIterations(reagent.recipeID, player, "bag queue") * resultsReagent[itemID]
+					if resultsReagent then
+						numAvailable = GnomeWorks:InventoryRecipeIterations(reagent.recipeID, player, "bag queue") * resultsReagent[itemID]
+					end
 
 					reagent.numCraftable = numAvailable
 
@@ -1300,7 +1303,7 @@ do
 			BuildFlatQueue(self.data.flatQueue[player], self.data.queueData[player])
 
 
---			self:SendMessageDispatch("GnomeWorksQueueCountsChanged")
+			self:SendMessageDispatch("GnomeWorksQueueCountsChanged")
 
 
 			if GnomeWorksDB.config.queueLayoutFlat then
@@ -1571,7 +1574,7 @@ do
 			elseif entry then
 				local _,_,tradeID = GnomeWorks:GetRecipeData(entry.recipeID)
 
-				button:SetFormattedText("Process %s x %d",GnomeWorks:GetRecipeName(entry.recipeID) or "spell:"..entry.recipeID,math.min(entry.numCraftable,entry.count))
+				button:SetFormattedText("Process %s x %d",GnomeWorks:GetRecipeName(entry.recipeID) or "spell:"..entry.recipeID,math.min(entry.numCraftable or 1,entry.count or 1))
 				button:Enable()
 
 				local pseudoTrade = GnomeWorks.data.pseudoTradeData[tradeID]
@@ -1584,6 +1587,8 @@ do
 
 					if not InCombatLockdown() then
 						button.secure:Show()
+						button.secure:SetAllPoints(button)
+
 						button.secure:SetAttribute("type", "macro")
 						button.secure:SetAttribute("macrotext", macroText)
 					end
@@ -1594,6 +1599,7 @@ do
 
 					if not InCombatLockdown() then
 						button.secure:Hide()
+						button.secure:ClearAllPoints()
 
 						EditMacro("GWProcess", "GWProcess", 977, "/click GWProcess", false, false)
 					end
@@ -1605,6 +1611,7 @@ do
 
 				if not InCombatLockdown() then
 					button.secure:Hide()
+					button.secure:ClearAllPoints()
 				end
 
 				button:SetText("Nothing To Process")
@@ -1640,7 +1647,8 @@ do
 
 		local buttonConfig = {
 --			{ text = "Process", operation = ProcessQueue, width = 250, validate = SetProcessLabel, lineBreak = true, template = "SecureActionButtonTemplate" },
-			{ text = "Nothing To Process", name = "GWProcess", width = 250, validate = ConfigureButton, lineBreak = true, addSecure=true, template = "SecureActionButtonTemplate", updateEvent = "HeartBeat GnomeWorksQueueCountsChanged GnomeWorksProcessing  GnomeWorksInventoryScanComplete" },
+			{ text = "Nothing To Process", name = "GWProcess", width = 250, validate = ConfigureButton, lineBreak = true, addSecure=true, template = "SecureActionButtonTemplate",
+						updateEvent = "GnomeWorksCountsQueueChanged GnomeWorksQueueChanged GnomeWorksProcessing GnomeWorksInventoryScanComplete HeartBeat" },
 			{ text = "Stop", operation = StopProcessing, width = 125 },
 			{ text = "Clear", operation = ClearQueue, width = 125, lineBreak = true },
 			{ text = "Scan Auctions", width = 250, validate = ConfigureAuctionButton, updateEvent = "HeartBeat GnomeWorksAuctionScan" }
@@ -1667,9 +1675,9 @@ do
 				local newButton = GnomeWorks:CreateButton(controlFrame, 18, nil, config.name)
 
 				if config.addSecure then
-					newButton.secure = CreateFrame("Button",nil, newButton, config.template, (config.name or config.text).."Secure")
+					newButton.secure = CreateFrame("Button",nil, UIParent, config.template, (config.name or config.text).."Secure")
 
-					newButton.secure:SetAllPoints(newButton)
+--					newButton.secure:SetAllPoints(newButton)
 
 					newButton.secure:HookScript("OnEnter", function(b) newButton.state.Highlight:Show() end)
 					newButton.secure:HookScript("OnLeave", function(b) newButton.state.Highlight:Hide() end)
@@ -1887,9 +1895,7 @@ do
 		end
 
 		if deleted then
-			GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
-			GnomeWorks:SendMessageDispatch("GnomeWorksSkillListChanged")
-			GnomeWorks:SendMessageDispatch("GnomeWorksDetailsChanged")
+			GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged GnomeWorksSkillListChanged GnomeWorksDetailsChanged")
 		end
 	end
 
@@ -1948,9 +1954,7 @@ do
 										entry.count = 1
 									end
 
-									GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
-									GnomeWorks:SendMessageDispatch("GnomeWorksSkillListChanged")
-									GnomeWorks:SendMessageDispatch("GnomeWorksDetailsChanged")
+									GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged GnomeWorksSkillListChanged GnomeWorksDetailsChanged")
 
 --									GnomeWorks:ShowQueueList()
 								end
