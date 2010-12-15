@@ -1189,6 +1189,8 @@ do
 				skillFrame:SetPoint("BOTTOMLEFT",20,55)
 			end
 		end
+
+		GnomeWorks:SendMessageDispatch("GnomeWorksFrameMoved")
 	end
 
 
@@ -1263,7 +1265,7 @@ do
 
 
 					if onHand > 0 then
-						entry.craftable = true
+						entry.craftable = onHand
 					else
 						entry.craftable = nil
 					end
@@ -1766,7 +1768,9 @@ do
 			if numItems then
 				DoTradeSkill(GnomeWorks.selectedSkill, numItems)
 			else
-				DoTradeSkill(GnomeWorks.selectedSkill, entry.bag)
+				if entry.onHand then
+					DoTradeSkill(GnomeWorks.selectedSkill, entry.onHand)
+				end
 			end
 		end
 

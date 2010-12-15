@@ -51,6 +51,10 @@ do
 	}
 
 	local fakeTrades = {
+		[51005] = true,			-- milling
+		[13262] = true,			-- disenchant
+		[31252] = true,			-- prospecting
+
 		[100000] = true,		-- common skills
 		[100001] = true,		-- vendor conversions
 	}

@@ -522,6 +522,7 @@ end
 				end
 			end
 
+--[[
 			if player == "Judithpriest" then
 				for itemID in pairs(GnomeWorks.data.trackedItems) do
 					inventory.bag[itemID] = mod(itemID, 20)
@@ -529,6 +530,8 @@ end
 			--DebugSpam(inventoryData[reagentID])
 				end
 			end
+]]
+
 
 			local craftedBag = table.wipe(inventory["craftedBag"])
 			local craftedBank = table.wipe(inventory["craftedBank"])

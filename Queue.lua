@@ -112,6 +112,7 @@ do
 
 
 	local function ResizeMainWindow()
+		GnomeWorks:SendMessageDispatch("GnomeWorksFrameMoved")
 	end
 
 
@@ -1339,18 +1340,18 @@ do
 	local function FirstCraftableEntry(queue)
 		if queue then
 			for k,q in pairs(queue) do
-				if q.command == "create" and (q.count or 0) > 0 then
-					local count = GnomeWorks:InventoryRecipeIterations(q.recipeID, queuePlayer, "bag")
-					if count>0 then
-						return q, count
-					end
-				end
-
 				if q.subGroup then
 					local first,count = FirstCraftableEntry(q.subGroup.entries)
 
 					if first then
 						return first,count
+					end
+				end
+
+				if q.command == "create" and (q.count or 0) > 0 then
+					local count = GnomeWorks:InventoryRecipeIterations(q.recipeID, queuePlayer, "bag")
+					if count>0 then
+						return q, count
 					end
 				end
 			end
@@ -1384,47 +1385,88 @@ do
 
 
 	function GnomeWorks:SpellCastCompleted(event,unit,spell,rank,lineID,spellID)
---print("SPELL CAST COMPLETED", ...)
+--print("SPELL CAST COMPLETED")
 --print(event,unit,spell,rank,lineID,spellID)
 
-		if unit == "player"	and doTradeEntry and spellID == doTradeEntry.recipeID then
-			if doTradeEntry.manualEntry then
-				local entry = doTradeEntry
 
-				if doTradeEntry.control then
-					entry = doTradeEntry.control[1]
-				end
+		if unit == "player"	and doTradeEntry then
+			local _,_,recipeTradeID = GnomeWorks:GetRecipeData(doTradeEntry.recipeID)
 
-				entry.count = entry.count - 1
-
-				if entry.count == 0 then
-					DeleteQueueEntry(self.data.queueData[queuePlayer], entry)
+			if spellID == doTradeEntry.recipeID then
+				if doTradeEntry.manualEntry then
+					local entry = doTradeEntry
 
 					if doTradeEntry.control then
-						table.remove(doTradeEntry.control,1)
+						entry = doTradeEntry.control[1]
+					end
 
-						if #doTradeEntry.control == 0 then
+					entry.count = entry.count - 1
+
+					if entry.count == 0 then
+						DeleteQueueEntry(self.data.queueData[queuePlayer], entry)
+
+						if doTradeEntry.control then
+							table.remove(doTradeEntry.control,1)
+
+							if #doTradeEntry.control == 0 then
+								doTradeEntry = nil
+								GnomeWorks.processSpell = nil
+
+								GnomeWorks.IsProcessing = false
+								self:SendMessageDispatch("GnomeWorksProcessing")
+							end
+						else
 							doTradeEntry = nil
 							GnomeWorks.processSpell = nil
 
 							GnomeWorks.IsProcessing = false
 							self:SendMessageDispatch("GnomeWorksProcessing")
 						end
-					else
-						doTradeEntry = nil
-						GnomeWorks.processSpell = nil
-
-						GnomeWorks.IsProcessing = false
-						self:SendMessageDispatch("GnomeWorksProcessing")
+					end
+				else
+					if doTradeEntry.count < 1 then
+						StopTradeSkillRepeat()
 					end
 				end
-			else
-				if doTradeEntry.count < 1 then
-					StopTradeSkillRepeat()
+
+				self:ShowQueueList()
+			elseif spellID == recipeTradeID then
+				if GnomeWorks:IsPseudoTrade(spellID) then
+					local entry = doTradeEntry
+
+					if doTradeEntry.control then
+						entry = doTradeEntry.control[1]
+					end
+
+					entry.count = entry.count - 1
+
+					if doTradeEntry.manualEntry then
+
+						if entry.count == 0 then
+							DeleteQueueEntry(self.data.queueData[queuePlayer], entry)
+
+							if doTradeEntry.control then
+								table.remove(doTradeEntry.control,1)
+
+								if #doTradeEntry.control == 0 then
+									doTradeEntry = nil
+									GnomeWorks.processSpell = nil
+
+									GnomeWorks.IsProcessing = false
+								end
+							else
+								doTradeEntry = nil
+								GnomeWorks.processSpell = nil
+
+								GnomeWorks.IsProcessing = false
+							end
+						end
+					end
+
+					GnomeWorks:ShowQueueList()
+					self:SendMessageDispatch("GnomeWorksProcessing")
 				end
 			end
-
-			self:ShowQueueList()
 		end
 	end
 
@@ -1545,6 +1587,7 @@ do
 		local buttons = {}
 
 		local function ConfigureButton(button)
+--print("configure button")
 			local entry, craftable
 
 			if GnomeWorksDB.config.queueLayoutFlat then
@@ -1573,7 +1616,7 @@ do
 				EditMacro("GWProcess", "GWProcess", 977, "", false, false)
 			elseif entry then
 				local _,_,tradeID = GnomeWorks:GetRecipeData(entry.recipeID)
-
+--print(entry.count)
 				button:SetFormattedText("Process %s x %d",GnomeWorks:GetRecipeName(entry.recipeID) or "spell:"..entry.recipeID,math.min(entry.numCraftable or 1,entry.count or 1))
 				button:Enable()
 
@@ -1587,7 +1630,13 @@ do
 
 					if not InCombatLockdown() then
 						button.secure:Show()
-						button.secure:SetAllPoints(button)
+						local bottom = button:GetBottom()
+						local top = button:GetTop()
+						local left = button:GetLeft()
+						local right = button:GetRight()
+
+						button.secure:SetPoint("TOPLEFT","UIParent","BOTTOMLEFT",left,top)
+						button.secure:SetPoint("BOTTOMRIGHT","UIParent",right,bottom)
 
 						button.secure:SetAttribute("type", "macro")
 						button.secure:SetAttribute("macrotext", macroText)
@@ -1648,7 +1697,7 @@ do
 		local buttonConfig = {
 --			{ text = "Process", operation = ProcessQueue, width = 250, validate = SetProcessLabel, lineBreak = true, template = "SecureActionButtonTemplate" },
 			{ text = "Nothing To Process", name = "GWProcess", width = 250, validate = ConfigureButton, lineBreak = true, addSecure=true, template = "SecureActionButtonTemplate",
-						updateEvent = "GnomeWorksCountsQueueChanged GnomeWorksQueueChanged GnomeWorksProcessing GnomeWorksInventoryScanComplete HeartBeat" },
+						updateEvent = "GnomeWorksQueueCountsChanged GnomeWorksQueueChanged GnomeWorksProcessing GnomeWorksInventoryScanComplete HeartBeat GnomeWorksFrameMoved" },
 			{ text = "Stop", operation = StopProcessing, width = 125 },
 			{ text = "Clear", operation = ClearQueue, width = 125, lineBreak = true },
 			{ text = "Scan Auctions", width = 250, validate = ConfigureAuctionButton, updateEvent = "HeartBeat GnomeWorksAuctionScan" }
@@ -1675,8 +1724,10 @@ do
 				local newButton = GnomeWorks:CreateButton(controlFrame, 18, nil, config.name)
 
 				if config.addSecure then
-					newButton.secure = CreateFrame("Button",nil, UIParent, config.template, (config.name or config.text).."Secure")
+					newButton.secure = CreateFrame("Button",(config.name or config.text).."Secure", UIParent, config.template)
+--newButton:SetScript("OnSizeChanged", function() print("please, please, please") end)
 
+					newButton.secure:SetFrameStrata("TOOLTIP")
 --					newButton.secure:SetAllPoints(newButton)
 
 					newButton.secure:HookScript("OnEnter", function(b) newButton.state.Highlight:Show() end)
