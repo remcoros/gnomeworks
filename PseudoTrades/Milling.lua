@@ -201,6 +201,41 @@ do
 			[43104] = .53, --Burnt Pigment
 			[39338] = 3, --Golden Pigment
 		},
+
+
+		[52983] = { -- Cinderbloom
+			[61979] = 2.5, --Ashen Pigment
+			[61980] = .265, -- Burning Embers
+		},
+		[52984] = { -- Stormvine
+			[61979] = 2.5, --Ashen Pigment
+			[61980] = .265, -- Burning Embers
+		},
+
+		[52986] = { -- Heartblossom
+			[61979] = 2.5, --Ashen Pigment
+			[61980] = .265, -- Burning Embers
+		},
+		[52985] = { -- Azshara's Veil
+			[61979] = 2.5, --Ashen Pigment
+			[61980] = .265, -- Burning Embers
+		},
+
+
+		[52987] = { -- Twilight Jasmine
+			[61979] = 3, --Ashen Pigment
+			[61980] = .53, -- Burning Embers
+		},
+		[52988] = { -- Whiptail
+			[61979] = 3, --Ashen Pigment
+			[61980] = .53, -- Burning Embers
+		},
+
+
+		[52989] = { -- Deathspore Pod
+			[61979] = 3, --Ashen Pigment
+			[61980] = .53, -- Burning Embers
+		},
 	}
 
 	local millBrackets =
@@ -256,11 +291,21 @@ do
 		[36905] = 325,
 		[36907] = 325,
 		[36904] = 325,
+
+		[52983] = 425,
+		[52984] = 425,
+
+		[52986] = 450,
+		[52985] = 450,
+
+		[52987] = 475,
+		[52988] = 475,
+
+		[52989] = 500,
 	}
 
 
-	local millingLevels = { 1,25,75,125,175,225,275,325 }
-
+	local millingLevels = { 1,25,75,125,175,225,275,325,425,450,475,500 }
 
 	local pigmentSources = {}
 

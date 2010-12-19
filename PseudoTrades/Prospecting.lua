@@ -2,6 +2,50 @@
 
 do
 	local prospectingResults = {
+		[52183] = { --Pyrite Ore						early results averaged per type (common/rare)
+			[52327] = 2, --Volatile Earth
+			[52178] = 0.167, --Zephyrite
+			[52182] = 0.167, --Jasper
+			[52177] = 0.167, --Carnelian
+			[52179] = 0.167, --Alicite
+			[52181] = 0.167, --Hessonite
+			[52180] = 0.167, --Nightstone
+			[52193] = 0.075, --Ember Topaz
+			[52194] = 0.075, --Demoneye
+			[52195] = 0.075, --Amberjewel
+			[52192] = 0.075, --Dream Emerald
+			[52190] = 0.075, --Inferno Ruby
+			[52191] = 0.075, --Ocean Sapphire
+		},
+		[52185] = { --Elementium Ore					early results averaged per type
+			[52178] = 0.18, --Zephyrite
+			[52182] = 0.18, --Jasper
+			[52177] = 0.18, --Carnelian
+			[52179] = 0.18, --Alicite
+			[52181] = 0.18, --Hessonite
+			[52180] = 0.18, --Nightstone
+			[52193] = 0.045, --Ember Topaz
+			[52194] = 0.045, --Demoneye
+			[52195] = 0.045, --Amberjewel
+			[52192] = 0.045, --Dream Emerald
+			[52190] = 0.045, --Inferno Ruby
+			[52191] = 0.045, --Ocean Sapphire
+		},
+		[53038] = { --Obsidium Ore					early results averaged per type
+			[52178] = 0.235, --Zephyrite
+			[52182] = 0.235, --Jasper
+			[52177] = 0.235, --Carnelian
+			[52179] = 0.235, --Alicite
+			[52181] = 0.235, --Hessonite
+			[52180] = 0.235, --Nightstone
+			[52193] = 0.012, --Ember Topaz
+			[52194] = 0.012, --Demoneye
+			[52195] = 0.012, --Amberjewel
+			[52192] = 0.012, --Dream Emerald
+			[52190] = 0.012, --Inferno Ruby
+			[52191] = 0.012, --Ocean Sapphire
+		},
+
 		[36912] = { --Saronite Ore
 			[36929] = 0.275, --Huge Citrine
 			[36930] = 0.062, --Monarch Topaz
@@ -130,6 +174,9 @@ do
 	local prospectingReagents = {}
 
 	local prospectingLevels = {
+		[52183] = 500, --Pyrite Ore
+		[52185] = 475, --Elementium Ore
+		[53038] = 425, --Obsidium Ore
 		[36912] = 400, --Saronite Ore
 		[36909] = 350, --Cobalt Ore
 		[23425] = 325, --Adamantite Ore

@@ -5,6 +5,8 @@ do
 	local skillList = {}
 	local recipeList, trade
 
+	local recipeCached = {}
+
 
 	local function VendorConversionSpellID(itemID)
 		return itemID+200000
@@ -24,7 +26,10 @@ do
 
 		local recipes = GnomeWorksDB.vendorConversionRecipes
 
-		if not recipes[spoofedRecipeID] then
+		local recipeToken
+
+
+		if not recipes[spoofedRecipeID] or not recipeCached[spoofedRecipeID] then
 
 			for n=1,itemCount do
 				local itemTexture, itemValue, itemLink, itemName = GetMerchantItemCostItem(index, n)
@@ -34,11 +39,20 @@ do
 
 					reagents[costItemID] = itemValue
 
+					recipeToken = (recipeToken and recipeToken..":"..costItemID.."x"..itemValue) or costItemID.."x"..itemValue
+
 					GnomeWorks:AddToReagentCache(costItemID, spoofedRecipeID, itemValue)
 				else
 					-- currency conversions.  hmm...
 					return -- bail out cuz this stuff is tba
 				end
+			end
+
+
+			if not recipes[spoofedRecipeID] then
+				GnomeWorks:print("recording vendor conversion for item: ",name)
+			elseif recipes[spoofedRecipeID].recipeToken ~= recipeToken then
+				GnomeWorks:print("updating vendor conversion for item: ",name)
 			end
 
 			recipes[spoofedRecipeID] = {}
@@ -51,7 +65,16 @@ do
 			recipes[spoofedRecipeID].reagents = reagents
 
 
+
+
+			recipes[spoofedRecipeID].recipeToken = recipeToken
+
+
 			skillList[#skillList + 1] = spoofedRecipeID
+
+
+			recipeCached[spoofedRecipeID] = true
+
 
 			for player, knownSpellList in pairs(GnomeWorks.data.knownSpells) do
 				knownSpellList[spoofedRecipeID] = #skillList
@@ -67,8 +90,6 @@ do
 			GnomeWorks:AddToItemCache(itemID, spoofedRecipeID, quantity)
 
 
-
-			GnomeWorks:print("recording vendor conversion for item: ",name)
 		end
 	end
 

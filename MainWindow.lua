@@ -1768,8 +1768,8 @@ do
 			if numItems then
 				DoTradeSkill(GnomeWorks.selectedSkill, numItems)
 			else
-				if entry.onHand then
-					DoTradeSkill(GnomeWorks.selectedSkill, entry.onHand)
+				if entry.craftable then
+					DoTradeSkill(GnomeWorks.selectedSkill, entry.craftable)
 				end
 			end
 		end

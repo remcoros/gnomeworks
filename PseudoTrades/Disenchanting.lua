@@ -55,6 +55,12 @@ do
 		["[Nexus Crystal]"] = 20725,
 		["[Abyss Crystal]"] = 34057,
 		["[Void Crystal]"] = 22450,
+
+		["[Lesser Celestial Essence]"] = 52718,
+		["[Small Heavenly Shard]"] = 52720,
+		["[Heavenly Shard]"] = 52721,
+		["[Maelstrom Crystal]"] = 52722,
+		["[Hypnotic Dust]"] = 52555,
 	}
 
 
@@ -76,6 +82,7 @@ do
 			[100] = "[Arcane Dust] 		75% 	2-5x 	[Greater Planar Essence] 	22% 	1-2x 	[Large Prismatic Shard] 	3%",
 			[121] = "[Infinite Dust] 	75% 	1-2x 	[Lesser Cosmic Essence] 	22% 	1-2x 	[Small Dream Shard] 		3%",
 			[152] = "[Infinite Dust] 	75% 	2-5x 	[Greater Cosmic Essence] 	22% 	1-2x 	[Dream Shard] 				3%",
+			[272] = "[Hypnotic Dust] 	25% 	1-3x 	[Lesser Celestial Essence] 	75% 	1-3x	[NIL]						0%",
 		},
 		["Weapon"] = {
 			[6] =	"[Strange Dust] 	20% 	1-2x 	[Lesser Magic Essence] 		80% 	1-2x	[NIL]						0%",
@@ -93,6 +100,7 @@ do
 			[100] =	"[Arcane Dust] 		22% 	2-5x 	[Greater Planar Essence] 	75% 	1-2x 	[Large Prismatic Shard] 	3%",
 			[121] =	"[Infinite Dust] 	22% 	1-2x 	[Lesser Cosmic Essence] 	75% 	1-2x 	[Small Dream Shard] 		3%",
 			[152] =	"[Infinite Dust] 	22% 	2-5x 	[Greater Cosmic Essence] 	75% 	1-2x 	[Dream Shard] 				3%",
+			[272] = "[Hypnotic Dust] 	75% 	1-3x 	[Lesser Celestial Essence] 	25% 	1-3x 	[NIL]						0%",
 		},
 		["Rare"] = {
 			[11] =	"[Small Glimmering Shard] 	100%	[NIL]				0%",
@@ -107,6 +115,8 @@ do
 			[100] =	"[Large Prismatic Shard] 	99.5%	[Void Crystal]	 	0.5%",
 			[121] =	"[Small Dream Shard] 		99.5%	[Abyss Crystal] 	0.5%",
 			[165] =	"[Dream Shard] 				99.5%	[Abyss Crystal] 	0.5%",
+			[279] = "[Small Heavenly Shard] 	100%	[NIL]				0%",
+			[318] = "[Heavenly Shard]			100%	[NIL]				0%",
 		},
 		["Epic Armor"] = {
 			[40] =	"[Small Radiant Shard] 		2-4x",
@@ -118,6 +128,8 @@ do
 			[105] =	"[Void Crystal] 			1.66-1.66x",		-- 1-2x 	33% 1x, 67% 2x
 			[165] =	"[Abyss Crystal] 			1-1x",
 			[201] =	"[Abyss Crystal] 			1-2x",
+			[285] =	"[Maelstrom Crystal]		1-1x",
+			[360] =	"[Maelstrom Crystal] 		1-2x",
 		},
 		["Epic Weapon"] = {
 			[40] =	"[Small Radiant Shard] 		2-4x",
@@ -130,6 +142,8 @@ do
 			[105] =	"[Void Crystal] 			1.66-1.66x",		-- 1-2x 	33% 1x, 67% 2x
 			[165] =	"[Abyss Crystal] 			1-1x",
 			[201] =	"[Abyss Crystal] 			1-2x",
+			[285] =	"[Maelstrom Crystal]		1-1x",
+			[360] =	"[Maelstrom Crystal] 		1-2x",
 		}
 	}
 
@@ -161,7 +175,7 @@ do
 
 		local name = nil
 
-		for level=5,250 do
+		for level=5,400 do
 			local line
 
 			if armor[level] then
@@ -197,7 +211,7 @@ do
 		local baseLevel = 6
 		local newTable = nil
 
-		for level=6,250 do
+		for level=6,400 do
 			local line
 
 			if weapon[level] then
@@ -235,7 +249,7 @@ do
 		local baseLevel = 11
 		local newTable = nil
 
-		for level=11,250 do
+		for level=11,400 do
 			local line
 
 			if rare[level] then
@@ -269,7 +283,7 @@ do
 		local baseLevel = 40
 		local newTable = nil
 
-		for level=40,250 do
+		for level=40,400 do
 			local line
 
 			if epicArmor[level] then
@@ -299,7 +313,7 @@ do
 		local baseLevel = 40
 		local newTable = nil
 
-		for level=40,250 do
+		for level=40,400 do
 			local line
 
 			if epicWeapon[level] then

@@ -666,47 +666,30 @@ print(arg1)
 	end)
 
 
-	if not IsAddOnLoaded("AddOnLoader") then
+	initList:AddSegment(InitializeData, "GnomeWorks: InitializeData")
+	initList:AddSegment(ParseTradeLinks, "GnomeWorks: ParseTradeLinks")
+	initList:AddSegment(ParseKnownRecipes, "GnomeWorks: ParseKnownRecipes")
+	initList:AddSegment(CreateUI, "GnomeWorks: CreateUI")
+	initList:AddSegment(RegisterEvents, "GnomeWorks: RegisterEvents")
+
+	local function registerLoad()
+--print("gw registering addon_load event")
 		GnomeWorks:RegisterEvent("ADDON_LOADED", function(event, name)
-			if string.lower(name) == string.lower(modName) then
-				GnomeWorks:UnregisterEvent(event)
---				GnomeWorks:ScheduleTimer("OnLoad",.01)
-
-
-
-				initList:AddSegment(InitializeData, "GnomeWorks: InitializeData")
-				initList:AddSegment(ParseTradeLinks, "GnomeWorks: ParseTradeLinks")
-				initList:AddSegment(ParseKnownRecipes, "GnomeWorks: ParseKnownRecipes")
-				initList:AddSegment(CreateUI, "GnomeWorks: CreateUI")
-				initList:AddSegment(RegisterEvents, "GnomeWorks: RegisterEvents")
-
-
-				initList:Execute()
-			end
-		end )
-	else
-		GnomeWorks:RegisterEvent("ADDON_LOADED", function(event, name)
---			print("gnomeworks detected the loading of "..tostring(name))
+--		print("gnomeworks detected the loading of "..tostring(name))
 			if string.lower(name) == string.lower(modName) then
 				GnomeWorks:UnregisterEvent(event)
 
-				initList:AddSegment(InitializeData, "GnomeWorks: InitializeData")
-				initList:AddSegment(ParseTradeLinks, "GnomeWorks: ParseTradeLinks")
-				initList:AddSegment(ParseKnownRecipes, "GnomeWorks: ParseKnownRecipes")
-				initList:AddSegment(CreateUI, "GnomeWorks: CreateUI")
-				initList:AddSegment(RegisterEvents, "GnomeWorks: RegisterEvents")
-
-
 				initList:Execute()
-
---				GnomeWorks:ScheduleTimer("OnLoad",1)
---				GnomeWorks:OnLoad()
---				GnomeWorks:Initialize()
---				GnomeWorks.MainWindow:Hide()
-
 			end
 		end)
 	end
+
+
+	registerLoad()
+
+--	GnomeWorks:ScheduleTimer(registerLoad, 0.0)
+
+--	print("gw parsed")
 end
 
 

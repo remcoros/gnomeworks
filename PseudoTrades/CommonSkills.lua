@@ -4,6 +4,7 @@
 do
 
 	local commonRecipes = {
+
 		[44122] = {
 			name = "Lesser Cosmic Essence",
 			reagents = {
@@ -11,6 +12,15 @@ do
 			},
 			results = {
 				[34056] = 3, --Lesser Cosmic Essence
+			},
+		},
+		[74187] = {
+			name = "Lesser Celestial Essence",
+			reagents = {
+				[52719] = 1, --Greater Celestial Essence
+			},
+			results = {
+				[52718] = 3, --Lesser Celestial Essence
 			},
 		},
 		[32977] = {
@@ -76,6 +86,15 @@ do
 				[10998] = 3, --Lesser Astral Essence
 			},
 		},
+		[74188] = {
+			name = "Create Heavenly Shard",
+			reagents = {
+				[52720] = 3, --Small Heavenly Shard
+			},
+			results = {
+				[52721] = 1, --Heavenly Shard
+			},
+		},
 		[59926] = {
 			name = "Borean Leather",
 			reagents = {
@@ -119,6 +138,15 @@ do
 			},
 			results = {
 				[34055] = 1, --Greater Cosmic Essence
+			},
+		},
+		[32978] = {
+			name = "Lesser Planar Essence",
+			reagents = {
+				[22446] = 1, --Greater Planar Essence
+			},
+			results = {
+				[22447] = 3, --Lesser Planar Essence
 			},
 		},
 		[49234] = {
@@ -184,40 +212,31 @@ do
 				[35624] = 1, --Eternal Earth
 			},
 		},
-		[20040] = {
-			name = "Lesser Eternal Essence",
+		[74493] = {
+			name = "Savage Leather",
 			reagents = {
-				[16203] = 1, --Greater Eternal Essence
+				[52977] = 5, --Savage Leather Scraps
 			},
 			results = {
+				[52976] = 1, --Savage Leather
+			},
+		},
+		[20039] = {
+			name = "Greater Eternal Essence",
+			reagents = {
 				[16202] = 3, --Lesser Eternal Essence
 			},
-		},
-		[13361] = {
-			name = "Greater Magic Essence",
-			reagents = {
-				[10938] = 3, --Lesser Magic Essence
-			},
 			results = {
-				[10939] = 1, --Greater Magic Essence
+				[16203] = 1, --Greater Eternal Essence
 			},
 		},
-		[13362] = {
-			name = "Lesser Magic Essence",
+		[74186] = {
+			name = "Greater Celestial Essence",
 			reagents = {
-				[10939] = 1, --Greater Magic Essence
+				[52718] = 3, --Lesser Celestial Essence
 			},
 			results = {
-				[10938] = 3, --Lesser Magic Essence
-			},
-		},
-		[32978] = {
-			name = "Lesser Planar Essence",
-			reagents = {
-				[22446] = 1, --Greater Planar Essence
-			},
-			results = {
-				[22447] = 3, --Lesser Planar Essence
+				[52719] = 1, --Greater Celestial Essence
 			},
 		},
 		[28100] = {
@@ -256,13 +275,13 @@ do
 				[21885] = 1, --Primal Water
 			},
 		},
-		[28104] = {
-			name = "Create Primal Shadow",
+		[20040] = {
+			name = "Lesser Eternal Essence",
 			reagents = {
-				[22577] = 10, --Mote of Shadow
+				[16203] = 1, --Greater Eternal Essence
 			},
 			results = {
-				[22456] = 1, --Primal Shadow
+				[16202] = 3, --Lesser Eternal Essence
 			},
 		},
 		[28105] = {
@@ -274,22 +293,31 @@ do
 				[22457] = 1, --Primal Mana
 			},
 		},
-		[28106] = {
-			name = "Create Primal Life",
+		[13740] = {
+			name = "Lesser Nether Essence",
 			reagents = {
-				[22575] = 10, --Mote of Life
+				[11175] = 1, --Greater Nether Essence
 			},
 			results = {
-				[21886] = 1, --Primal Life
+				[11174] = 3, --Lesser Nether Essence
 			},
 		},
-		[20039] = {
-			name = "Greater Eternal Essence",
+		[13362] = {
+			name = "Lesser Magic Essence",
 			reagents = {
-				[16202] = 3, --Lesser Eternal Essence
+				[10939] = 1, --Greater Magic Essence
 			},
 			results = {
-				[16203] = 1, --Greater Eternal Essence
+				[10938] = 3, --Lesser Magic Essence
+			},
+		},
+		[13361] = {
+			name = "Greater Magic Essence",
+			reagents = {
+				[10938] = 3, --Lesser Magic Essence
+			},
+			results = {
+				[10939] = 1, --Greater Magic Essence
 			},
 		},
 		[49247] = {
@@ -310,13 +338,22 @@ do
 				[11175] = 1, --Greater Nether Essence
 			},
 		},
-		[13740] = {
-			name = "Lesser Nether Essence",
+		[28104] = {
+			name = "Create Primal Shadow",
 			reagents = {
-				[11175] = 1, --Greater Nether Essence
+				[22577] = 10, --Mote of Shadow
 			},
 			results = {
-				[11174] = 3, --Lesser Nether Essence
+				[22456] = 1, --Primal Shadow
+			},
+		},
+		[28106] = {
+			name = "Create Primal Life",
+			reagents = {
+				[22575] = 10, --Mote of Life
+			},
+			results = {
+				[21886] = 1, --Primal Life
 			},
 		},
 	}
