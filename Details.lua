@@ -802,7 +802,9 @@ do
 
 
 
-			local detailNumMadeLabel = detailIcon:CreateFontString(nil,"OVERLAY", "GameFontGreenSmall")
+--			local detailNumMadeLabel = detailIcon:CreateFontString(nil,"OVERLAY", "GameFontGreenSmall")
+			local detailNumMadeLabel = detailIcon:CreateFontString(nil,"OVERLAY", "SystemFont_Outline_Small")
+
 			detailNumMadeLabel:SetPoint("BOTTOMRIGHT",-2,2)
 			detailNumMadeLabel:SetPoint("TOPLEFT",0,0)
 			detailNumMadeLabel:SetJustifyH("RIGHT")

@@ -1251,7 +1251,7 @@ do
 			local player = GnomeWorks.player
 
 			if not entry.subGroup then
-				local results, reagents = GnomeWorks:GetRecipeData(entry.recipeID, player)
+				local results, reagents, tradeID = GnomeWorks:GetRecipeData(entry.recipeID, player)
 
 				if next(reagents) then
 					local onHand = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "bag")
@@ -1268,6 +1268,10 @@ do
 						entry.craftable = onHand
 					else
 						entry.craftable = nil
+					end
+
+					if tradeID == 53428 then
+						entry.craftable = 1
 					end
 
 					entry.bag = bag
@@ -1356,6 +1360,12 @@ do
 		local player = GnomeWorks.player
 		local tradeID = GnomeWorks.tradeID
 
+		if IsTradeSkillGuild() then
+			GnomeWorks.queryCraftersButton:Show()
+		else
+			GnomeWorks.queryCraftersButton:Hide()
+		end
+
 		GnomeWorks:UpdateTradeButtons(player,tradeID)
 		GnomeWorks:ShowStatus()
 		GnomeWorks:ShowSkillList()
@@ -1382,6 +1392,9 @@ do
 			self:ScanTrade()
 		end
 	end
+
+
+
 
 
 	function GnomeWorks:CHAT_MSG_SKILL()
@@ -1431,9 +1444,18 @@ do
 		if player and tradeID then
 --			local key = player..":"..tradeID
 
-			local player, tradeID, label, groupName = self:RecipeGroupValidate(player, tradeID, self.groupLabel or "By Category", self.group)
+			local groupLabel, group
+
+			if IsTradeSkillLinked() or IsTradeSkillGuild() then
+				groupLabel, group = string.split("/",GnomeWorksDB.config.currentGroup.alt[tradeID] or "")
+			else
+				groupLabel, group = string.split("/",GnomeWorksDB.config.currentGroup.self[tradeID] or "")
+			end
+
+			local player, tradeID, label, groupName = self:RecipeGroupValidate(player, tradeID, groupLabel or "By Category", group)
 
 			local group = self:RecipeGroupFind(player, tradeID, label, groupName)
+
 
 			self.group = groupName
 			self.groupLabel = label
@@ -1557,6 +1579,17 @@ do
 			end
 		end
 
+		local function SelectGuildTradeSkill(menuFrame, skillID)
+			ToggleDropDownMenu(1, nil, playerSelectMenu, menuFrame, menuFrame:GetWidth(), 0)
+			ViewGuildRecipes(skillID)
+		end
+
+
+		local function OpenGuildRoster()
+			ShowUIPanel(GuildFrame)
+		end
+
+
 		local function InitMenu(menuFrame, level)
 			if (level == 1) then  -- character names
 				local title = {}
@@ -1588,31 +1621,76 @@ do
 						index = index + 1
 					end
 				end
+
+				local guildName = GnomeWorks.data.playerData[(UnitName("player"))].guild
+
+				if guildName then
+					playerMenu.text = "|cff80ff80"..guildName
+
+					playerMenu.hasArrow = true
+
+--					playerMenu.func = OpenGuildRoster
+
+					playerMenu.value = "GUILD:"..guildName
+					playerMenu.disabled = false
+					playerMenu.notCheckable = 1
+
+					UIDropDownMenu_AddButton(playerMenu)
+					index = index + 1
+
+					QueryGuildRecipes()
+				end
 			end
 
 			if (level == 2) then  -- skills per player
-				local links = GnomeWorks:GetTradeLinkList(UIDROPDOWNMENU_MENU_VALUE)
-				local skillButton = {}
+				if string.find(UIDROPDOWNMENU_MENU_VALUE,"GUILD:") then
+					local skillButton = {}
 
-				for index, tradeID in ipairs(tradeIDList) do
-					if links[tradeID] then
-						local rank, maxRank = string.match(links[tradeID], "trade:%d+:(%d+):(%d+)")
-						local spellName, spellLink, spellIcon = GnomeWorks:GetTradeInfo(tradeID)
+					QueryGuildRecipes()
 
-						skillButton.text = string.format("%s |cff00ff00[%s/%s]|r", spellName, rank, maxRank)
-						skillButton.value = tradeID
+					local numTradeSkill = GetNumGuildTradeSkill()
 
-						skillButton.icon = spellIcon
+					for i = 1, numTradeSkill do
+						local skillID, isCollapsed, iconTexture, headerName, numOnline, numPlayers, playerName, class, online, zone, skill, classFileName = GetGuildTradeSkillInfo(i)
 
-						skillButton.arg1 = UIDROPDOWNMENU_MENU_VALUE
-						skillButton.arg2 = links[tradeID]
-						skillButton.func = SelectTradeSkill
+						if not playerName and CanViewGuildRecipes(skillID) then
+							skillButton.text = headerName -- .."["..skill.."]"
+							skillButton.value = skillID
 
-						skillButton.checked = (tradeID == GnomeWorks.tradeID and UIDROPDOWNMENU_MENU_VALUE == GnomeWorks.player)
+							skillButton.icon = iconTexture
 
-						skillButton.disabled = false
+							skillButton.arg1 = skillID
+							skillButton.func = SelectGuildTradeSkill
 
-						UIDropDownMenu_AddButton(skillButton, level)
+							skillButton.disabled = false
+
+							UIDropDownMenu_AddButton(skillButton, level)
+						end
+					end
+				else
+					local links = GnomeWorks:GetTradeLinkList(UIDROPDOWNMENU_MENU_VALUE)
+					local skillButton = {}
+
+					for index, tradeID in ipairs(tradeIDList) do
+						if links[tradeID] then
+							local rank, maxRank = string.match(links[tradeID], "trade:%d+:(%d+):(%d+)")
+							local spellName, spellLink, spellIcon = GnomeWorks:GetTradeInfo(tradeID)
+
+							skillButton.text = string.format("%s |cff00ff00[%s/%s]|r", spellName, rank, maxRank)
+							skillButton.value = tradeID
+
+							skillButton.icon = spellIcon
+
+							skillButton.arg1 = UIDROPDOWNMENU_MENU_VALUE
+							skillButton.arg2 = links[tradeID]
+							skillButton.func = SelectTradeSkill
+
+							skillButton.checked = (tradeID == GnomeWorks.tradeID and UIDROPDOWNMENU_MENU_VALUE == GnomeWorks.player)
+
+							skillButton.disabled = false
+
+							UIDropDownMenu_AddButton(skillButton, level)
+						end
 					end
 				end
 			end
@@ -1982,6 +2060,60 @@ do
 	end
 
 
+
+	local function QueryGuildCrafters()
+		QueryGuildMembersForRecipe()
+	end
+
+
+	local function InitToolTip(frame)
+		GameTooltip:SetOwner(frame, "ANCHOR_NONE")
+		GameTooltip:ClearLines()
+
+
+		local spaceLeft = frame:GetLeft()
+		local spaceRight = GetScreenWidth() - sf:GetRight()
+
+		if spaceRight > spaceLeft then
+			GameTooltip:SetPoint("TOPLEFT",frame, "TOPRIGHT")
+		else
+			GameTooltip:SetPoint("TOPRIGHT",frame, "TOPLEFT")
+		end
+	end
+
+
+	local function ShowGuildCrafters()
+		InitToolTip(GnomeWorks.queryCraftersButton)
+
+		local skillLineID, recipeID, numMembers = GetGuildRecipeInfoPostQuery()
+
+		if recipeID and recipeID == GnomeWorks.selectedEntry.recipeID then
+			GameTooltip:AddLine(GetSpellLink(recipeID))
+
+			for i = 1, numMembers, 1 do
+				local name, online = GetGuildRecipeMember(i)
+
+				GameTooltip:AddDoubleLine("|cffffffff"..name, online and "|cff00ff00ONLINE" or "|cffff0000OFFLINE")
+			end
+		else
+			GameTooltip:AddLine("Click to Query")
+		end
+
+		GameTooltip:Show()
+	end
+
+
+	local function HideGuildCrafters()
+		GameTooltip:Hide()
+	end
+
+
+
+	function GnomeWorks:GUILD_RECIPE_KNOWN_BY_MEMBERS()
+		ShowGuildCrafters()
+	end
+
+
 	function GnomeWorks:CreateMainWindow()
 		frame = self.Window:CreateResizableWindow("GnomeWorksFrame", "GnomeWorks (r"..VERSION..")", 600, 400, ResizeMainWindow, GnomeWorksDB.config)
 
@@ -2165,7 +2297,7 @@ do
 		local playerName = CreateFrame("Button", nil, frame)
 
 		playerName:SetPoint("LEFT",tradeButtonFrame)
---		playerName:SetWidth(rightSideWidth)
+		playerName:SetWidth(rightSideWidth)
 		playerName:SetHeight(16)
 		playerName:SetText("UNKNOWN")
 		playerName:SetPoint("TOPRIGHT",frame,"TOPRIGHT",-20,-15)
@@ -2186,9 +2318,41 @@ do
 		self.playerNameFrame = playerName
 
 
+
+
+--		local queryCrafters = CreateFrame("Button", nil, frame)
+
+		local queryCrafters = GnomeWorks:CreateButton(frame, 22)
+
+
+		queryCrafters:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -20,-44)
+		queryCrafters:SetPoint("LEFT", playerName, "LEFT", 0,0)
+--		queryCrafters:SetHeight(18)
+		queryCrafters:SetText(GUILD_TRADE_SKILL_VIEW_CRAFTERS)
+--		queryCrafters:SetJustifyH("RIGHT")
+
+		queryCrafters:SetNormalFontObject("GameFontNormal")
+		queryCrafters:SetHighlightFontObject("GameFontHighlight")
+
+
+		queryCrafters:EnableMouse(true)
+
+		queryCrafters:RegisterForClicks("AnyUp")
+
+		queryCrafters:SetScript("OnClick", QueryGuildCrafters)
+		queryCrafters:SetScript("OnEnter", ShowGuildCrafters)
+		queryCrafters:SetScript("OnLeave", HideGuildCrafters)
+
+		queryCrafters:SetFrameLevel(playerName:GetFrameLevel()+1)
+
+		self.queryCraftersButton = queryCrafters
+
+		queryCrafters:Hide()
+
+
+
+
 		self.SelectTradeLink = SelectTradeLink
-
-
 
 
 		table.insert(UISpecialFrames, "GnomeWorksFrame")

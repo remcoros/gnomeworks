@@ -162,7 +162,7 @@ do
 							if reagent.source ~= "alt" then
 								numAvailable = GnomeWorks:GetInventoryCount(itemID, player, reagent.source)
 							else
-								numAvailable = GnomeWorks:GetInventoryCount(itemID, "faction", "mail", player)
+								numAvailable = GnomeWorks:GetFactionInventoryCount(itemID, player)
 							end
 
 							sourceQueue = GnomeWorks.data[reagent.source.."Queue"][player]
@@ -349,7 +349,7 @@ do
 						vendorSource = "vendor"
 					end
 
-					local available = GnomeWorks:GetInventoryCount(reagentID, "faction", "mail queue") + (inventoryDelta[reagentID] or 0)
+					local available = GnomeWorks:GetFactionInventoryCount(reagentID) - GnomeWorks:GetInventoryCount(reagentID, player, "queue") + (inventoryDelta[reagentID] or 0)
 
 					if available > needed then
 						available = needed
@@ -448,7 +448,7 @@ do
 						if reagent.source ~= "alt" then
 							numAvailable = GnomeWorks:GetInventoryCount(itemID, player, reagent.source)
 						else
-							numAvailable = GnomeWorks:GetInventoryCount(itemID, "faction", "mail", player)
+							numAvailable = GnomeWorks:GetFactionInventoryCount(itemID, player)
 						end
 
 						sourceQueue = GnomeWorks.data[reagent.source.."Queue"][player]
@@ -530,7 +530,7 @@ do
 --if itemID == 43122 or entry.itemID == 43122 then
 --	print("    ",(GetItemInfo(itemID)),entry.count, entry.reserved[itemID])
 --end
-					entry.count = math.min(entry.count, math.floor(entry.reserved[itemID]/reagents[itemID]))
+					entry.count = math.min(entry.count, math.floor(entry.reserved[itemID]/(reagents[itemID] or 1)))
 				end
 			end
 		end
@@ -912,7 +912,7 @@ do
 			if inv ~= "alt" then
 				numAvailable = GnomeWorks:GetInventoryCount(reagentID, player, inv)
 			else
-				numAvailable = GnomeWorks:GetInventoryCount(reagentID, "faction", "mail", player)
+				numAvailable = GnomeWorks:GetFactionInventoryCount(reagentID, player)
 			end
 
 			if numAvailable > stillNeeded then
@@ -2482,7 +2482,7 @@ do
 				entry.bag = GnomeWorks:GetInventoryCount(itemID, player, "bag")
 				entry.bank = GnomeWorks:GetInventoryCount(itemID, player, "bank")
 				entry.guildBank = GnomeWorks:GetInventoryCount(itemID, player, "guildBank")
-				entry.alt = GnomeWorks:GetInventoryCount(itemID, "faction", "mail")
+				entry.alt = GnomeWorks:GetFactionInventoryCount(itemID)
 			end
 
 			if entry.command == "create" then

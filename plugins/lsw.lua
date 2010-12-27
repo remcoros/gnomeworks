@@ -99,6 +99,10 @@ do
 			font = "GameFontHighlightSmall",
 	--		filterMenu = costFilterMenu,
 			sortCompare = function(a,b)
+				if LSWConfig.valueAsPercent then
+					return (a.value or 0) / (a.cost or 0.00001) - (b.value or 0) / (b.cost or 0.00001)
+				end
+
 				return (a.value or 0) - (b.value or 0)
 			end,
 			draw = function (rowFrame, cellFrame, entry)

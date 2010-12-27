@@ -4,7 +4,6 @@
 do
 
 	local commonRecipes = {
-
 		[44122] = {
 			name = "Lesser Cosmic Essence",
 			reagents = {

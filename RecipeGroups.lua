@@ -45,6 +45,10 @@ function GnomeWorks:RecipeGroupValidate(player, tradeID, label, name)
 		local groupList = self.data.groupList
 
 		if groupList[key] then
+			if name == OVERALL_PARENT_GROUP_NAME then
+				name = nil
+			end
+
 			return player, tradeID, label, name
 		end
 
@@ -55,7 +59,13 @@ function GnomeWorks:RecipeGroupValidate(player, tradeID, label, name)
 
 			key = labelKey..":"..label.name
 
-			return player, tradeID, label.name, label.subGroup.name and label.subGroup.name ~= OVERALL_PARENT_GROUP_NAME or nil
+			local groupName = label.subGroup.name
+
+			if groupName == OVERALL_PARENT_GROUP_NAME then
+				groupName = nil
+			end
+
+			return player, tradeID, label.name, groupName
 		end
 	end
 end
@@ -744,6 +754,12 @@ do
 		GnomeWorks.groupLabel = group.label
 		GnomeWorks.group = group.name
 
+		if IsTradeSkillLinked() or IsTradeSkillGuild() then
+			GnomeWorksDB.config.currentGroup.alt[GnomeWorks.tradeID] = group.label.."/"..group.name
+		else
+			GnomeWorksDB.config.currentGroup.self[GnomeWorks.tradeID] = group.label.."/"..group.name
+		end
+
 		GnomeWorks:RecipeGroupDropdown_OnShow(dropDown)
 
 --		self:RecipeGroupGenerateAutoGroups()
@@ -857,7 +873,7 @@ end
 -- Called when the grouping operators drop down is displayed
 function GnomeWorks:RecipeGroupOperations_OnClick()
 	if not RecipeGroupOpsMenu then
-		RecipeGroupOpsMenu = CreateFrame("Frame", "RecipeGroupOpsMenu", getglobal("UIParent"), "UIDropDownMenuTemplate")
+		RecipeGroupOpsMenu = CreateFrame("Frame", "RecipeGroupOpsMenu", UIParent, "UIDropDownMenuTemplate")
 	end
 
 	UIDropDownMenu_Initialize(RecipeGroupOpsMenu, GnomeWorksRecipeGroupOpsMenu_Init, "MENU")

@@ -15,58 +15,7 @@ GnomeWorksDB = {}
 LibStub("AceEvent-3.0"):Embed(GnomeWorks)
 LibStub("AceTimer-3.0"):Embed(GnomeWorks)
 
---[[
--- execution holds
--- the idea here is to put off processing until a particular event has fired
--- this is needed for syncing data from the server
-do
-	local executionHoldFrame = CreateFrame("Frame",nil,UIParent)
-	executionHoldFrame.hold = {}
 
-	executionHoldFrame:RegisterAllEvents()
-
-	executionHoldFrame:SetScript("OnEvent", function(frame, event, ...)
-if string.find(event,"AUCTION") then
-	print("execution hold system",event)
-end
-		if frame.hold[event] then
-			for method, params in pairs(frame.hold[event]) do
-				GnomeWorks[method](GnomeWorks, event, ...)
-			end
-
-			frame.hold[event] = nil
-
-			frame:UnregisterEvent(event)
-		end
-	end)
-
-
-	-- this flags an event as delaying operations that need this particular function
-	function GnomeWorks:SetExecutionHold(event)
---print("set hold event",event)
-		executionHoldFrame:RegisterEvent(event)
-
-		if not executionHoldFrame.hold[event] then
-			executionHoldFrame.hold[event] = {}
-		end
-	end
-
-	-- this function is called by any method that relies on up-to-date info
-	-- if there is a hold for the event, then the method is tabled until the event has fired
-	function GnomeWorks:GetExecutionHold(event, method, ...)
---print("check for hold on", event)
-		if not executionHoldFrame.hold[event] then
-			return false
-		else
-			if not executionHoldFrame.hold[event][method] then
-				executionHoldFrame.hold[event][method] = {...}
-			end
-		end
-
-		return true
-	end
-end
-]]
 
 -- message dispatch
 do
@@ -183,6 +132,8 @@ end
 
 local defaultConfig = {
 	scrollFrameLineHeight = 15,
+	currentGroup = { self = {}, alt = {} },
+	currentFilter = { self = {}, alt = {} },
 }
 
 
@@ -275,6 +226,23 @@ do
 		end
 
 
+
+		local function DeepCopy(src,dst)
+			for k,v in pairs(src) do
+				if not dst[k] then
+					dst[k] = v
+				else
+					if type(v) == "table" then
+						DeepCopy(v, dst[k])
+					end
+				end
+			end
+		end
+
+		DeepCopy(defaultConfig, GnomeWorksDB.config)
+
+
+
 		local function InitDBTables(var, ...)
 			if var then
 				if not GnomeWorksDB[var] then
@@ -289,12 +257,6 @@ do
 
 		InitDBTables("config", "serverData", "vendorItems", "results", "names", "reagents", "tradeIDs", "skillUps", "vendorOnly")
 
-
-		for k,v in pairs(defaultConfig) do
-			if not GnomeWorksDB.config[k] then
-				GnomeWorksDB.config[k] = v
-			end
-		end
 
 
 		local function InitServerDBTables(server, var, ...)
@@ -608,6 +570,10 @@ print(arg1)
 
 			GnomeWorks:RegisterEvent("UNIT_SPELLCAST_STOP", "SpellCastStop")
 			GnomeWorks:RegisterEvent("UNIT_SPELLCAST_START", "SpellCastStart")
+
+			GnomeWorks:RegisterEvent("GUILD_RECIPE_KNOWN_BY_MEMBERS")
+
+--			GnomeWorks:RegisterEvent("GUILD_ROSTER_UPDATE")
 
 			for name,plugin in pairs(GnomeWorks.plugins) do
 	--print("initializing",name)

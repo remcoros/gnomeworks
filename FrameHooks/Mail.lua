@@ -21,10 +21,32 @@ do
 
 
 
+	local function CheckForAltNeeds()
+		local player = UnitName("player")
+
+		for alt, queue in pairs(GnomeWorks.data.altQueue) do
+			if alt ~= player then
+				for itemID, numNeeded in pairs(queue) do
+					local itemName, itemLink = GetItemInfo(itemID)
+
+					local numOnHand = GetItemCount(itemID)
+					local numAvailable = GnomeWorks:GetInventoryCount(itemID,player,"craftedGuildBank queue")
+
+					if numAvailable then
+						GnomeWorks:printf("%s needs %d x [%s].  you have %d on hand (%d total available)", alt, numNeeded, itemName or "item:"..itemID, numOnHand, numAvailable)
+					end
+				end
+			end
+		end
+	end
+
+
 
 	function GnomeWorks:MAIL_SHOW()
 		GnomeWorks.atMail = true
 		CheckInbox()
+
+		CheckForAltNeeds()
 	end
 
 
@@ -83,27 +105,9 @@ do
 	end
 
 
-	local function CheckForAltNeeds()
-		local player = UnitName("player")
-
-		for alt, queue in pairs(GnomeWorks.data.altQueue) do
-			if alt ~= player then
-				for itemID, numNeeded in pairs(queue) do
-					local itemName, itemLink = GetItemInfo(itemID)
-
-					local numOnHand = GetItemCount(itemID)
-					local numAvailable = GnomeWorks:GetInventoryCount(itemID,player,"craftedGuildBank queue")
-
-					if numAvailable then
-						GnomeWorks:printf("%s needs %d x [%s].  you have %d on hand (%d total available)", alt, numNeeded, itemName or "item:"..itemID, numOnHand, numAvailable)
-					end
-				end
-			end
-		end
-	end
 
 
-	GnomeWorks:RegisterMessageDispatch("MailUpdated", CheckForAltNeeds)
+--	GnomeWorks:RegisterMessageDispatch("MailUpdated", CheckForAltNeeds)
 end
 
 
