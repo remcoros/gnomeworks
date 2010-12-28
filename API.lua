@@ -204,7 +204,7 @@ do
 		return self.queueFrame.scrollFrame
 	end
 
-	function GnomeWorks:GetShoppinhListScrollFrame()
+	function GnomeWorks:GetShoppingListScrollFrame()
 		return self.shoppingListFrame.scrollFrame
 	end
 

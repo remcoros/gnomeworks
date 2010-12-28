@@ -233,11 +233,21 @@ do
 					dst[k] = v
 				else
 					if type(v) == "table" then
+						if type(dst[k]) ~= "table" then
+							dst[k] = {}
+						end
+
 						DeepCopy(v, dst[k])
 					end
 				end
 			end
 		end
+
+
+		if not GnomeWorksDB.config then
+			GnomeWorksDB.config = {}
+		end
+
 
 		DeepCopy(defaultConfig, GnomeWorksDB.config)
 
