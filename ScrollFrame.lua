@@ -103,22 +103,90 @@ do
 -- standard api functions:
 	local function RowFrameOnEnter(rowFrame)
 		local scrollFrame = rowFrame.scrollFrame
+
 		scrollFrame.mouseOverIndex = rowFrame.rowIndex
 
-		if scrollFrame.DrawRowHighlight then
-			scrollFrame:DrawRowHighlight(rowFrame)
+		if rowFrame.rowIndex > 0 and scrollFrame.selectable then
+			if IsShiftKeyDown() and scrollFrame.firstSelection and IsMouseButtonDown() then
+				local index = rowFrame.rowIndex + (scrollFrame.scrollOffset or 0)
+
+				table.wipe(scrollFrame.selection)
+
+				if scrollFrame.firstSelection < index then
+					for i=scrollFrame.firstSelection,index do
+						scrollFrame.selection[i] = true
+					end
+				else
+					for i=index,scrollFrame.firstSelection do
+						scrollFrame.selection[i] = true
+					end
+				end
+
+				if scrollFrame.DrawRowHighlight then
+					for i=1,scrollFrame.numRows do
+						scrollFrame:DrawRowHighlight(scrollFrame.rowFrame[i])
+					end
+				end
+
+				scrollFrame.lastSelection = index
+			else
+				if scrollFrame.DrawRowHighlight then
+					scrollFrame:DrawRowHighlight(rowFrame)
+				end
+			end
+		else
+			if scrollFrame.DrawRowHighlight then
+				scrollFrame:DrawRowHighlight(rowFrame)
+			end
 		end
 	end
 
 	local function RowFrameOnLeave(rowFrame)
 		local scrollFrame = rowFrame.scrollFrame
+
 		scrollFrame.mouseOverIndex = nil
+
 		if scrollFrame.DrawRowHighlight then
 			scrollFrame:DrawRowHighlight(rowFrame)
 		end
 	end
 
 	local function RowFrameOnClick(rowFrame, ...)
+		local scrollFrame = rowFrame.scrollFrame
+
+		if rowFrame.rowIndex > 0 and scrollFrame.selectable then
+			local index = rowFrame.rowIndex + (scrollFrame.scrollOffset or 0)
+
+			if IsControlKeyDown() then
+				scrollFrame.selection[index] = (scrollFrame.selection[index] == nil) or nil
+			else
+				if not scrollFrame.selection[index] and not IsShiftKeyDown() then
+					table.wipe(scrollFrame.selection)
+				end
+			end
+
+			if not IsShiftKeyDown() or not scrollFrame.firstSelection then
+				scrollFrame.firstSelection = index
+			else
+				table.wipe(scrollFrame.selection)
+
+				if scrollFrame.firstSelection < index then
+					for i=scrollFrame.firstSelection,index do
+						scrollFrame.selection[i] = true
+					end
+				else
+					for i=index,scrollFrame.firstSelection do
+						scrollFrame.selection[i] = true
+					end
+				end
+			end
+
+			scrollFrame.selection[index] = true
+
+			for i=1,scrollFrame.numRows do
+				scrollFrame:DrawRowHighlight(scrollFrame.rowFrame[i])
+			end
+		end
 	end
 
 
@@ -401,43 +469,59 @@ do
 
 
 	local function OnEnter(frame)
+		local rowFrame = frame:GetParent()
+
 		if frame.OnEnter then
-			if frame:OnEnter() then
-				return
+			if not frame:OnEnter() then
+				if rowFrame.OnEnter then
+					rowFrame:OnEnter()
+				end
+			end
+		else
+			if rowFrame.OnEnter then
+				rowFrame:OnEnter()
 			end
 		end
 
-		local rowFrame = frame:GetParent()
 
-		rowFrame:OnEnter()
 	end
+
 
 	local function OnLeave(frame)
-		if frame.OnLeave then
-			if frame:OnLeave() then
-				return
-			end
-		end
-
 		local rowFrame = frame:GetParent()
 
-		rowFrame:OnLeave()
+		if frame.OnLeave then
+			if not frame:OnLeave() then
+				if rowFrame.OnLeave then
+					rowFrame:OnLeave()
+				end
+			end
+		else
+			if rowFrame.OnLeave then
+				rowFrame:OnLeave()
+			end
+		end
 	end
+
 
 	local function OnClick(frame, ...)
 		local rowFrame = frame:GetParent()
-		local scrollFrame = rowFrame:GetParent()
+		local scrollFrame = rowFrame:GetParent():GetParent()
 
 		-- if frame has click function, the call it.  if it returns true, then don't call parent onclick (if it exists)
 		if frame.OnClick then
-			if frame:OnClick(...) then
-				return
+			if not frame:OnClick(...) then
+				if rowFrame.OnClick then
+					rowFrame:OnClick(...)
+				end
+			end
+		else
+			if rowFrame.OnClick then
+				rowFrame:OnClick(...)
 			end
 		end
 
-		if rowFrame.OnClick then
-			rowFrame:OnClick(...)
-		end
+
 	end
 
 
@@ -460,6 +544,46 @@ do
 	end
 
 
+
+	local function ScrollFrameEventHandler(scrollFrame, event, ...)
+		if event == "MODIFIER_STATE_CHANGED" and MouseIsOver(scrollFrame) then
+			local key, state = ...
+
+			if key == "LCTRL" or key == "RCTRL" then
+				if state == 1 and scrollFrame.keyboardEnabled then
+					scrollFrame:EnableKeyboard(scrollFrame.keyboardEnabled)
+				else
+					scrollFrame:EnableKeyboard(false)
+				end
+			end
+		end
+	end
+
+
+	local function ScrollFrameKeyDispatch(scrollFrame, key)
+		if scrollFrame.keyboardDispatch[key] then
+			return scrollFrame.keyboardDispatch[key](scrollFrame,key)
+		end
+	end
+
+
+	local function RegisterKeyboardInput(scrollFrame, key, func)
+		scrollFrame.keyboardDispatch[key] = func
+	end
+
+
+	local function EnableKeyboardInput(scrollFrame)
+		scrollFrame.keyboardEnabled = true
+
+		scrollFrame:RegisterEvent("MODIFIER_STATE_CHANGED")
+
+		scrollFrame:SetScript("OnKeyUp", ScrollFrameKeyDispatch)
+
+		scrollFrame:EnableKeyboard(false)
+	end
+
+
+
 	function lib:Create(frame, rowHeight, recycle)
 		local sf
 
@@ -468,20 +592,74 @@ do
 		else
 			serial = serial + 1
 
-			sf = CreateFrame("ScrollFrame", "ScrollFrame"..serial, frame, "UIPanelScrollFrameTemplate")
+			sf = CreateFrame("ScrollFrame", "ScrollFrame"..serial, frame) -- , "UIPanelScrollFrameTemplate")
 
 			sf.scrollChild = CreateFrame("Frame", nil, sf)
 
 
 			sf:SetScrollChild(sf.scrollChild)
 
+			sf.scrollBar = CreateFrame("Slider", "ScrollFrame"..serial.."ScrollBar", sf)
+
+			sf.scrollBar:SetWidth(16)
+
+			sf.scrollBar:SetPoint("TOPRIGHT", frame, -1, -16)
+			sf.scrollBar:SetPoint("BOTTOMRIGHT", frame, -1, 16)
+
+
+			sf.scrollBar.background = sf.scrollBar:CreateTexture(nil,"BACKGROUND")
+			sf.scrollBar.background:SetTexture(0.05,0.05,0.05,1.0)
+			sf.scrollBar.background:SetWidth(16)
+			sf.scrollBar.background:SetPoint("TOPRIGHT", frame, -1,-16)
+			sf.scrollBar.background:SetPoint("BOTTOMRIGHT", frame, -1, 16)
+
+			sf.scrollUpButton = CreateFrame("Button", nil, sf.scrollBar, "UIPanelScrollUpButtonTemplate")
+			sf.scrollUpButton:SetPoint("TOP", 0, 15)
+			sf.scrollUpButton:SetScript("OnClick", function(button)
+				local parent = button:GetParent()
+				local scrollStep = parent.scrollStep or (parent:GetHeight()/2)
+				parent:SetValue(parent:GetValue() - scrollStep)
+				PlaySound("UChatScrollButton")
+			end)
+
+			sf.scrollDownButton = CreateFrame("Button", nil, sf.scrollBar, "UIPanelScrollDownButtonTemplate")
+			sf.scrollDownButton:SetPoint("BOTTOM", 0, -15)
+			sf.scrollDownButton:SetScript("OnClick", function(button)
+				local parent = button:GetParent()
+				local scrollStep = parent.scrollStep or (parent:GetHeight()/2)
+				parent:SetValue(parent:GetValue() + scrollStep)
+				PlaySound("UChatScrollButton")
+			end)
+
+
+			local thumb = sf:CreateTexture()
+			thumb:SetTexture("Interface\\Buttons\\UI-ScrollBar-Knob")
+
+			thumb:SetWidth(18)
+			thumb:SetHeight(24)
+
+			thumb:SetTexCoord(.2, .8, .125, .875)
+
+
+			sf.scrollBar:SetThumbTexture(thumb)
+
+
+			sf.scrollBar:SetScript("OnValueChanged", function(f,v) sf:SetVerticalScroll(v) end)
+
 
 			sf:SetScript("OnScrollRangeChanged", nil)
 
-			local frameName = sf:GetName()
-			sf.scrollUpButton = _G[ frameName.."ScrollBarScrollUpButton" ];
-			sf.scrollDownButton = _G[ frameName.."ScrollBarScrollDownButton" ];
+			sf:SetScript("OnLoad", ScrollFrame_OnLoad)
+
+			sf:SetScript("OnMouseWheel", ScrollFrameTemplate_OnMouseWheel)
+
+
+			sf:SetScript("OnEvent", ScrollFrameEventHandler)
 		end
+
+
+		sf:EnableKeyboard(false)
+
 
 		sf:SetPoint("TOP")
 		sf:SetPoint("LEFT")
@@ -522,12 +700,22 @@ do
 
 		sf.RefreshRows = RefreshRows
 
+		sf.EnableKeyboardInput = EnableKeyboardInput
+		sf.RegisterKeyboardInput = RegisterKeyboardInput
+
+
 		sf.SetHandlerScripts = SetHandlerScripts
 
 		sf.OnClick = OnClick
 		sf.OnEnter = OnEnter
 		sf.OnLeave = OnLeave
 
+
+		sf.keyboardDispatch = {}
+
+		sf.selection = {}
+		sf.firstSelection = nil
+		sf.lastSelection = nil
 
 		sf:SetScript("OnSizeChanged", Draw)
 
@@ -537,21 +725,7 @@ do
 
 
 
-		sf.scrollBar = _G["ScrollFrame"..serial.."ScrollBar"]
 
-		sf.scrollBar:ClearAllPoints()
-		sf.scrollBar:SetPoint("TOPRIGHT", frame, -1, -16)
-		sf.scrollBar:SetPoint("BOTTOMRIGHT", frame, -1, 16)
-
-
-		local scrollBarTrough = CreateFrame("Frame", nil, sf.scrollBar)
-		scrollBarTrough:SetFrameLevel(scrollBarTrough:GetFrameLevel()-1)
-
-		scrollBarTrough.background = scrollBarTrough:CreateTexture(nil,"BACKGROUND")
-		scrollBarTrough.background:SetTexture(0.05,0.05,0.05,1.0)
-		scrollBarTrough.background:SetWidth(16)
-		scrollBarTrough.background:SetPoint("TOPRIGHT", frame, -1,-16)
-		scrollBarTrough.background:SetPoint("BOTTOMRIGHT", frame, -1, 16)
 
 		return sf
 	end
@@ -564,10 +738,11 @@ do
 	local colorBlack = { ["r"] = 0.0, ["g"] = 1.0, ["b"] = 0.0, ["a"] = 0.0 }
 	local colorDark = { ["r"] = 1.1, ["g"] = 0.1, ["b"] = 0.1, ["a"] = 0.0 }
 
-	local highlightOff = { ["r"] = 0.0, ["g"] = 0.0, ["b"] = 0.0, ["a"] = 0.0 }
-	local highlightSelected = { .5,.5,.5, .5 }
+	local highlightOff = {  0.0,  0.0,  0.0, 0.0 }
+
+	local highlightSelected = { .7,.7,.5, .5 }
 	local highlightMouseOver = { .9,.9,.7, .35 }
-	local highlightSelectedMouseOver = { ["r"] = 1, ["g"] = 1, ["b"] = 0.5, ["a"] = 0.5 }
+	local highlightSelectedMouseOver = {  1,  1,  0.5, 0.5 }
 
 	local menuFrame = GnomeWorksMenuFrame or CreateFrame("Frame", "GnomeWorksMenuFrame", UIParent, "UIDropDownMenuTemplate")
 
@@ -827,19 +1002,32 @@ do
 				return
 			end
 
+			local dark
+			local index = rowFrame.rowIndex + scrollFrame.scrollOffset
+
+			local mouseOver = highlightMouseOver
+
+			if scrollFrame.selection[index] then
+				mouseOver = highlightSelectedMouseOver
+			end
+
 			entry = entry or rowFrame.data
 
 			if scrollFrame.mouseOverIndex == rowFrame.rowIndex then
-				rowFrame.highlight:SetVertexColor(unpack(highlightMouseOver))
+				rowFrame.highlight:SetVertexColor(unpack(mouseOver))
 			elseif entry and entry.index == scrollFrame.selectedIndex then
 				rowFrame.highlight:SetVertexColor(unpack(highlightSelected))
+			elseif scrollFrame.selection[index] then
+				if math.floor(rowFrame.rowIndex/2)*2 == rowFrame.rowIndex then  -- alternating gradient lines
+					rowFrame.highlight:SetVertexColor(.4,.6,.4,.25)
+				else
+					rowFrame.highlight:SetVertexColor(0.4,.6,.4,.2)
+				end
 			else
-				if math.floor(rowFrame.rowIndex/2)*2 == rowFrame.rowIndex then
+				if math.floor(rowFrame.rowIndex/2)*2 == rowFrame.rowIndex then  -- alternating gradient lines
 					rowFrame.highlight:SetVertexColor(.5,.5,.5,.03)
---					rowFrame.highlight:Show()
 				else
 					rowFrame.highlight:SetVertexColor(0,0,0,0)
---					rowFrame.highlight:Show()
 				end
 			end
 		end

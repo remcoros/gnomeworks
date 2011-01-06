@@ -52,10 +52,12 @@ do
 
 		local function Init()
 			plugin.variables.queueCount = { value = 5, label = "Number to Queue:", format = "Number to Queue: |cff80ff80%s" }
+			plugin.variables.minCount = { value = 0, label = "Skip if fewer than:", format = "Skip if fewer than: |cff80ff80%s" }
 			plugin.variables.profitRatioThreshold = { value = 25, label = "Profit Margin (percent):", format = "Profit Margin: |cff80ff80%s%%" }
 			plugin.variables.profitThreshold = { value = 0, label = "Profit (in gold):", format = "Profit: |cff80ff80%sg" }
 			plugin.variables.costThreshold = { value = 100, label = "Max Cost (in gold):", format = "Max Cost: |cff80ff80%sg" }
 			plugin.variables.valueThreshold = { value = 5, label = "Min Value (in gold):", format = "Min Value |cff80ff80%sg" }
+
 
 
 			plugin:AddInput("profitRatioThreshold")
@@ -63,6 +65,7 @@ do
 			plugin:AddInput("costThreshold")
 			plugin:AddInput("valueThreshold")
 			plugin:AddInput("queueCount")
+			plugin:AddInput("minCount")
 
 			plugin:AddButton("Go", QueueProfitableRecipes).notCheckable = true
 		end

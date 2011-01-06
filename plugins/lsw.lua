@@ -42,6 +42,11 @@ do
 
 
 
+		local BOP_STRING = "|cffff0000-BOP-|r"
+		local NO_DE_STRING = "|cffff0000NO DE|r"
+
+
+
 		local costFilterMenu = {
 		}
 
@@ -99,8 +104,13 @@ do
 			font = "GameFontHighlightSmall",
 	--		filterMenu = costFilterMenu,
 			sortCompare = function(a,b)
+
 				if LSWConfig.valueAsPercent then
 					return (a.value or 0) / (a.cost or 0.00001) - (b.value or 0) / (b.cost or 0.00001)
+				end
+
+				if LSWConfig.singleColumn then
+					return (a.value or 0 - a.cost or 0) - (b.value or 0 - b.cost or 0)
 				end
 
 				return (a.value or 0) - (b.value or 0)
@@ -114,6 +124,9 @@ do
 					local itemFateString = string.format("|c%s%s|r", itemFateColor[itemFate], itemFate)
 					local hilight = (costAmount or 0) < (valueAmount or 0)
 					local valueText
+
+					local itemID = entry.itemID
+
 
 					if itemFate == "a" and itemCache[itemID] and itemCache[itemID].BOP then
 						valueText = BOP_STRING
@@ -436,6 +449,7 @@ do
 
 			if skillType ~= "header" then
 				LSW.UpdateSingleRecipePrice(entry.recipeID)
+
 				entry.value, entry.fate = LSW:GetSkillValue(entry.recipeID, globalFate)
 				entry.cost = LSW:GetSkillCost(entry.recipeID)
 			end

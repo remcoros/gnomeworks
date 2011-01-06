@@ -537,7 +537,7 @@ DebugSpam("GetTradeSkill: "..(tradeName or "nil").." "..rank)
 	end
 
 
-
+	local scanTimeStart
 	function GnomeWorks:ScanTrade()
 DebugSpam("SCAN TRADE")
 		if self.scanInProgress == true then
@@ -545,10 +545,12 @@ DebugSpam("SCAN BUSY!")
 			return
 		end
 
+
 		if not self.tradeID then
 			return
 		end
 
+		scanTimeStart = GetTime()
 
 		local tradeID = self.tradeID
 		local player
@@ -851,11 +853,17 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 --	DebugSpam("Scan Complete")
 
 
-
-		self:InventoryScan()
-
 		self:ScanCategoryGroups(mainGroup)
 		self:ScanSlotGroups(slotGroup)
+
+		local scanTimeEnd = GetTime()
+
+		if scanTimeEnd - scanTimeStart > .1 then
+			self:error("trade skill scan took", scanTimeEnd - scanTimeStart,"seconds")
+		end
+
+
+		self:InventoryScan()
 
 -- re-regsiter the update events again now that we're done scanning
 --		RegisterUpdateEvents()

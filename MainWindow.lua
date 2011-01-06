@@ -847,11 +847,13 @@ do
 									if true or entry.recipeID > 0 then
 										local spellLink = GetSpellLink(entry.recipeID)
 
+										local results, reagents, tradeID = GnomeWorks:GetRecipeData(entry.recipeID)
+
 										if spellLink then
 											GameTooltip:SetHyperlink(spellLink)
+										elseif tradeID == 53428 then
+											GameTooltip:SetSpellByID(entry.recipeID)
 										else
-											local results, reagents, tradeID = GnomeWorks:GetRecipeData(entry.recipeID)
-
 											GameTooltip:AddLine(GnomeWorks:GetRecipeName(entry.recipeID))
 
 											GameTooltip:AddLine("Reagents:",1,1,1)
@@ -893,7 +895,7 @@ do
 			width = 60,
 			align = "CENTER",
 			sortCompare = function(a,b)
-				return (a.totalInventory or 0) - (b.totalInventory or 0)
+				return (a.alt or 0) - (b.alt or 0)
 			end,
 			enabled = function()
 				return GnomeWorks.tradeID ~= 53428
@@ -1032,7 +1034,7 @@ do
 			width = 60,
 			align = "CENTER",
 			sortCompare = function(a,b)
-				return (a.altInventory or 0) - (b.altInventory or 0)
+				return (a.totalInventory or 0) - (b.totalInventory or 0)
 			end,
 			enabled = function()
 				return GnomeWorks.tradeID ~= 53428
@@ -1194,7 +1196,6 @@ do
 	end
 
 
-
 	local function BuildScrollingTable()
 
 		local function ResizeSkillFrame(scrollFrame,width,height)
@@ -1231,6 +1232,36 @@ do
 
 		skillFrame.scrollFrame = sf
 
+		sf.selectable = true
+
+
+		local function CreateEmptyGroup(scrollFrame)
+		end
+
+		local function CreateGroup(scrollFrame)
+		end
+
+		local function SelectAll(scrollFrame)
+			for i=1,scrollFrame.numRows do
+				scrollFrame.selection[i] = true
+			end
+
+			scrollFrame:Draw()
+		end
+
+		local function DeselectAll(scrollFrame)
+			table.wipe(scrollFrame.selection)
+
+			scrollFrame:Draw()
+		end
+
+
+		sf:EnableKeyboardInput()
+
+		sf:RegisterKeyboardInput("N", CreateEmptyGroup)
+		sf:RegisterKeyboardInput("G", CreateGroup)
+		sf:RegisterKeyboardInput("A", SelectAll)
+		sf:RegisterKeyboardInput("D", DeselectAll)
 
 
 		sf.IsEntryFiltered = function(self, entry)
@@ -1270,9 +1301,6 @@ do
 						entry.craftable = nil
 					end
 
-					if tradeID == 53428 then
-						entry.craftable = 1
-					end
 
 					entry.bag = bag
 					entry.vendor = vendor
@@ -1289,6 +1317,10 @@ do
 					entry.mail = 0
 
 					entry.craftable = nil
+
+					if tradeID == 53428 then
+						entry.craftable = 1
+					end
 				end
 
 				local itemLink = (entry.index and GnomeWorks:GetTradeSkillItemLink(entry.index))
@@ -1334,7 +1366,7 @@ do
 					if itemID then
 						for k,inv in ipairs(inventoryIndex) do
 							if inv == "alt" then
-								entry.inventory[inv] = GnomeWorks:GetInventoryCount(itemID, "faction", "bag bank mail", player)
+								entry.inventory[inv] = GnomeWorks:GetFactionInventoryCount(itemID, player)
 							else
 								entry.inventory[inv] = GnomeWorks:GetInventoryCount(itemID, player, inv)
 							end

@@ -451,6 +451,8 @@ do
 
 
 		local windowMenu = {
+--			{ text = "** DEBUG: Raise Frame Level **", notCheckable = 1, func = function() local level = frame.mover:GetFrameLevel() print("raise level",level) frame.mover:SetFrameLevel(level+1) end },
+--			{ text = "** DEBUG: Lower Frame Level **", notCheckable = 1, func = function() local level = frame.mover:GetFrameLevel() print("lower level",level) frame.mover:SetFrameLevel(level-1) end },
 			{ text = "Raise Frame", notCheckable = 1, func = function() frame:SetFrameStrata("DIALOG")  if frame.title then frame.title:SetFrameStrata("DIALOG") end end },
 			{ text = "Lower Frame", notCheckable = 1, func = function() frame:SetFrameStrata("LOW") if frame.title then frame.title:SetFrameStrata("LOW") end end },
 			{
