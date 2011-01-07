@@ -859,7 +859,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		local scanTimeEnd = GetTime()
 
 		if scanTimeEnd - scanTimeStart > .1 then
-			self:error("trade skill scan took", scanTimeEnd - scanTimeStart,"seconds")
+			warning:error("trade skill scan took", scanTimeEnd - scanTimeStart,"seconds")
 		end
 
 

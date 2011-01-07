@@ -110,7 +110,7 @@ do
 				end
 
 				if LSWConfig.singleColumn then
-					return (a.value or 0 - a.cost or 0) - (b.value or 0 - b.cost or 0)
+					return ((a.value or 0) - (a.cost or 0)) - ((b.value or 0) - (b.cost or 0))
 				end
 
 				return (a.value or 0) - (b.value or 0)
