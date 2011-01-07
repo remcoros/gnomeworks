@@ -1378,7 +1378,7 @@ do
 --print("SPELL CAST FAILED", ...)
 		if unit == "player" then
 			doTradeEntry = nil
-			GnomeWorks.IsProcessing = false
+			GnomeWorks.isProcessing = false
 			self:SendMessageDispatch("GnomeWorksProcessing")
 		end
 	end
@@ -1412,14 +1412,14 @@ do
 								doTradeEntry = nil
 								GnomeWorks.processSpell = nil
 
-								GnomeWorks.IsProcessing = false
+								GnomeWorks.isProcessing = false
 								self:SendMessageDispatch("GnomeWorksProcessing")
 							end
 						else
 							doTradeEntry = nil
 							GnomeWorks.processSpell = nil
 
-							GnomeWorks.IsProcessing = false
+							GnomeWorks.isProcessing = false
 							self:SendMessageDispatch("GnomeWorksProcessing")
 						end
 					end
@@ -1452,13 +1452,13 @@ do
 									doTradeEntry = nil
 									GnomeWorks.processSpell = nil
 
-									GnomeWorks.IsProcessing = false
+									GnomeWorks.isProcessing = false
 								end
 							else
 								doTradeEntry = nil
 								GnomeWorks.processSpell = nil
 
-								GnomeWorks.IsProcessing = false
+								GnomeWorks.isProcessing = false
 							end
 						end
 					end
@@ -1475,7 +1475,7 @@ do
 --print("SPELL CAST START", spellID, doTradeEntry and doTradeEntry.recipeID)
 
 		if unit == "player" then
-			GnomeWorks.IsProcessing = false
+			GnomeWorks.isProcessing = false
 			self:SendMessageDispatch("GnomeWorksProcessing")
 		end
 	end
@@ -1488,7 +1488,7 @@ do
 
 			CURRENT_TRADESKILL = GetTradeSkillLine()
 
-			GnomeWorks.IsProcessing = true
+			GnomeWorks.isProcessing = true
 			self:SendMessageDispatch("GnomeWorksProcessing")
 		end
 	end
@@ -1604,7 +1604,7 @@ do
 				entry, craftable = FirstCraftableEntry(GnomeWorks.data.queueData[queuePlayer])
 			end
 
-			if GnomeWorks.IsProcessing then
+			if GnomeWorks.isProcessing then
 				button:SetFormattedText("Processing...")
 				button:Disable()
 				button:Show()

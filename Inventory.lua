@@ -41,12 +41,59 @@ do
 	local longestScanTime = .25
 
 
+
+
+	function GnomeWorks:BagScan()
+		local player = self.player
+		local invData = self.data.inventoryData[player]
+		local bag = invData.bag
+		local bank = invData.bank
+
+		if player == (UnitName("player")) then
+			for itemID in pairs(GnomeWorks.data.trackedItems) do
+				local inBag = GetItemCount(itemID)
+				local inBank = GetItemCount(itemID,true) - inBag
+				local recahe
+
+				if (bag[itemID] or 0) ~= inBag then
+					bag[itemID] = inBag
+					recache = true
+				end
+
+				if (bank[itemID] or 0) ~= inBank then
+					bank[itemID] = inBank
+					recache = true
+				end
+
+				if recache then
+					local reagentUsage = self.data.reagentUsage[itemID]
+
+					for k,invLabel in pairs(inventoryList) do
+						if invData[invLabel] then
+							invData[invLabel][itemID] = nil
+							if reagentUsage then
+								self:UncacheReagentCounts(player, invData[invLabel], reagentUsage)
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+
+
+
+
 	function GnomeWorks:BAG_UPDATE(event,bag)
 		if bagThrottleTimer then
 			self:CancelTimer(bagThrottleTimer, true)
 		end
 
-		bagThrottleTimer = self:ScheduleTimer("InventoryScan",.01)
+		if GnomeWorks.isProcessing then
+			bagThrottleTimer = self:ScheduleTimer("BagScan",5)
+		else
+			bagThrottleTimer = self:ScheduleTimer("BagScan",.01)
+		end
 	end
 
 
