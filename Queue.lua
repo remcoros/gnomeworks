@@ -1320,7 +1320,7 @@ do
 
 
 			GnomeWorks:ShoppingListUpdate(player)
-
+			GnomeWorks:PrepAuctionScan(player)
 
 			self:SendMessageDispatch("SkillRanksChanged")
 

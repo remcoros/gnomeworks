@@ -253,7 +253,7 @@ do
 		local DrawRow = scrollFrame.DrawRow
 
 		if not scrollFrame:IsVisible() then
-			return
+--			return
 		end
 
 		scrollFrame.numRows = math.floor(scrollFrame:GetHeight()/scrollFrame.rowHeight)
@@ -740,9 +740,9 @@ do
 
 	local highlightOff = {  0.0,  0.0,  0.0, 0.0 }
 
-	local highlightSelected = { .7,.7,.5, .5 }
-	local highlightMouseOver = { .9,.9,.7, .35 }
-	local highlightSelectedMouseOver = {  1,  1,  0.5, 0.5 }
+	local highlightSelected = { 1,1,.7, .35 }
+	local highlightMouseOver = { .5,.5,.7, .35 }
+	local highlightSelectedMouseOver = {  1,  1,  0.7, 0.2 }
 
 	local menuFrame = GnomeWorksMenuFrame or CreateFrame("Frame", "GnomeWorksMenuFrame", UIParent, "UIDropDownMenuTemplate")
 
@@ -1007,21 +1007,24 @@ do
 
 			local mouseOver = highlightMouseOver
 
+
+			entry = entry or rowFrame.data
+
+
 			if scrollFrame.selection[index] then
 				mouseOver = highlightSelectedMouseOver
 			end
 
-			entry = entry or rowFrame.data
 
-			if scrollFrame.mouseOverIndex == rowFrame.rowIndex then
-				rowFrame.highlight:SetVertexColor(unpack(mouseOver))
-			elseif entry and entry.index == scrollFrame.selectedIndex then
+			if entry and entry.index == scrollFrame.selectedIndex then
 				rowFrame.highlight:SetVertexColor(unpack(highlightSelected))
+			elseif scrollFrame.mouseOverIndex == rowFrame.rowIndex then
+				rowFrame.highlight:SetVertexColor(unpack(mouseOver))
 			elseif scrollFrame.selection[index] then
 				if math.floor(rowFrame.rowIndex/2)*2 == rowFrame.rowIndex then  -- alternating gradient lines
-					rowFrame.highlight:SetVertexColor(.4,.6,.4,.25)
+					rowFrame.highlight:SetVertexColor(.4,.6,.4,.18)
 				else
-					rowFrame.highlight:SetVertexColor(0.4,.6,.4,.2)
+					rowFrame.highlight:SetVertexColor(0.4,.6,.4,.13)
 				end
 			else
 				if math.floor(rowFrame.rowIndex/2)*2 == rowFrame.rowIndex then  -- alternating gradient lines
@@ -1038,6 +1041,12 @@ do
 			local visibleWidth = 0
 			local frameWidth = scrollFrame:GetWidth()
 
+			local resizingColumn = scrollFrame.resizingColumn or 2
+
+			if resizingColumn > #scrollFrame.columnWidth then
+				resizingColumn = #scrollFrame.columnWidth
+			end
+
 			for i=1,#headers do
 				local visible = not headers[i].enabled or (type(headers[i].enabled)=="function" and headers[i].enabled())
 				local width = scrollFrame.columnWidth[i]
@@ -1052,7 +1061,7 @@ do
 				visibleWidth = visibleWidth + width
 			end
 
-			scrollFrame.columnWidth[2] = scrollFrame.columnWidth[2] + frameWidth - visibleWidth
+			scrollFrame.columnWidth[resizingColumn] = scrollFrame.columnWidth[resizingColumn] + frameWidth - visibleWidth
 			scrollFrame.headerWidth = frameWidth
 
 

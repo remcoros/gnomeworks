@@ -256,6 +256,8 @@ print("WTF?")
 			parentFrame:Show()
 
 			self:ShoppingListUpdate(player)
+
+			self:PrepAuctionScan(player)
 		end
 	end
 

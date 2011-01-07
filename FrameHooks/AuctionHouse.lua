@@ -16,8 +16,14 @@ do
 
 	local buyoutList = {}
 
-	local sf
+
 	local frame
+	local buyFrame
+	local reagentFrame
+
+	local GWAuctionTabID
+
+
 
 	local purchaseEntry
 
@@ -108,7 +114,7 @@ do
 				print("can't find it")
 			end
 		else
-			sf:Refresh()
+			buyFrame.sf:Refresh()
 		end
 	end
 
@@ -129,14 +135,14 @@ do
 			GnomeWorks:printf("buying %s x %d for %s",(GetItemInfo(reagentID)),entry.count,QuickMoneyFormat(entry.buyOut))
 
 			PlaceAuctionBid("list", found, entry.buyOut)
-			table.remove(sf.data.entries, entry.dataIndex)
+			table.remove(buyFrame.sf.data.entries, entry.dataIndex)
 
 			GnomeWorks.data.inventoryData.auctionHouse[reagentID] = GnomeWorks.data.inventoryData.auctionHouse[reagentID] - entry.count
 
 			GnomeWorks.data.inventoryData[UnitName("player")].mail[reagentID] = (GnomeWorks.data.inventoryData[UnitName("player")].mail[reagentID] or 0) + entry.count
 
 			GnomeWorks:InventoryScan()
-			sf:Refresh()
+			buyFrame.sf:Refresh()
 		else
 			page = 0
 
@@ -180,107 +186,108 @@ do
 	end
 
 
-	local columnHeaders = {
-		{
---			font = "GameFontHighlight",
-			buttonX = {
-				normalTexture = "Interface\\Icons\\INV_Misc_Bag_10",
-				highlightTexture = "Interface\\InventoryItems\\WoWUnknownItem01",
-				width = 14,
-				height = 14,
-			},
-			align = "CENTER",
-			name = "Cost Per",
-			width = 90,
-			OnEnter = AuctionFrame_OnEnter,
-			OnLeave = function()
-							GameTooltip:Hide()
+
+	local function BuildScrollingBuyFrame(frame)
+
+		local columnHeaders = {
+			{
+	--			font = "GameFontHighlight",
+				buttonX = {
+					normalTexture = "Interface\\Icons\\INV_Misc_Bag_10",
+					highlightTexture = "Interface\\InventoryItems\\WoWUnknownItem01",
+					width = 14,
+					height = 14,
+				},
+				align = "CENTER",
+				name = "Cost Per",
+				width = 90,
+				OnEnter = AuctionFrame_OnEnter,
+				OnLeave = function()
+								GameTooltip:Hide()
+							end,
+				draw =	function (rowFrame,cellFrame,entry)
+							cellFrame.text:SetPoint("LEFT", cellFrame, "LEFT", 16, 0)
+							cellFrame.text:SetText(QuickMoneyFormat(entry.buyOut/entry.count))
+
+							local alpha
+
+							if EntryIsCurrent(entry) then
+								alpha = 1
+							else
+								alpha = .5
+							end
+
+							if entry.buyIt then
+								cellFrame.text:SetTextColor(0,1,0,alpha)
+							else
+								cellFrame.text:SetTextColor(1,0,0,alpha)
+							end
 						end,
-			draw =	function (rowFrame,cellFrame,entry)
-						cellFrame.text:SetPoint("LEFT", cellFrame, "LEFT", 16, 0)
-						cellFrame.text:SetText(QuickMoneyFormat(entry.buyOut/entry.count))
+				OnClick = AuctionFrame_OnClick,
+			}, -- [1]
+			{
+				name = "Count",
+				align = "CENTER",
+				width = 50,
+				font = "GameFontHighlightSmall",
+				OnEnter = AuctionFrame_OnEnter,
+				OnLeave = function()
+								GameTooltip:Hide()
+							end,
+				draw =	function (rowFrame,cellFrame,entry)
+							cellFrame.text:SetText(entry.count)
 
-						local alpha
+							local alpha
 
-						if EntryIsCurrent(entry) then
-							alpha = 1
-						else
-							alpha = .5
-						end
+							if EntryIsCurrent(entry) then
+								alpha = 1
+							else
+								alpha = .5
+							end
 
-						if entry.buyIt then
-							cellFrame.text:SetTextColor(0,1,0,alpha)
-						else
-							cellFrame.text:SetTextColor(1,0,0,alpha)
-						end
-					end,
-			OnClick = AuctionFrame_OnClick,
-		}, -- [1]
-		{
-			name = "Count",
-			align = "CENTER",
-			width = 50,
-			font = "GameFontHighlightSmall",
-			OnEnter = AuctionFrame_OnEnter,
-			OnLeave = function()
-							GameTooltip:Hide()
+							if entry.buyIt then
+								cellFrame.text:SetTextColor(0,1,0,alpha)
+							else
+								cellFrame.text:SetTextColor(1,0,0,alpha)
+							end
 						end,
-			draw =	function (rowFrame,cellFrame,entry)
-						cellFrame.text:SetText(entry.count)
+				OnClick = AuctionFrame_OnClick,
+			}, -- [2]
 
-						local alpha
+			{
+	--			font = "GameFontHighlight",
+				name = "Total Buyout",
+				width = 90,
+				align = "CENTER",
+				draw =	function (rowFrame,cellFrame,entry)
+							cellFrame.text:SetText(QuickMoneyFormat(entry.buyOut))
 
-						if EntryIsCurrent(entry) then
-							alpha = 1
-						else
-							alpha = .5
-						end
+							local alpha
 
-						if entry.buyIt then
-							cellFrame.text:SetTextColor(0,1,0,alpha)
-						else
-							cellFrame.text:SetTextColor(1,0,0,alpha)
-						end
-					end,
-			OnClick = AuctionFrame_OnClick,
-		}, -- [2]
-
-		{
---			font = "GameFontHighlight",
-			name = "Total Buyout",
-			width = 90,
-			align = "CENTER",
-			draw =	function (rowFrame,cellFrame,entry)
-						cellFrame.text:SetText(QuickMoneyFormat(entry.buyOut))
-
-						local alpha
-
-						if EntryIsCurrent(entry) then
-							alpha = 1
-						else
-							alpha = .5
-						end
+							if EntryIsCurrent(entry) then
+								alpha = 1
+							else
+								alpha = .5
+							end
 
 
-						if entry.buyIt then
-							cellFrame.text:SetTextColor(0,1,0,alpha)
-						else
-							cellFrame.text:SetTextColor(1,0,0,alpha)
-						end
-					end,
-			OnClick = AuctionFrame_OnClick,
-			OnEnter = AuctionFrame_OnEnter,
-			OnLeave = function()
-							GameTooltip:Hide()
+							if entry.buyIt then
+								cellFrame.text:SetTextColor(0,1,0,alpha)
+							else
+								cellFrame.text:SetTextColor(1,0,0,alpha)
+							end
 						end,
-		}, -- [3]
-	}
+				OnClick = AuctionFrame_OnClick,
+				OnEnter = AuctionFrame_OnEnter,
+				OnLeave = function()
+								GameTooltip:Hide()
+							end,
+			}, -- [3]
+		}
 
-
-
-	local function BuildScrollingFrame()
 
 		local function ResizeFrame(scrollFrame,width,height)
+
 			if scrollFrame then
 				scrollFrame.columnWidth[2] = scrollFrame.columnWidth[2] + width - scrollFrame.headerWidth
 				scrollFrame.headerWidth = width
@@ -304,16 +311,11 @@ do
 			}
 
 
-		local auctionFrame = CreateFrame("Frame",nil,frame)
-		auctionFrame:SetPoint("LEFT",20,0)
-		auctionFrame:SetPoint("BOTTOM",frame,"BOTTOM",0,20)
-		auctionFrame:SetPoint("TOP", frame, 0, -80)
-		auctionFrame:SetPoint("RIGHT", frame, -20,0)
 
 
 --		GnomeWorks.auctionFrame = auctionFrame
 
-		sf = GnomeWorks:CreateScrollingTable(auctionFrame, ScrollPaneBackdrop, columnHeaders, ResizeFrame)
+		local sf = GnomeWorks:CreateScrollingTable(frame, ScrollPaneBackdrop, columnHeaders, ResizeFrame)
 
 
 --		sf.childrenFirst = true
@@ -327,6 +329,111 @@ do
 		end
 
 		sf:RegisterRowUpdate(UpdateRowData)
+
+
+		frame.sf = sf
+	end
+
+
+
+	local function BuildScrollingReagentFrame(frame)
+
+		local columnHeaders = {
+			{
+	--			font = "GameFontHighlight",
+				buttonX = {
+					normalTexture = "Interface\\Icons\\INV_Misc_Bag_10",
+					highlightTexture = "Interface\\InventoryItems\\WoWUnknownItem01",
+					width = 14,
+					height = 14,
+				},
+				align = "RIGHT",
+				name = "Reagent",
+				width = 30,
+--				OnEnter = AuctionFrame_OnEnter,
+				OnLeave = function()
+								GameTooltip:Hide()
+							end,
+				draw =	function (rowFrame,cellFrame,entry)
+							cellFrame.text:SetPoint("RIGHT", cellFrame, "RIGHT", -8, 0)
+							cellFrame.text:SetText(GetItemInfo(entry.itemID))
+
+							local needed = GnomeWorks.data.auctionQueue[GnomeWorks.player][entry.itemID] or 0
+							local available = GnomeWorks.data.inventoryData.auctionHouse[entry.itemID] or 0
+
+							if available == 0 then
+								cellFrame.text:SetTextColor(1,0,0)
+							elseif needed == 0 then
+								cellFrame.text:SetTextColor(.5,.5,.5)
+							elseif available >= needed then
+								cellFrame.text:SetTextColor(0,1,0)
+							else
+								cellFrame.text:SetTextColor(1,1,0)
+							end
+						end,
+				OnClick = function (cellFrame, button, source)
+								local rowFrame = cellFrame:GetParent()
+
+								if rowFrame.rowIndex>0 then
+									local entry = rowFrame.data
+
+									GnomeWorks:BeginSingleReagentScan(entry.itemID)
+									rowFrame.scrollFrame.selectedIndex = entry.index
+								end
+
+
+							end
+			}, -- [1]
+		}
+
+
+		local function ResizeFrame(scrollFrame,width,height)
+
+		if scrollFrame then
+				scrollFrame.columnWidth[1] = scrollFrame.columnWidth[1] + width - scrollFrame.headerWidth
+				scrollFrame.headerWidth = width
+
+				local x = 0
+
+				for i=1,#scrollFrame.columnFrames do
+					scrollFrame.columnFrames[i]:SetPoint("LEFT",scrollFrame, "LEFT", x,0)
+					scrollFrame.columnFrames[i]:SetPoint("RIGHT",scrollFrame, "LEFT", x+scrollFrame.columnWidth[i],0)
+
+					x = x + scrollFrame.columnWidth[i]
+				end
+			end
+		end
+
+		local ScrollPaneBackdrop  = {
+				bgFile = "Interface\\AddOns\\GnomeWorks\\Art\\frameInsetSmallBackground.tga",
+				edgeFile = "Interface\\AddOns\\GnomeWorks\\Art\\frameInsetSmallBorder.tga",
+				tile = true, tileSize = 16, edgeSize = 16,
+				insets = { left = 9.5, right = 9.5, top = 9.5, bottom = 11.5 }
+			}
+
+
+
+
+--		GnomeWorks.auctionFrame = auctionFrame
+
+		local sf = GnomeWorks:CreateScrollingTable(frame, ScrollPaneBackdrop, columnHeaders, ResizeFrame)
+
+
+--		sf.childrenFirst = true
+
+		sf.IsEntryFiltered = function(self, entry)
+			return false
+		end
+
+
+		local function UpdateRowData(scrollFrame,entry)
+		end
+
+		sf:RegisterRowUpdate(UpdateRowData)
+
+		sf.data = { entries = {} }
+
+		frame.sf = sf
 	end
 
 
@@ -336,25 +443,94 @@ do
 		end
 
 
+--		frame = self.Window:CreateResizableWindow("GnomeWorksAuctionFrame", "Auctions", 300, 300, ResizeWindow, GnomeWorksDB.config)
 
-		frame = self.Window:CreateResizableWindow("GnomeWorksAuctionFrame", "Auctions", 300, 300, ResizeWindow, GnomeWorksDB.config)
+--		frame:SetMaxResize(300,1000)
+--		frame:SetMinResize(300,200)
 
---		frame:DockWindow(self.MainWindow)
+----		frame:DockWindow(self.MainWindow)
+
+		LoadAddOn("Blizzard_AuctionUI")
+
+		frame = CreateFrame("Frame", nil, AuctionFrame)
+
+		frame:SetPoint("TOPLEFT",0,0)
+		frame:SetPoint("BOTTOMRIGHT",0,0)
 
 
-		frame:SetMaxResize(300,1000)
-		frame:SetMinResize(300,200)
+		buyFrame = CreateFrame("Frame", nil, frame)
 
-		BuildScrollingFrame()
+		buyFrame:SetPoint("TOPLEFT",190,-103)
+		buyFrame:SetPoint("BOTTOMRIGHT",-10,40)
+
+
+		reagentFrame = CreateFrame("Frame", nil, frame)
+
+		reagentFrame:SetPoint("TOPLEFT",20,-103)
+		reagentFrame:SetPoint("BOTTOMRIGHT",frame, "BOTTOMLEFT", 180,40)
+
+
+
 
 		frame:Hide()
 
 
-		local button = CreateFrame("Button", "GWAuctionItemIcon", frame, "ActionButtonTemplate")
+
+		local lastTab = _G["AuctionFrameTab"..AuctionFrame.numTabs]
+
+		local tabs = AuctionFrame.numTabs + 1
+
+		GWAuctionTabID = tabs
+
+
+		local auctionTab = CreateFrame("Button", "AuctionFrameTab"..tabs, AuctionFrame, "AuctionTabTemplate")
+
+
+		auctionTab:SetPoint("TOPLEFT", lastTab, "TOPRIGHT", -8,0)
+		auctionTab:SetID(tabs)
+		auctionTab:SetText("|cff80ff80GnomeWorks")
+
+--		auctionTab:SetWidth(70)
+		PanelTemplates_TabResize(auctionTab,0)
+
+
+		PanelTemplates_SetNumTabs(AuctionFrame, tabs)
+		PanelTemplates_EnableTab(AuctionFrame, tabs)
+
+
+
+		local originalAuctionFrameTab_OnClick = AuctionFrameTab_OnClick
+
+		function AuctionFrameTab_OnClick (self, index, down)
+			local index = self:GetID()
+
+			frame:Hide()
+
+			originalAuctionFrameTab_OnClick(self, index, down)
+
+			if index == GWAuctionTabID then
+				frame:Show()
+				AuctionFrameTopLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Browse-TopLeft")
+				AuctionFrameTop:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Browse-Top")
+				AuctionFrameTopRight:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Browse-TopRight")
+				AuctionFrameBotLeft:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Browse-BotLeft")
+				AuctionFrameBot:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-Bot")
+				AuctionFrameBotRight:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-BotRight")
+			end
+		end
+
+
+		BuildScrollingBuyFrame(buyFrame)
+		BuildScrollingReagentFrame(reagentFrame)
+
+--		frame:Hide()
+
+
+		local button = CreateFrame("Button", "GWAuctionItemIcon", buyFrame, "ActionButtonTemplate")
 
 		button:SetAlpha(0.8)
 
-		button:SetPoint("TOPLEFT", 20, -20)
+		button:SetPoint("BOTTOMLEFT", buyFrame, "TOPLEFT", 20, 20)
 		button:SetWidth(32)
 		button:SetHeight(32)
 
@@ -365,7 +541,7 @@ do
 		button:SetScript("OnEnter", function(b)
 			GameTooltip:SetOwner(b,"ANCHOR_NONE")
 			GameTooltip:SetHyperlink("item:"..(b.itemID or 0))
-			GameTooltip:SetPoint("TOPRIGHT", frame, "TOPLEFT")
+			GameTooltip:SetPoint("BOTTOMLEFT", b, "TOPRIGHT")
 			GameTooltip:Show()
 		end)
 
@@ -387,7 +563,7 @@ do
 		button.count = text
 
 
-		local text = button:CreateFontString(nil,"OVERLAY", "GameFontHighlight")
+		text = button:CreateFontString(nil,"OVERLAY", "GameFontHighlight")
 
 		text:SetJustifyH("LEFT")
 		text:SetPoint("LEFT",button,"RIGHT",5,-10)
@@ -401,19 +577,59 @@ do
 		frame.reagentButton = button
 
 
+
+		local function BeginAuctionScan()
+			GnomeWorks:BeginReagentScan(GnomeWorks.player)
+		end
+
+		local function CancelAuctionScan()
+			GnomeWorks:StopReagentScan()
+		end
+
+		local function ConfigureAuctionButton(button)
+
+			if GnomeWorks.atAuctionHouse then
+				if GnomeWorks.auctionScanning then
+					button:SetText("Cancel Auction Scan")
+					button:SetScript("OnClick", CancelAuctionScan)
+				else
+					button:SetText("Scan Auctions")
+					button:SetScript("OnClick", BeginAuctionScan)
+				end
+
+				button:Enable()
+			else
+				button:SetText("Scan Auctions")
+				button:Disable()
+			end
+		end
+
+
+		local scanButton = GnomeWorks:CreateButton(frame, 24)
+
+		scanButton:SetPoint("BOTTOMRIGHT",-8,14)
+		scanButton:SetWidth(250)
+
+		scanButton:SetText("Scan Auctions")
+
+		scanButton:SetNormalFontObject("GameFontNormal")
+		scanButton:SetHighlightFontObject("GameFontHighlight")
+		scanButton:SetDisabledFontObject("GameFontDisable")
+
+		GnomeWorks:RegisterMessageDispatch("HeartBeat GnomeWorksAuctionScan", function() ConfigureAuctionButton(scanButton) end)
+
+		ConfigureAuctionButton(scanButton)
+
+
 		return frame
 	end
 
 
+
+
+
+
 	function GnomeWorks:ShowAuctionWindow()
-		if not frame then
-			self:CreateAuctionWindow()
-
-			sf.data = {}
-
-			sf.selectedIndex = 1
-		end
-
 		if reagentID then
 			local icon = GetItemIcon(reagentID)
 
@@ -431,7 +647,8 @@ do
 					frame.reagentButton.needed:SetFormattedText("%d Needed",self.data.auctionQueue[self.player][reagentID] or 0)
 					frame.reagentButton.needed:Show()
 				else
-					frame.reagentButton.needed:Hide()
+					frame.reagentButton.needed:SetText("Unused in current queue configuration")
+					frame.reagentButton.needed:Show()
 				end
 
 				frame.reagentButton:Show()
@@ -439,11 +656,13 @@ do
 				frame.reagentButton:Hide()
 			end
 
-			sf.data.entries = self.data.auctionData[reagentID]
+			buyFrame.sf.data.entries = self.data.auctionData[reagentID]
 
-			sf:Refresh()
+			buyFrame.sf:Refresh()
+			reagentFrame.sf:Refresh()
+
 			frame:Show()
-			frame.title:Show()
+--			frame.title:Show()
 		end
 	end
 
@@ -578,7 +797,6 @@ do
 
 
 	function GnomeWorks:BeginReagentScan(player)
-		local queueData = GnomeWorks.data.queueData[player]
 
 		SortAuctionItems("list", "buyout")
 
@@ -588,11 +806,8 @@ do
 
 		reagentScanAbort = nil
 
-		local reagents = {}
+		GnomeWorks:PrepAuctionScan(player)
 
-		AddReagentsToReagentList(queueData, reagents)
-
-		self:ShowAuctionWindow()
 
 		auctionData = self.data.auctionData
 
@@ -601,10 +816,7 @@ do
 		end
 
 
-		reagentList = reagents
-
-
-		for id in pairs(reagents) do
+		for id in pairs(reagentList) do
 			if auctionData[id] then
 				table.wipe(auctionData[id])
 
@@ -632,8 +844,6 @@ do
 			auctionData = self.data.auctionData
 
 			self:ShowAuctionWindow()
-
-
 
 			reagentList = { [itemID] = 1 }
 
@@ -667,10 +877,51 @@ do
 	end
 
 
+	function GnomeWorks:PrepAuctionScan(player)
+		local queueData = GnomeWorks.data.queueData[player]
+
+		local reagents = table.wipe(reagentList or {})
+
+		AddReagentsToReagentList(queueData, reagents)
+
+--		self:ShowAuctionWindow()
+
+
+		reagentList = reagents
+
+		if reagentFrame then
+			local data = reagentFrame.sf.data.entries
+
+			local n = 0
+
+			for itemID in pairs(reagentList) do
+				n = n + 1
+				if data[n] then
+					data[n].itemID = itemID
+				else
+					data[n] = { index = n, itemID = itemID }
+				end
+			end
+
+			reagentFrame.sf.data.numEntries = n
+
+			reagentFrame.sf:Refresh()
+		end
+	end
+
 
 	function GnomeWorks:AUCTION_HOUSE_SHOW(...)
 		self.atAuctionHouse = true
 --		self:BeginReagentScan(GnomeWorks.data.inventoryData[(UnitName("player"))].queue, function() print("DONE WITH SCAN") end)
+
+
+		if not frame then
+			self:CreateAuctionWindow()
+
+			buyFrame.sf.data = {}
+			buyFrame.sf.selectedIndex = 1
+		end
+
 
 		if not self.player then
 			self.player = UnitName("player")
@@ -686,12 +937,13 @@ do
 	end
 
 
+
 	function GnomeWorks:AUCTION_HOUSE_CLOSED(...)
 		self.atAuctionHouse = false
 
 		if frame then
-			frame:Hide()
-			frame.title:Hide()
+--			frame:Hide()
+--			frame.title:Hide()
 		end
 
 		self:StopReagentScan()
