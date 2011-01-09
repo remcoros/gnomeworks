@@ -501,12 +501,12 @@ do
 
 		local originalAuctionFrameTab_OnClick = AuctionFrameTab_OnClick
 
-		function AuctionFrameTab_OnClick (self, index, down)
+		function AuctionFrameTab_OnClick (self, passedIndex, down)
 			local index = self:GetID()
 
 			frame:Hide()
 
-			originalAuctionFrameTab_OnClick(self, index, down)
+			originalAuctionFrameTab_OnClick(self, passedIndex, down)
 
 			if index == GWAuctionTabID then
 				frame:Show()

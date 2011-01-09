@@ -44,12 +44,14 @@ do
 
 
 	function GnomeWorks:BagScan()
-		local player = self.player
+		local player = UnitName("player")
 		local invData = self.data.inventoryData[player]
-		local bag = invData.bag
-		local bank = invData.bank
 
-		if player == (UnitName("player")) then
+		if invData then
+			local bag = invData.bag
+			local bank = invData.bank
+
+
 			for itemID in pairs(GnomeWorks.data.trackedItems) do
 				local inBag = GetItemCount(itemID)
 				local inBank = GetItemCount(itemID,true) - inBag
