@@ -17,60 +17,6 @@ LibStub("AceTimer-3.0"):Embed(GnomeWorks)
 
 
 
--- message dispatch
-do
-	local dispatchTable = {}
-
-	function GnomeWorks:RegisterMessageDispatch(messageList, func, postProcess)
-		for message in string.gmatch(messageList, "%a+") do
-			if dispatchTable[message] then
-				local t = dispatchTable[message]
-				if postProcess then
-					t[#t+1] = func
-				else
-					table.insert(t,1,func)
-				end
-
-			else
-				dispatchTable[message] = { func }
-			end
-		end
-	end
-
-
-	function GnomeWorks:SendMessageDispatch(messageList)
-		for message in string.gmatch(messageList, "%a+") do
---print("sending",message)
-			if dispatchTable[message] then
-				t = dispatchTable[message]
-
-				for k,func in ipairs(t) do
---collectgarbage("collect")
-					if func ~= "delete" then
-						if type(func) == "function" and func() then					-- message returns true when it's set to fire once
-							t[k] = "delete"
-						elseif type(func) == "string" and GnomeWorks[func](GnomeWorks) then
-							t[k] = "delete"
-						end
-					end
-				end
-
-				local s,e = 1,#t
-
-				while s <= e do
-					if t[s] == "delete" then
-						t[s] = t[e]
-						t[e] = nil
-						e = e - 1
-					else
-						s = s + 1
-					end
-				end
-			end
-		end
-	end
-end
-
 
 
 do
@@ -124,7 +70,7 @@ do
 			end
 		end
 
-		GnomeWorks:SendMessageDispatch("GnomeWorksSkillListChanged")
+		GnomeWorks:SendMessageDispatch("SkillListChanged")
 	end
 end
 

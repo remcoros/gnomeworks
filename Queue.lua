@@ -112,7 +112,7 @@ do
 
 
 	local function ResizeMainWindow()
-		GnomeWorks:SendMessageDispatch("GnomeWorksFrameMoved")
+		GnomeWorks:SendMessageDispatch("FrameMoved")
 	end
 
 
@@ -1179,7 +1179,7 @@ do
 		end
 
 
-		self:SendMessageDispatch("GnomeWorksQueueChanged GnomeWorksSkillListChanged GnomeWorksDetailsChanged")
+		self:SendMessageDispatch("QueueChanged")
 	end
 
 
@@ -1304,7 +1304,7 @@ do
 			BuildFlatQueue(self.data.flatQueue[player], self.data.queueData[player])
 
 
-			self:SendMessageDispatch("GnomeWorksQueueCountsChanged")
+			self:SendMessageDispatch("QueueCountsChanged")
 
 
 			if GnomeWorksDB.config.queueLayoutFlat then
@@ -1379,7 +1379,7 @@ do
 		if unit == "player" then
 			doTradeEntry = nil
 			GnomeWorks.isProcessing = false
-			self:SendMessageDispatch("GnomeWorksProcessing")
+			self:SendMessageDispatch("TradeProcessing")
 		end
 	end
 
@@ -1413,14 +1413,14 @@ do
 								GnomeWorks.processSpell = nil
 
 								GnomeWorks.isProcessing = false
-								self:SendMessageDispatch("GnomeWorksProcessing")
+								self:SendMessageDispatch("TradeProcessing")
 							end
 						else
 							doTradeEntry = nil
 							GnomeWorks.processSpell = nil
 
 							GnomeWorks.isProcessing = false
-							self:SendMessageDispatch("GnomeWorksProcessing")
+							self:SendMessageDispatch("TradeProcessing")
 						end
 					end
 				else
@@ -1464,7 +1464,7 @@ do
 					end
 
 					GnomeWorks:ShowQueueList()
-					self:SendMessageDispatch("GnomeWorksProcessing")
+					self:SendMessageDispatch("TradeProcessing")
 				end
 			end
 		end
@@ -1476,7 +1476,7 @@ do
 
 		if unit == "player" then
 			GnomeWorks.isProcessing = false
-			self:SendMessageDispatch("GnomeWorksProcessing")
+			self:SendMessageDispatch("TradeProcessing")
 		end
 	end
 
@@ -1489,7 +1489,7 @@ do
 			CURRENT_TRADESKILL = GetTradeSkillLine()
 
 			GnomeWorks.isProcessing = true
-			self:SendMessageDispatch("GnomeWorksProcessing")
+			self:SendMessageDispatch("TradeProcessing")
 		end
 	end
 
@@ -1575,7 +1575,7 @@ do
 
 			GnomeWorks:InventoryScan()
 
-			GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged GnomeWorksDetailsChanged GnomeWorksSkillListChanged SkillRanksChanged")
+			GnomeWorks:SendMessageDispatch("QueueChanged SkillRanksChanged")
 		end
 
 
@@ -1697,10 +1697,10 @@ do
 		local buttonConfig = {
 --			{ text = "Process", operation = ProcessQueue, width = 250, validate = SetProcessLabel, lineBreak = true, template = "SecureActionButtonTemplate" },
 			{ text = "Nothing To Process", name = "GWProcess", width = 250, validate = ConfigureButton, lineBreak = true, addSecure=true, template = "SecureActionButtonTemplate",
-						updateEvent = "GnomeWorksQueueCountsChanged GnomeWorksQueueChanged GnomeWorksProcessing GnomeWorksInventoryScanComplete HeartBeat GnomeWorksFrameMoved" },
+						updateEvent = "QueueCountsChanged QueueChanged TradeProcessing InventoryScanComplete HeartBeat FrameMoved" },
 			{ text = "Stop", operation = StopProcessing, width = 125 },
 			{ text = "Clear", operation = ClearQueue, width = 125, lineBreak = true },
-			{ text = "Scan Auctions", width = 250, validate = ConfigureAuctionButton, updateEvent = "HeartBeat GnomeWorksAuctionScan" }
+			{ text = "Scan Auctions", width = 250, validate = ConfigureAuctionButton, updateEvent = "HeartBeat AuctionScan" }
 		}
 
 
@@ -1924,7 +1924,7 @@ do
 			end
 		end
 
-		GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
+		GnomeWorks:SendMessageDispatch("QueueChanged")
 	end
 
 
@@ -1946,7 +1946,7 @@ do
 		end
 
 		if deleted then
-			GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged GnomeWorksSkillListChanged GnomeWorksDetailsChanged")
+			GnomeWorks:SendMessageDispatch("QueueChanged")
 		end
 	end
 
@@ -1962,7 +1962,7 @@ do
 			table.insert(GnomeWorks.data.queueData[queuePlayer], entry)
 		end
 
-		GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged GnomeWorksSkillListChanged GnomeWorksDetailsChanged")
+		GnomeWorks:SendMessageDispatch("QueueChanged")
 	end
 
 	local function OpMoveQueueEntryToTop(button,entry)
@@ -1976,7 +1976,7 @@ do
 			table.insert(GnomeWorks.data.queueData[queuePlayer], 1, entry)
 		end
 
-		GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged GnomeWorksSkillListChanged GnomeWorksDetailsChanged")
+		GnomeWorks:SendMessageDispatch("QueueChanged")
 	end
 
 
@@ -2005,7 +2005,7 @@ do
 										entry.count = 1
 									end
 
-									GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged GnomeWorksSkillListChanged GnomeWorksDetailsChanged")
+									GnomeWorks:SendMessageDispatch("QueueChanged")
 
 --									GnomeWorks:ShowQueueList()
 								end
@@ -2615,7 +2615,7 @@ do
 		frame.playerNameFrame = playerName
 
 
-		self:RegisterMessageDispatch("GnomeWorksQueueChanged GnomeWorksTradeScanComplete GnomeWorksInventoryScanComplete", function() if frame:IsShown() then GnomeWorks:ShowQueueList() end end)
+		self:RegisterMessageDispatch("QueueChanged TradeScanComplete InventoryScanComplete AuctionScanComplete", function() if frame:IsShown() then GnomeWorks:ShowQueueList() end end)
 
 
 
@@ -2628,7 +2628,7 @@ do
 				frame:SetText("Layout: Grouped")
 			end
 
-			GnomeWorks:SendMessageDispatch("GnomeWorksQueueChanged")
+			GnomeWorks:SendMessageDispatch("QueueChanged")
 		end
 
 		local layoutSelection = CreateFrame("Button", nil, frame)

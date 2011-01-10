@@ -23,6 +23,7 @@ do
 
 	local GWAuctionTabID
 
+	local auctionTab
 
 
 	local purchaseEntry
@@ -483,7 +484,7 @@ do
 		GWAuctionTabID = tabs
 
 
-		local auctionTab = CreateFrame("Button", "AuctionFrameTab"..tabs, AuctionFrame, "AuctionTabTemplate")
+		auctionTab = CreateFrame("Button", "AuctionFrameTab"..tabs, AuctionFrame, "AuctionTabTemplate")
 
 
 		auctionTab:SetPoint("TOPLEFT", lastTab, "TOPRIGHT", -8,0)
@@ -501,12 +502,12 @@ do
 
 		local originalAuctionFrameTab_OnClick = AuctionFrameTab_OnClick
 
-		function AuctionFrameTab_OnClick (self, passedIndex, down)
+		function AuctionFrameTab_OnClick(self, ...)
 			local index = self:GetID()
 
 			frame:Hide()
 
-			originalAuctionFrameTab_OnClick(self, passedIndex, down)
+			originalAuctionFrameTab_OnClick(self, ...)
 
 			if index == GWAuctionTabID then
 				frame:Show()
@@ -616,7 +617,7 @@ do
 		scanButton:SetHighlightFontObject("GameFontHighlight")
 		scanButton:SetDisabledFontObject("GameFontDisable")
 
-		GnomeWorks:RegisterMessageDispatch("HeartBeat GnomeWorksAuctionScan", function() ConfigureAuctionButton(scanButton) end)
+		GnomeWorks:RegisterMessageDispatch("HeartBeat AuctionScan", function() ConfigureAuctionButton(scanButton) end)
 
 		ConfigureAuctionButton(scanButton)
 
@@ -661,7 +662,11 @@ do
 			buyFrame.sf:Refresh()
 			reagentFrame.sf:Refresh()
 
-			frame:Show()
+			if not frame:IsVisible() then
+				AuctionFrameTab_OnClick(auctionTab, "LeftButton", false)
+			end
+
+--			frame:Show()
 --			frame.title:Show()
 		end
 	end
@@ -779,7 +784,7 @@ do
 				self:ScheduleTimer(SendQuery, .3)
 			else
 				self.auctionScanning = nil
-				self:SendMessageDispatch("GnomeWorksAuctionScan GnomeWorksQueueChanged")
+				self:SendMessageDispatch("AuctionScanComplete")
 			end
 		end
 	end
@@ -834,7 +839,7 @@ do
 
 			self.auctionScanning = true
 
-			self:SendMessageDispatch("GnomeWorksAuctionScan")
+			self:SendMessageDispatch("AuctionScan")
 		end
 	end
 
@@ -862,7 +867,7 @@ do
 				SendQuery()
 
 				self.auctionScanning = true
-				self:SendMessageDispatch("GnomeWorksAuctionScan")
+				self:SendMessageDispatch("AuctionScan")
 			end
 		end
 	end
@@ -873,7 +878,7 @@ do
 		reagentScanAbort = true
 		self.auctionScanning = nil
 
-		self:SendMessageDispatch("GnomeWorksAuctionScan GnomeWorksQueueChanged")
+		self:SendMessageDispatch("AuctionScan AuctionScanComplete")
 	end
 
 
@@ -933,7 +938,7 @@ do
 			self:ShoppingListShow(self.player)
 		end
 
-		self:SendMessageDispatch("GnomeWorksAuctionScan")
+		self:SendMessageDispatch("AuctionScan")
 	end
 
 

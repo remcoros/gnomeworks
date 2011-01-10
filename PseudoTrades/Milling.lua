@@ -555,7 +555,7 @@ do
 		collectgarbage("collect")
 
 		GnomeWorks:ScheduleTimer("UpdateMainWindow",.1)
-		GnomeWorks:SendMessageDispatch("GnomeWorksScanComplete")
+		GnomeWorks:SendMessageDispatch("TradeScanComplete")
 		return
 	end
 

@@ -43,6 +43,7 @@ Libs\LibStagedExecution.lua
 
 #### Main files
 GnomeWorks.lua
+MessageDispatch.lua
 MainWindow.lua
 Window.lua
 RecipeData.lua

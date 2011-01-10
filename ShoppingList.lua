@@ -299,7 +299,7 @@ print("WTF?")
 
 		sf.data = { entries = {} }
 
-		self:RegisterMessageDispatch("GnomeWorksQueueCountsChanged GnomeWorksInventoryScanComplete", function() GnomeWorks:ShoppingListUpdate() end)
+		self:RegisterMessageDispatch("QueueCountsChanged InventoryScanComplete", function() GnomeWorks:ShoppingListUpdate() end)
 
 --[[
 		sf.IsEntryFiltered = function(self, entry)

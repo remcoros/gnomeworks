@@ -1192,7 +1192,7 @@ do
 			end
 		end
 
-		GnomeWorks:SendMessageDispatch("GnomeWorksFrameMoved")
+		GnomeWorks:SendMessageDispatch("FrameMoved")
 	end
 
 
@@ -1413,7 +1413,7 @@ do
 
 		ResizeMainWindow()
 
-		GnomeWorks:SendMessageDispatch("GnomeWorksDetailsChanged")
+		GnomeWorks:SendMessageDispatch("SelectionChanged")
 	end
 
 
@@ -1572,7 +1572,7 @@ do
 			searchTextParameters.arg = ""
 		end
 
-		self:SendMessageDispatch("GnomeWorksSkillListChanged")
+		self:SendMessageDispatch("SkillListChanged")
 --		sf:Refresh()
 	end
 
@@ -1958,7 +1958,7 @@ do
 		end)
 
 
-		GnomeWorks:RegisterMessageDispatch("GnomeWorksDetailsChanged HeartBeat", function()
+		GnomeWorks:RegisterMessageDispatch("SelectionChanged HeartBeat", function()
 			for i, b in pairs(buttons) do
 				if b.validate then
 					b:validate()
@@ -2069,7 +2069,7 @@ do
 
 		controlFrame:SetWidth(position)
 
-		GnomeWorks:RegisterMessageDispatch("GnomeWorksDetailsChanged", function()
+		GnomeWorks:RegisterMessageDispatch("SelectionChanged", function()
 --			sf:Draw()
 			for i, b in pairs(buttons) do
 				if b.validate then
@@ -2390,15 +2390,15 @@ do
 		table.insert(UISpecialFrames, "GnomeWorksFrame")
 
 		frame:HookScript("OnShow", function() PlaySound("igCharacterInfoOpen") end)
-		frame:HookScript("OnHide", function() CloseTradeSkill() PlaySound("igCharacterInfoClose") end)
+		frame:HookScript("OnHide", function() if frame:IsVisible() then PlaySound("igCharacterInfoClose") end CloseTradeSkill() end)
 
 
-		self:RegisterMessageDispatch("GnomeWorksScanComplete", ScanComplete)
+		self:RegisterMessageDispatch("TradeScanComplete", ScanComplete)
 
-		self:RegisterMessageDispatch("GnomeWorksSkillListChanged", function()
+		self:RegisterMessageDispatch("SkillListChanged", function()
 			self:ShowSkillList()
 
-			self:SendMessageDispatch("GnomeWorksDetailsChanged")
+			self:SendMessageDispatch("SelectionChanged")
 		end)
 
 

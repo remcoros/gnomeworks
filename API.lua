@@ -110,6 +110,7 @@ do
 		pluginInputBox:SetParent(button)
 	end
 
+
 	local function AddInput(plugin, var)
 		if plugin.variables[var] then
 			local new = {

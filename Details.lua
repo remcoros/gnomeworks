@@ -602,7 +602,7 @@ do
 		sf:RegisterRowUpdate(UpdateRowData)
 
 
-		GnomeWorks:RegisterMessageDispatch("GnomeWorksDetailsChanged", function()
+		GnomeWorks:RegisterMessageDispatch("SelectionChanged", function()
 --print(GetTime(), "details changed")
 			GnomeWorks:ShowReagents(GnomeWorks.selectedSkill)
 		end)
@@ -1080,7 +1080,7 @@ do
 
 
 
-		GnomeWorks:RegisterMessageDispatch("GnomeWorksDetailsChanged", function()
+		GnomeWorks:RegisterMessageDispatch("SelectionChanged", function()
 			self:ShowDetails(self.selectedSkill)
 		end)
 

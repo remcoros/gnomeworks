@@ -766,7 +766,7 @@ do
 --		self:SortAndFilterRecipes()
 --		self:UpdateTradeSkillWindow()
 
-		GnomeWorks:SendMessageDispatch("GnomeWorksSkillListChanged")
+		GnomeWorks:SendMessageDispatch("SkillListChanged")
 	end
 
 

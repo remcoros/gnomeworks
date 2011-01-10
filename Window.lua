@@ -340,7 +340,9 @@ do
 														child:SetHeight(h)
 													end
 												end
-												resizeFunction()
+												if resizeFunction then
+													resizeFunction()
+												end
 											end)
 
 		frame.SavePosition = function(f)

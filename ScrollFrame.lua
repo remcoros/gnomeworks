@@ -1119,7 +1119,13 @@ do
 						if headers[i].draw and rowData then
 							headers[i].draw(rowFrame,rowFrame.cols[i],rowData)
 						else
-							rowFrame.cols[i].text:SetText((rowData and rowData[headers[i].dataField]) or "")
+							local data = rowData and rowData[headers[i].dataField] or ""
+
+							if type(data) == "number" and headers[i].precision then
+								data = math.floor(data*headers[i].precision+.5)/headers[i].precision
+							end
+
+							rowFrame.cols[i].text:SetText(data)
 						end
 					end
 

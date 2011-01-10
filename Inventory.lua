@@ -51,6 +51,7 @@ do
 			local bag = invData.bag
 			local bank = invData.bank
 
+			local itemUncached
 
 			for itemID in pairs(GnomeWorks.data.trackedItems) do
 				local inBag = GetItemCount(itemID)
@@ -74,11 +75,19 @@ do
 						if invData[invLabel] then
 							invData[invLabel][itemID] = nil
 							if reagentUsage then
-								self:UncacheReagentCounts(player, invData[invLabel], reagentUsage)
+								itemUncached = self:UncacheReagentCounts(player, invData[invLabel], reagentUsage)
 							end
 						end
 					end
 				end
+			end
+
+			if itemUncached then
+				GnomeWorks:InventoryProcess(player)
+
+				GnomeWorks:SendMessageDispatch("InventoryScanComplete")
+			else
+				GnomeWorks:SendMessageDispatch("InventoryScanComplete")
 			end
 		end
 	end
@@ -215,6 +224,8 @@ end
 
 
 	function GnomeWorks:UncacheReagentCounts(player, inventory, reagentUsage)
+		local uncached
+
 		for recipeID in pairs(reagentUsage) do
 			if self.data.knownSpells[player][recipeID] then
 
@@ -227,6 +238,7 @@ end
 
 						for itemID in pairs(results) do
 							if invData[itemID] then
+								uncached = true
 								invData[itemID] = nil
 
 								local subUsage = self.data.reagentUsage[itemID]
@@ -240,6 +252,8 @@ end
 				end
 			end
 		end
+
+		return uncached
 	end
 
 
@@ -532,12 +546,56 @@ end
 	end
 
 
-	local invscan = 1
+	function GnomeWorks:InventoryProcess(player)
+		player = player or self.player
+		local inventory = self.data.inventoryData[player]
+
+		local scanTime = GetTime()
+
+		local craftedBag = table.wipe(inventory["craftedBag"])
+		local craftedBank = table.wipe(inventory["craftedBank"])
+		local craftedGuildBank = inventory["craftedGuildBank"] and table.wipe(inventory["craftedGuildBank"])
+		local craftedMail = table.wipe(inventory["craftedMail"])
+--			local craftedAuction = table.wipe(inventory["craftedAuction"])
+
+
+		if craftedGuildBank then
+			local key = "GUILD:"..self.data.playerData[player].guild
+
+			local guildBankInventory = self.data.inventoryData[key]
+
+			if guildBankInventory and guildBankInventory.bank then
+				for reagentID, count in pairs(guildBankInventory.bank) do
+					craftedGuildBank[reagentID] = (craftedGuildBank[reagentID] or 0) + count
+				end
+			end
+		end
+
+
+		for k,inv in ipairs(inventoryList) do
+			table.wipe(itemVisited)
+
+			local invData = inventory[inv]
+
+			if invData then
+				for itemID in pairs(GnomeWorks.data.itemSource) do
+					self:InventoryReagentCraftability(invData, itemID, player, inventorySourceTable[inv])
+				end
+			end
+		end
+
+
+		local elapsed = GetTime()-scanTime
+
+		if elapsed > longestScanTime then
+			DebugSpam("|cffff0000WARNING: GnomeWorks Inventory Scan took ",math.floor(elapsed*100)/100," seconds")
+			longestScanTime = elapsed
+		end
+	end
+
+
 
 	function GnomeWorks:InventoryScan(playerOverride)
-		local scanTime = GetTime()
---	DEFAULT_CHAT_FRAME:AddMessage("InventoryScan "..invscan)
-		invscan = invscan + 1
 		local player = playerOverride or self.player
 		local inventory = self.data.inventoryData[player]
 
@@ -571,6 +629,8 @@ end
 				end
 			end
 
+
+
 --[[
 			if player == "Judithpriest" then
 				for itemID in pairs(GnomeWorks.data.trackedItems) do
@@ -581,75 +641,6 @@ end
 			end
 ]]
 
-
-			local craftedBag = table.wipe(inventory["craftedBag"])
-			local craftedBank = table.wipe(inventory["craftedBank"])
-			local craftedGuildBank = inventory["craftedGuildBank"] and table.wipe(inventory["craftedGuildBank"])
-			local craftedMail = table.wipe(inventory["craftedMail"])
---			local craftedAuction = table.wipe(inventory["craftedAuction"])
-
---[[
-			for reagentID, count in pairs(inventory["bag"]) do
-				craftedBag[reagentID] = count
-			end
-
-			for reagentID, count in pairs(inventory["bank"]) do
-				craftedBank[reagentID] = count
-			end
-
-			for reagentID, count in pairs(inventory["mail"]) do
-				craftedMail[reagentID] = count
-			end
-]]
---[[
-			for reagentID, count in pairs(inventory["auction"]) do
-				craftedAuction[reagentID] = count
-
-				if craftedGuildBank then
-					craftedGuildBank[reagentID] = craftedAuction[reagentID]
-				end
-			end
-]]
-
-			if craftedGuildBank then
-				local key = "GUILD:"..self.data.playerData[player].guild
-
-				local guildBankInventory = self.data.inventoryData[key]
-
-				if guildBankInventory and guildBankInventory.bank then
-					for reagentID, count in pairs(guildBankInventory.bank) do
-						craftedGuildBank[reagentID] = (craftedGuildBank[reagentID] or 0) + count
-					end
-				end
-			end
-
---[[
-			table.wipe(itemVisited)							-- this is a simple infinite loop avoidance scheme: basically, don't visit the same node twice
-
-
-
-			for itemID in pairs(GnomeWorks.data.itemSource) do
-				self:InventoryReagentCraftability(craftedBag, itemID, player, "bag queue")
-				self:InventoryReagentCraftability(craftedBank, itemID, player, "craftedBag bank")
-				self:InventoryReagentCraftability(craftedMail, itemID, player, "craftedBank mail")
---				self:InventoryReagentCraftability(craftedAuction, itemID, player, "craftedAuction queue")
-				if craftedGuildBank then
-					self:InventoryReagentCraftability(craftedGuildBank, itemID, player, "craftedMail craftedGuildBank")
-				end
-			end
-]]
-
-			for k,inv in ipairs(inventoryList) do
-				table.wipe(itemVisited)
-
-				local invData = inventory[inv]
-
-				if invData then
-					for itemID in pairs(GnomeWorks.data.itemSource) do
---						self:InventoryReagentCraftability(invData, itemID, player, inventorySourceTable[inv])
-					end
-				end
-			end
 
 
 -- assign nil's to all 0 count items
@@ -665,18 +656,9 @@ end
 		end
 
 
-
+		GnomeWorks:SendMessageDispatch("InventoryScanComplete")
 --	DebugSpam("InventoryScan Complete")
-		local elapsed = GetTime()-scanTime
 
-		if elapsed > longestScanTime then
-			DebugSpam("|cffff0000WARNING: GnomeWorks Inventory Scan took ",math.floor(elapsed*100)/100," seconds")
-			longestScanTime = elapsed
-		end
-
-		GnomeWorks:SendMessageDispatch("GnomeWorksInventoryScanComplete")
-		GnomeWorks:SendMessageDispatch("GnomeWorksSkillListChanged")
-		GnomeWorks:SendMessageDispatch("GnomeWorksDetailsChanged")
 	end
 
 end
