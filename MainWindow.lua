@@ -1964,7 +1964,7 @@ do
 					b:validate()
 				end
 			end
-		end)
+		end,"ConfigureCraftingButtons")
 
 		return controlFrame
 	end
@@ -2076,7 +2076,7 @@ do
 					b:validate()
 				end
 			end
-		end)
+		end,"ConfigureUIButtons")
 
 		return controlFrame
 	end
@@ -2393,19 +2393,19 @@ do
 		frame:HookScript("OnHide", function() if frame:IsVisible() then PlaySound("igCharacterInfoClose") end CloseTradeSkill() end)
 
 
-		self:RegisterMessageDispatch("TradeScanComplete", ScanComplete)
+		self:RegisterMessageDispatch("TradeScanComplete", ScanComplete, "ShowMainWindow")
 
-		self:RegisterMessageDispatch("SkillListChanged", function()
+		self:RegisterMessageDispatch("SkillListChanged SkillRanksChanged", function()
 			self:ShowSkillList()
 
 			self:SendMessageDispatch("SelectionChanged")
-		end)
+		end, "ShowSkillList")
 
 
 		self:RegisterMessageDispatch("SkillRanksChanged", function()
-			self:ShowSkillList()
+
 			self:ShowStatus()
-		end)
+		end, "ShowStatus")
 
 
 

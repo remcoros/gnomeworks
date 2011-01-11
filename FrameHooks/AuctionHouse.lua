@@ -617,7 +617,7 @@ do
 		scanButton:SetHighlightFontObject("GameFontHighlight")
 		scanButton:SetDisabledFontObject("GameFontDisable")
 
-		GnomeWorks:RegisterMessageDispatch("HeartBeat AuctionScan", function() ConfigureAuctionButton(scanButton) end)
+		GnomeWorks:RegisterMessageDispatch("HeartBeat AuctionScan", function() ConfigureAuctionButton(scanButton) end, "ConfigureAuctionButtons")
 
 		ConfigureAuctionButton(scanButton)
 

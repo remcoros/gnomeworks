@@ -20,20 +20,34 @@ do
 	local frame
 
 
-	function GnomeWorks:RegisterMessageDispatch(messageList, func, postProcess)
+	function GnomeWorks:RegisterMessageDispatch(messageList, func, name)
 		for message in string.gmatch(messageList, "%a+") do
 			if dispatchTable[message] then
 				local t = dispatchTable[message]
-				if postProcess then
-					t[#t+1] = func
-				else
-					table.insert(t,1,func)
+				local alreadyAdded
+
+				for i=1,#t do
+					if t[i].func == func then
+						alreadyAdded = true
+						break
+					end
 				end
 
+				if not alreadyAdded then
+					local newEntry = {
+						func = func,
+						name = name,
+						iterations=0,
+						elapsed=0,
+						index = #t+1,
+						maxTime = 0
+					}
 
+					t[#t+1] = newEntry
+				end
 			else
-				dispatchTable[message] = { func }
-				timingTable[#timingTable+1] = { name = message, iterations=0, elapsed=0, index = #timingTable+1, maxTime = 0 }
+				dispatchTable[message] = { { func = func, name = name, iterations=0, elapsed=0, index = 1, maxTime = 0, } }
+				timingTable[#timingTable+1] = { name = message, iterations=0, elapsed=0, index = #timingTable+1, maxTime = 0, subGroup = { entries = dispatchTable[message], expanded = false} }
 				dispatchIndex[message] = #timingTable
 			end
 		end
@@ -54,15 +68,28 @@ do
 
 				local hooks = 0
 
-				for k,func in ipairs(t) do
-					if func ~= "delete" then
+				for k,entry in ipairs(t) do
+					if entry ~= "delete" then
 						hooks = hooks + 1
 
-						if type(func) == "function" and func() then					-- message returns true when it's set to fire once
+						local entryTimeStart = GetTime()
+
+						if type(entry.func) == "function" and entry.func() then					-- message returns true when it's set to fire once
 							t[k] = "delete"
-						elseif type(func) == "string" and GnomeWorks[func](GnomeWorks) then
+						elseif type(entry.func) == "string" and GnomeWorks[entry.func](GnomeWorks) then
 							t[k] = "delete"
 						end
+
+						local elapsed = (GetTime()-entryTimeStart)
+
+						entry.elapsed = entry.elapsed + elapsed
+						entry.iterations = entry.iterations + 1
+						entry.last = elapsed
+
+						if elapsed > entry.maxTime then
+							entry.maxTime = elapsed
+						end
+
 					end
 				end
 
@@ -75,6 +102,7 @@ do
 					times.maxTime = elapsed
 				end
 
+				times.last = elapsed
 
 				times.elapsed = times.elapsed + elapsed
 
@@ -109,26 +137,99 @@ do
 	local function CreateDebugFrame()
 		local columnHeaders = {
 			{
+				font = "GameFontHighlight",
+				button = {
+					normalTexture = "Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga",
+					highlightTexture = "Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga",
+					width = 14,
+					height = 14,
+				},
 				align = "LEFT",
 				name = "event",
 				width = 90,
 				dataField = "name",
+				draw =	function (rowFrame,cellFrame,entry)
+							cellFrame.text:SetPoint("LEFT", cellFrame, "LEFT", entry.depth*8+4+12, 0)
+
+							if entry.subGroup then
+								if entry.subGroup.expanded then
+									cellFrame.button:SetNormalTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga")
+									cellFrame.button:SetHighlightTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga")
+								else
+									cellFrame.button:SetNormalTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_closed.tga")
+									cellFrame.button:SetHighlightTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_closed.tga")
+								end
+
+								cellFrame.text:SetText(entry.name or tostring(entry.func))
+								cellFrame.button:Show()
+
+								rowFrame:SetAlpha(1)
+							else
+								cellFrame.text:SetText(entry.name or tostring(entry.func))
+								cellFrame.button:Hide()
+
+								rowFrame:SetAlpha(.5)
+							end
+						end,
 				OnClick = function (cellFrame, button, source)
 							local rowFrame = cellFrame:GetParent()
+							local entry = rowFrame.data
+
 
 							if rowFrame.rowIndex > 0 then
-								local entry = rowFrame.data
+								if source == "button" then
+									entry.subGroup.expanded = not entry.subGroup.expanded
+									cellFrame.scrollFrame:Refresh()
+								else
+									if entry.subGroup then
+										GnomeWorks:SendMessageDispatch(entry.name)
+									else
+										local entryTimeStart = GetTime()
 
-								GnomeWorks:SendMessageDispatch(entry.name)
+										entry.func()
+
+										local elapsed = (GetTime()-entryTimeStart)
+
+										entry.elapsed = entry.elapsed + elapsed
+										entry.iterations = entry.iterations + 1
+										entry.last = elapsed
+
+										if elapsed > entry.maxTime then
+											entry.maxTime = elapsed
+										end
+
+										cellFrame.scrollFrame:Draw()
+									end
+								end
+							else
+								if source == "button" then
+									cellFrame.collapsed = not cellFrame.collapsed
+
+									if not cellFrame.collapsed then
+										GnomeWorks:CollapseAllHeaders(cellFrame.scrollFrame.data.entries)
+										cellFrame.scrollFrame:Refresh()
+
+										cellFrame.button:SetNormalTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_closed.tga")
+										cellFrame.button:SetHighlightTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_closed.tga")
+									else
+										GnomeWorks:ExpandAllHeaders(cellFrame.scrollFrame.data.entries)
+										cellFrame.scrollFrame:Refresh()
+
+										cellFrame.button:SetNormalTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga")
+										cellFrame.button:SetHighlightTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga")
+									end
+								end
 							end
 						end,
 			},
+--[[
 			{
 				name = "hooks",
 				align = "CENTER",
 				width = 60,
 				dataField = "listeners",
 			},
+]]
 			{
 				name = "count",
 				align = "CENTER",
@@ -188,6 +289,13 @@ do
 								cellFrame.scrollFrame:Draw()
 							end
 						end,
+			},
+			{
+				name = "last",
+				align = "CENTER",
+				width = 60,
+				dataField = "last",
+				precision = 100,
 			},
 	--
 		}

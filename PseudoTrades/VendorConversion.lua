@@ -322,7 +322,7 @@ do
 
 
 		return true
-	end)
+	end, "AddVendorConversionRecipes")
 end
 
 

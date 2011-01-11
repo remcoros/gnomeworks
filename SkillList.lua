@@ -433,7 +433,7 @@ DebugSpam("done parsing skill list")
 				self:OpenTradeLink(self:GetTradeLink(tradeID, player), player)
 			end
 
-			GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() DoRecipeSelection(recipeID) return true end)			-- return true = fire once
+			GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() DoRecipeSelection(recipeID) return true end, "SelectRecipe")			-- return true = fire once
 		else
 			DoRecipeSelection(recipeID)
 		end
@@ -463,7 +463,7 @@ DebugSpam("done parsing skill list")
 				end
 
 
-				GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() GnomeWorks:SelectEntry(entry) return true end)
+				GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() GnomeWorks:SelectEntry(entry) return true end, "SelectRecipe")
 			else
 				self:SelectEntry(entry)
 			end

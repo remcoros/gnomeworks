@@ -605,7 +605,7 @@ do
 		GnomeWorks:RegisterMessageDispatch("SelectionChanged", function()
 --print(GetTime(), "details changed")
 			GnomeWorks:ShowReagents(GnomeWorks.selectedSkill)
-		end)
+		end, "ShowReagents")
 
 		return reagentFrame
 	end
@@ -1082,7 +1082,7 @@ do
 
 		GnomeWorks:RegisterMessageDispatch("SelectionChanged", function()
 			self:ShowDetails(self.selectedSkill)
-		end)
+		end, "ShowDetails")
 
 		return detailFrame
 	end

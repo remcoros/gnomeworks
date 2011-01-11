@@ -1697,10 +1697,10 @@ do
 		local buttonConfig = {
 --			{ text = "Process", operation = ProcessQueue, width = 250, validate = SetProcessLabel, lineBreak = true, template = "SecureActionButtonTemplate" },
 			{ text = "Nothing To Process", name = "GWProcess", width = 250, validate = ConfigureButton, lineBreak = true, addSecure=true, template = "SecureActionButtonTemplate",
-						updateEvent = "QueueCountsChanged QueueChanged TradeProcessing InventoryScanComplete HeartBeat FrameMoved" },
+						updateEvent = "QueueCountsChanged QueueChanged TradeProcessing InventoryScanComplete HeartBeat" },
 			{ text = "Stop", operation = StopProcessing, width = 125 },
 			{ text = "Clear", operation = ClearQueue, width = 125, lineBreak = true },
-			{ text = "Scan Auctions", width = 250, validate = ConfigureAuctionButton, updateEvent = "HeartBeat AuctionScan" }
+			{ text = "Scan Auctions", width = 250, validate = ConfigureAuctionButton, updateEvent = "HeartBeat AuctionScanComplete" }
 		}
 
 
@@ -1861,7 +1861,7 @@ do
 					b:validate()
 				end
 			end
-		end)
+		end, "ValidateQueueButtons")
 
 		return controlFrame
 	end
@@ -2615,7 +2615,7 @@ do
 		frame.playerNameFrame = playerName
 
 
-		self:RegisterMessageDispatch("QueueChanged TradeScanComplete InventoryScanComplete AuctionScanComplete", function() if frame:IsShown() then GnomeWorks:ShowQueueList() end end)
+		self:RegisterMessageDispatch("QueueChanged TradeScanComplete InventoryScanComplete AuctionScanComplete", function() if frame:IsShown() then GnomeWorks:ShowQueueList() end end, "ShowQueueList")
 
 
 
