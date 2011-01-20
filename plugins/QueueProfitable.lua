@@ -12,6 +12,9 @@ do
 
 	local function Register()
 
+		if not LSW then return false end
+
+
 		function QueueProfitableRecipes()
 			local knownRecipes = GnomeWorks.data.knownSpells[GnomeWorks.player]
 			local tradeName = GetTradeSkillLine()
@@ -75,8 +78,8 @@ do
 		return true
 	end
 
-	plugin = GnomeWorks:RegisterPlugin("Queue Profitable", Register)
 
+	plugin = GnomeWorks:RegisterPlugin("Queue Profitable", Register)
 end
 
 

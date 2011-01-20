@@ -461,8 +461,8 @@ do
 
 
 	api.ConfigureMacroText = function(recipeID)
+		GnomeWorks:Restack(-recipeID, 5)
 		return "/cast "..GetSpellInfo(51005).."\r/use "..GetItemInfo(-recipeID)
-
 	end
 
 

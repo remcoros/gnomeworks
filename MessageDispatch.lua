@@ -22,33 +22,34 @@ do
 
 	function GnomeWorks:RegisterMessageDispatch(messageList, func, name)
 		for message in string.gmatch(messageList, "%a+") do
-			if dispatchTable[message] then
-				local t = dispatchTable[message]
-				local alreadyAdded
+			if not dispatchTable[message] then
+				dispatchTable[message] = {}
 
-				for i=1,#t do
-					if t[i].func == func then
-						alreadyAdded = true
-						break
-					end
-				end
-
-				if not alreadyAdded then
-					local newEntry = {
-						func = func,
-						name = name,
-						iterations=0,
-						elapsed=0,
-						index = #t+1,
-						maxTime = 0
-					}
-
-					t[#t+1] = newEntry
-				end
-			else
-				dispatchTable[message] = { { func = func, name = name, iterations=0, elapsed=0, index = 1, maxTime = 0, } }
 				timingTable[#timingTable+1] = { name = message, iterations=0, elapsed=0, index = #timingTable+1, maxTime = 0, subGroup = { entries = dispatchTable[message], expanded = false} }
 				dispatchIndex[message] = #timingTable
+			end
+
+			local t = dispatchTable[message]
+			local alreadyAdded
+
+			for i=1,#t do
+				if t[i].func == func then
+					alreadyAdded = true
+					break
+				end
+			end
+
+			if not alreadyAdded then
+				local newEntry = {
+					func = func,
+					name = name,
+					iterations=0,
+					elapsed=0,
+					index = #t+1,
+					maxTime = 0
+				}
+
+				t[#t+1] = newEntry
 			end
 		end
 

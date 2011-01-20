@@ -345,7 +345,7 @@ print("getTradeInfo", recipeID)
 		player = player or self.player or (UnitName("player"))
 
 		local spec = specializations[recipeID]
-		if spec then
+		if spec and self.data.playerData[player] then
 			local playerSpec = self.data.playerData[player].specializations
 
 			if playerSpec and playerSpec[spec.specID] then

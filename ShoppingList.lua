@@ -9,7 +9,7 @@ do
 	local shoppingListPlayer
 
 
-	local queueList = { "bank", "mail", "guildBank", "alt", "vendor", "auction" }
+	local queueList = { "bank", "mail", "guildBank", "alt", "sale", "vendor", "auction" }
 
 
 
@@ -186,59 +186,63 @@ do
 		if sf then
 			player = player or self.player
 
-			for k,queue in pairs(queueList) do
-				local itemCount = 0
+			if self.data.playerData[player] then
+				for k,queue in pairs(queueList) do
+					local itemCount = 0
 
-				if not sf.data.entries[k] then
-					sf.data.entries[k] = {}
-					sf.data.entries[k].subGroup = { expanded = true, entries = {} }
-				end
-
-				sf.data.entries[k].name = queue
-				sf.data.entries[k].index = k
-
-				sf.data.entries[k].color = inventoryColors[queue]
-
-				local data = sf.data.entries[k].subGroup.entries
-
-				if self.data[queue.."Queue"][player] then
-					local totalCost = 0
-
-					for itemID,count in pairs(self.data[queue.."Queue"][player]) do
-						local reagentCost
-
-						if queue == "vendor" then
-							if GnomeWorks:VendorSellsItem(itemID) then
-								local name,_,_,_,_,_,_,_,_,tex,sellCost = GetItemInfo(itemID)
-								reagentCost = ((sellCost or 0)) * 4 * count
-								totalCost = totalCost + reagentCost
-							end
-						elseif queue == "auction" then
-							reagentCost = GnomeWorks:GetAuctionCost(itemID, count)
-							totalCost = totalCost + reagentCost
-						end
-
-						if count then
-							itemCount = itemCount + 1
-
-							if data[itemCount] then
-								data[itemCount].itemID = itemID
-								data[itemCount].count = count
-								data[itemCount].index = itemCount
-								data[itemCount].cost = reagentCost
-							else
-								data[itemCount] = { itemID = itemID, count = count, index = itemCount, color = inventoryColors[queue], source = queue, cost = reagentCost }
-							end
-						end
+					if not sf.data.entries[k] then
+						sf.data.entries[k] = {}
+						sf.data.entries[k].subGroup = { expanded = true, entries = {} }
 					end
 
-					sf.data.entries[k].cost = totalCost
+					sf.data.entries[k].name = queue
+					sf.data.entries[k].index = k
+
+					sf.data.entries[k].color = inventoryColors[queue]
+
+					local data = sf.data.entries[k].subGroup.entries
+
+					local shoppingList = self.data.shoppingQueueData[player][queue]
+
+					if shoppingList then
+						local totalCost = 0
+
+						for itemID,count in pairs(shoppingList) do
+							local reagentCost
+
+							if queue == "vendor" then
+								if GnomeWorks:VendorSellsItem(itemID) then
+									local name,_,_,_,_,_,_,_,_,tex,sellCost = GetItemInfo(itemID)
+									reagentCost = ((sellCost or 0)) * 4 * count
+									totalCost = totalCost + reagentCost
+								end
+							elseif queue == "auction" then
+								reagentCost = GnomeWorks:GetAuctionCost(itemID, count)
+								totalCost = totalCost + reagentCost
+							end
+
+							if count then
+								itemCount = itemCount + 1
+
+								if data[itemCount] then
+									data[itemCount].itemID = itemID
+									data[itemCount].count = count
+									data[itemCount].index = itemCount
+									data[itemCount].cost = reagentCost
+								else
+									data[itemCount] = { itemID = itemID, count = count, index = itemCount, color = inventoryColors[queue], source = queue, cost = reagentCost }
+								end
+							end
+						end
+
+						sf.data.entries[k].cost = totalCost
+					end
+
+					sf.data.entries[k].subGroup.numEntries = itemCount
 				end
 
-				sf.data.entries[k].subGroup.numEntries = itemCount
+				sf:Refresh()
 			end
-
-			sf:Refresh()
 		else
 print("WTF?")
 		end

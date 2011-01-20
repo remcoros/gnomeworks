@@ -72,7 +72,8 @@ do
 
 		purchaseLockout = true
 
-		local vendorQueue = self.data.vendorQueue[player]
+		local vendorQueue = self.data.shoppingQueueData[player].vendor
+
 		local totalSpent = 0
 
 		for i=1,GetMerchantNumItems() do
@@ -169,7 +170,7 @@ do
 		self.atVendor = true
 
 		local player = UnitName("player")
-		local vendorQueue = self.data.vendorQueue[player]
+		local vendorQueue = self.data.shoppingQueueData[player].vendor
 
 		if vendorQueue and next(vendorQueue) then
 --[[

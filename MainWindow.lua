@@ -787,10 +787,20 @@ do
 							local itemLink = GnomeWorks:GetTradeSkillItemLink(entry.index)
 							local spellName = GnomeWorks:GetRecipeName(entry.recipeID)
 
+
 							if itemLink then
 								local itemID = tonumber(string.match(itemLink,"item:(%d+)"))
 
 								spellName = GnomeWorks:FilterRecipeName(spellName, itemID, entry.recipeID)
+							end
+
+							if GnomeWorks.player ~= "All Recipes" then
+								local known,reallyKnown = GnomeWorks:IsSpellKnown(entry.recipeID,GnomeWorks.player) -- trainable will but not yet learned will return true, false
+
+								if not reallyKnown then
+									local rankNeeded = GnomeWorks.data.trainableSpells[entry.recipeID]
+									spellName = string.format("%s |cff803030(trainable at %s)",spellName,rankNeeded or "??")
+								end
 							end
 
 
@@ -799,6 +809,8 @@ do
 							cellFrame.button:Hide()
 						end
 
+
+						local alpha = 1
 
 						local cr,cg,cb = 1,0,0
 
@@ -912,6 +924,8 @@ do
 								return
 							end
 
+							local inventoryIndex = GnomeWorksDB.config.inventoryIndex
+
 							if GnomeWorksDB.vendorOnly[entry.recipeID] then
 								if entry.bag and entry.bag ~= 0 then
 									cellFrame.text:SetFormattedText("%s|r+%s\226\136\158",string.format(inventoryFormat.bag,entry.bag),GnomeWorks.system.inventoryColors.vendor)
@@ -922,6 +936,8 @@ do
 								local display = ""
 								local low, hi
 								local lowKey, hiKey
+
+								local playerData = GnomeWorks.data.playerData[GnomeWorks.player]
 
 								for k,inv in ipairs(inventoryIndex) do
 									if (entry[inv] or 0) >0 then
@@ -934,10 +950,10 @@ do
 								if low then
 									for i=#inventoryIndex,low+1,-1 do
 										local key = inventoryIndex[i]
-										if key ~= "guildBank" or GnomeWorks.data.playerData[GnomeWorks.player].guild then
+										if key ~= "guildBank" or (playerData and playerData.guild) then
 											local key2 = inventoryIndex[i-1]
 
-											if key2 ~= "guildBank" or GnomeWorks.data.playerData[GnomeWorks.player].guild then
+											if key2 ~= "guildBank" or (playerData and playerData.guild)  then
 												if entry[key] > entry[key2] then
 													hi = i
 													hiKey = key
@@ -988,13 +1004,15 @@ do
 										GameTooltip:AddLine("\226\136\158 = unlimited through vendor")
 										GameTooltip:Show()
 
-									elseif entry.alt and entry.alt + entry.guildBank > 0 then
+									else --if entry.alt and entry.alt + entry.guildBank > 0 then
 										GameTooltip:SetOwner(cellFrame, "ANCHOR_TOPLEFT")
 										GameTooltip:ClearLines()
 										GameTooltip:AddLine("Recipe Craftability",1,1,1,true)
 										GameTooltip:AddLine(GnomeWorks.player.."'s inventory")
 
 										local checkGuildBank = GnomeWorks.data.playerData[GnomeWorks.player] and GnomeWorks.data.playerData[GnomeWorks.player].guild
+
+										local inventoryIndex = GnomeWorksDB.config.inventoryIndex
 
 										local prevCount = 0
 										for i,key in pairs(inventoryIndex) do
@@ -1003,9 +1021,10 @@ do
 
 												if count > prevCount then
 													GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..(count-prevCount))
+													prevCount = count
 												end
 
-												prevCount = count
+
 											end
 
 --[[
@@ -1050,6 +1069,8 @@ do
 								cellFrame.text:SetText("")
 								return
 							end
+
+							local inventoryIndex = GnomeWorksDB.config.inventoryIndex
 
 							local display = ""
 							local low, hi
@@ -1110,6 +1131,7 @@ do
 									if entry.totalInventory > 0 then
 										GameTooltip:SetOwner(cellFrame, "ANCHOR_TOPLEFT")
 										GameTooltip:ClearLines()
+										GameTooltip:AddLine("Recipe Craft Results",1,1,1,true)
 										GameTooltip:AddLine(GnomeWorks.player.."'s inventory")
 
 										local itemID = entry.itemID
@@ -1117,44 +1139,37 @@ do
 										local prev = 0
 										local checkGuildBank = GnomeWorks.data.playerData[GnomeWorks.player] and GnomeWorks.data.playerData[GnomeWorks.player].guild
 
-										for i,key in pairs(inventoryIndex) do
+										local inventoryIndex = GnomeWorksDB.config.inventoryIndex
+
+										for i,key in ipairs(inventoryIndex) do
 											if key ~= "vendor" and (key ~= "guildBank" or checkGuildBank) then
 												local count = entry.inventory[key] or 0
 
-												if count ~= 0 then -- prev ~= count and count ~= 0 then
-
-													if key == "alt" then
-														GameTooltip:AddDoubleLine(inventoryTags[key], inventoryColors[key]..(count-prev))
-
-														GameTooltip:AddLine("    ")
-
-														GameTooltip:AddLine("alt item locations:",.8,.8,.8)
-														for inventoryName, containers in pairs(GnomeWorks.data.inventoryData) do
-															if inventoryName ~= GnomeWorks.player then
-																local bag = 0
-																if containers.bag and containers.bag[itemID] then
-																	GameTooltip:AddDoubleLine("   "..inventoryColors.alt..inventoryName.."/bag",inventoryColors.alt..containers.bag[itemID])
-
-																	bag = containers.bag[itemID]
-																end
-																if containers.bank and containers.bank[itemID] and containers.bank[itemID] > bag then
-																	if string.find(inventoryName,"GUILD:") then
-																		local guildName = string.match(inventoryName,"GUILD:(.+)")
-																		if guildName ~= GnomeWorks.data.playerData[GnomeWorks.player].guild then
-																			GameTooltip:AddDoubleLine("   "..inventoryColors.alt..guildName.."/guildBank",inventoryColors.alt..(containers.bank[itemID] - bag))
-																		end
-																	else
-																		GameTooltip:AddDoubleLine("   "..inventoryColors.alt..inventoryName.."/bank",inventoryColors.alt..(containers.bank[itemID] - bag))
-																	end
-																end
-															end
-														end
-													else
-														GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..count)
-													end
+												if count ~= 0 then
+													GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..count)
 												end
 
 												prev = count
+											end
+										end
+
+										if GnomeWorksDB.config.inventoryTracked.alt and entry.inventory.alt>0 then
+											GameTooltip:AddLine("    ")
+
+											GameTooltip:AddLine("alt item locations:",.8,.8,.8)
+											for player, containers in pairs(GnomeWorks.data.inventoryData) do
+												if player ~= GnomeWorks.player then
+													for i,key in ipairs(inventoryIndex) do
+														if key ~= "vendor" and key ~= "guildBank" and key ~= "alt" then
+															local count = containers[key][itemID]
+
+															if count and count > 0 then
+																GameTooltip:AddDoubleLine("   "..inventoryColors.alt..player.."/"..key,inventoryColors.alt..count)
+															end
+														end
+													end
+
+												end
 											end
 										end
 
@@ -1281,19 +1296,26 @@ do
 		local function UpdateRowData(scrollFrame,entry,firstCall)
 			local player = GnomeWorks.player
 
+			local inventoryIndex = GnomeWorksDB.config.inventoryIndex
+
 			if not entry.subGroup then
 				local results, reagents, tradeID = GnomeWorks:GetRecipeData(entry.recipeID, player)
 
 				if next(reagents) then
-					local onHand = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "bag")
+					local onHand = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player)
 
-					local bag = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "craftedBag")
-					local vendor = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedBag")
-					local bank = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedBank")
-					local mail = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedMail")
-					local guildBank = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "vendor craftedGuildBank")
-					local alt = GnomeWorks:InventoryRecipeIterations(entry.recipeID, "faction", "vendor craftedMail")
+					local totalCraftable = 0
+					for inv,isTracked in pairs(GnomeWorksDB.config.inventoryTracked) do
+						if isTracked then
+							local iterations = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, inv)
 
+							entry[inv] = iterations
+
+							if iterations > totalCraftable then
+								totalCraftable = iterations
+							end
+						end
+					end
 
 					if onHand > 0 then
 						entry.craftable = onHand
@@ -1301,20 +1323,13 @@ do
 						entry.craftable = nil
 					end
 
-
-					entry.bag = bag
-					entry.vendor = vendor
-					entry.bank = bank
-					entry.mail = mail
-					entry.guildBank = guildBank
-					entry.alt = math.max(alt, guildBank)
+					entry.totalCraftable = totalCraftable
 				else
-					entry.bag = 0
-					entry.vendor = 0
-					entry.bank = 0
-					entry.guildBank = 0
-					entry.alt = 0
-					entry.mail = 0
+					for inv,isTracked in pairs(GnomeWorksDB.config.inventoryTracked) do
+						if isTracked then
+							entry[inv] = 0
+						end
+					end
 
 					entry.craftable = nil
 
@@ -1351,11 +1366,16 @@ do
 					entry.inventory = {}
 				end
 
+
+				local inventoryIndex = GnomeWorksDB.config.inventoryIndex
+
+
 				for k,inv in ipairs(inventoryIndex) do
 					entry.inventory[inv] = 0
 				end
 
 				entry.totalInventory = 0
+
 
 				if itemLink then
 
@@ -1399,8 +1419,8 @@ do
 		end
 
 		GnomeWorks:UpdateTradeButtons(player,tradeID)
-		GnomeWorks:ShowStatus()
 		GnomeWorks:ShowSkillList()
+
 
 		if not GnomeWorks.selectedEntry then
 			for i=1,#sf.dataMap do
@@ -1414,6 +1434,9 @@ do
 		ResizeMainWindow()
 
 		GnomeWorks:SendMessageDispatch("SelectionChanged")
+
+		GnomeWorks:ScheduleTimer("ShowStatus",.1)
+--		GnomeWorks:ShowStatus()
 	end
 
 
@@ -1524,15 +1547,18 @@ do
 	function GnomeWorks:ShowStatus()
 		local rank, maxRank, estimatedSkillUp = self:GetTradeSkillRank()
 
+
 		self.levelStatusBar:SetMinMaxValues(0,maxRank)
 		self.levelStatusBar:SetValue(rank)
 		self.levelStatusBar.estimatedLevel:SetMinMaxValues(0,maxRank)
-		self.levelStatusBar.estimatedLevel:SetValue(rank)
+
 --		self.levelStatusBar:Show()
 
 
 		if estimatedSkillUp then
 			self.levelStatusBar.estimatedLevel:SetValue(estimatedSkillUp)
+		else
+			self.levelStatusBar.estimatedLevel:SetValue(rank)
 		end
 
 		self.playerNameFrame:SetFormattedText("%s - %s", self.player or "??", self:GetTradeName(self.tradeID) or "??")
@@ -1654,7 +1680,7 @@ do
 					end
 				end
 
-				local guildName = GnomeWorks.data.playerData[(UnitName("player"))].guild
+				local guildName = GetGuildInfo("player")
 
 				if guildName then
 					playerMenu.text = "|cff80ff80"..guildName
@@ -1855,12 +1881,12 @@ do
 		end
 
 
-		local function MaterialsOnAlt(button)
+		local function MarerialsSomewhere(button)
 
 			local entry = GnomeWorks.selectedEntry
 
 			if entry then
-				if entry.alt and entry.alt >= 1 then
+				if entry.totalCraftable and entry.totalCraftable >= 1 then
 					button:Enable()
 					return
 				end
@@ -1900,20 +1926,16 @@ do
 
 				local _, _, _, _, _, _, _, itemStackCount = GetItemInfo(next(GnomeWorksDB.results[entry.recipeID]))
 
-				if entry.alt < 1 then
+				if entry.totalCraftable < 1 then
 					numItems = itemStackCount
 				else
-					if entry.bag > 1 then
-						numItems = entry.bag
-					elseif entry.vendor > 1 then
-						numItems = entry.vendor
-					elseif entry.bank > 1 then
-						numItems = entry.bank
-					else
-						numItems = entry.alt
+					for k,inv in ipairs(GnomeWorksDB.config.inventoryIndex) do
+						if entry[inv] and entry[inv]>0 then
+							numItems = entry[inv]
+							break
+						end
 					end
 				end
-
 
 
 				if numItems == LARGE_NUMBER then
@@ -1935,7 +1957,7 @@ do
 			{ text = "Queue", operation = AddToQueue, setting = "queueCount", width = 50 },
 			{ style = "EditBox", setting = "queueCount", width = 50, default = 1, name = "queueCountButton"},
 			{ text = "Create All", operation = Create, width = 70, validate = MaterialsOnHand },
-			{ text = "Queue All", operation = AddToQueue, width = 70, validate = MaterialsOnAlt },
+			{ text = "Queue All", operation = AddToQueue, width = 70, validate = MaterialsSomewhere },
 		}
 
 
@@ -2260,8 +2282,11 @@ do
 
 
 
-		local estimatedLevel = CreateFrame("StatusBar", nil, frame)
-		local level = CreateFrame("StatusBar", nil, estimatedLevel)
+		local estimatedLevel = CreateFrame("StatusBar", "GWEstimatedRank", frame)
+		local level = CreateFrame("StatusBar", "GWRank", estimatedLevel)
+
+
+		level:SetAllPoints(estimatedLevel)
 
 
 		estimatedLevel:SetPoint("TOPRIGHT",frame,"TOPRIGHT",-20,-34)
@@ -2272,27 +2297,26 @@ do
 		estimatedLevel:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
 		estimatedLevel:SetStatusBarColor(.05,.5,1,1)
 
-		estimatedLevel:SetMinMaxValues(1,75)
-		estimatedLevel:SetValue(75)
+--		estimatedLevel:SetMinMaxValues(1,75)
+--		estimatedLevel:SetValue(75)
 
 
 		level:SetOrientation("HORIZONTAL")
 		level:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
 		level:SetStatusBarColor(.05,.05,.75,1)
 
-		level:SetMinMaxValues(1,75)
-		level:SetValue(75)
+--		level:SetMinMaxValues(1,75)
+--		level:SetValue(75)
 
-		level:SetAllPoints(estimatedLevel)
 
 
 		self.Window:SetBetterBackdrop(estimatedLevel, levelBackDrop)
 		self.Window:SetBetterBackdropColor(estimatedLevel, 1,1,1,.5)
 
 		local levelText = level:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-		levelText:SetPoint("CENTER",0,1)
+		levelText:SetPoint("LEFT",0,1)
 		levelText:SetHeight(13)
-		levelText:SetWidth(100)
+		levelText:SetPoint("RIGHT",0,1)
 		levelText:SetJustifyH("CENTER")
 
 		level.text = levelText
@@ -2301,28 +2325,40 @@ do
 		estimatedLevel.level = level
 
 
-		estimatedLevel:SetScript("OnValueChanged", function(frame, value)
+		estimatedLevel:HookScript("OnValueChanged", function(frame, value)
 			local minValue, maxValue = frame:GetMinMaxValues()
 			local level = frame.level:GetValue()
 
+			if value/maxValue > .5 then
+				levelText:SetJustifyH("LEFT")
+			else
+				levelText:SetJustifyH("RIGHT")
+			end
+
 			if value ~= level then
-				levelText:SetFormattedText("%d(%d)/%d",value,level,maxValue)
+				levelText:SetFormattedText("  %d(+%d)/%d  ",level,value-level,maxValue)
+			else
+				levelText:SetFormattedText("  %d/%d  ",level,maxValue)
 			end
 		end)
 
 
-		level:SetScript("OnValueChanged", function(frame, value)
+		level:HookScript("OnValueChanged", function(frame, value)
 			local minValue, maxValue = frame:GetMinMaxValues()
 
-			frame.estimatedLevel:SetValue(value)
+			if value/maxValue > .5 then
+				levelText:SetJustifyH("LEFT")
+			else
+				levelText:SetJustifyH("RIGHT")
+			end
 
-			levelText:SetFormattedText("%d/%d",value,maxValue)
+			levelText:SetFormattedText("  %d/%d  ",value,maxValue)
 		end)
 
 
 
-
 		self.levelStatusBar = level
+
 
 
 
@@ -2393,7 +2429,7 @@ do
 		frame:HookScript("OnHide", function() if frame:IsVisible() then PlaySound("igCharacterInfoClose") end CloseTradeSkill() end)
 
 
-		self:RegisterMessageDispatch("TradeScanComplete", ScanComplete, "ShowMainWindow")
+		self:RegisterMessageDispatch("TradeScanComplete InventoryScanComplete", ScanComplete, "ShowMainWindow")
 
 		self:RegisterMessageDispatch("SkillListChanged SkillRanksChanged", function()
 			self:ShowSkillList()
@@ -2403,7 +2439,6 @@ do
 
 
 		self:RegisterMessageDispatch("SkillRanksChanged", function()
-
 			self:ShowStatus()
 		end, "ShowStatus")
 

@@ -2,18 +2,6 @@
 
 
 
---[[
-
-	create = craft it
-	collect = vendor or ah
-	fromBank = from bank
-	fromAlt = from alt (and alt name?)
-	fromGuildBank = from guildBank
-
-]]
-
-
-
 local LARGE_NUMBER = 1000000
 
 
@@ -47,9 +35,9 @@ do
 
 	local inventoryIndex = { "bag", "vendor", "bank", "mail", "guildBank", "alt" }
 
-	local collectInventories = { "bank", "mail", "guildBank", "alt" }
+--	local collectInventories = { "bank", "mail", "guildBank", "alt" }
 
-
+--[[
 	local inventoryColors = {
 --		queue = "|cffff0000",
 		bag = "|cffffff80",
@@ -65,7 +53,11 @@ do
 	for k,v in pairs(inventoryColors) do
 		inventoryTags[k] = v..k
 	end
+]]
 
+	local inventoryColors = GnomeWorks.system.inventoryColors
+	local inventoryFormat = GnomeWorks.system.inventoryFormat
+	local inventoryTags = GnomeWorks.system.inventoryTags
 
 	local queueFrame
 
@@ -116,208 +108,6 @@ do
 	end
 
 
-	local function AdjustQueueCountsTBR(player, entry)
-		local cost = 0
-
-		if entry.subGroup then
-			local count = entry.count
-			local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,player)
-
-			local numCraftable = count
-
-			local reagentAdded = {}
-
-			if not entry.reserved then
-				entry.reserved = {}
-			end
-
-			for itemID, numNeeded in pairs(reagents) do
-				local needed = count * numNeeded
-
-				entry.reserved[itemID] = math.max(0,math.min(needed, GnomeWorks:GetInventoryCount(itemID, player, "bag queue")))
-			end
-
-
-			for i=1,count do
-				for itemID in pairs(reagents) do
-					reagentAdded[itemID] = false
-				end
-
-				for k,reagent in ipairs(entry.subGroup.entries) do
-					local itemID = reagent.itemID
-					local numNeeded = reagents[itemID]
-
-					reagent.parent = entry.subGroup.entries
-
-					local stillNeeded = count*numNeeded - (entry.reserved[itemID] or 0)
-
-					if stillNeeded>0 then
-						if stillNeeded<numNeeded then
-							numNeeded = stillNeeded
-						end
-
-						if reagent.command == "collect" and reagent.source then
-							local sourceQueue
-
-							if reagent.source ~= "alt" then
-								numAvailable = GnomeWorks:GetInventoryCount(itemID, player, reagent.source)
-							else
-								numAvailable = GnomeWorks:GetFactionInventoryCount(itemID, player)
-							end
-
-							sourceQueue = GnomeWorks.data[reagent.source.."Queue"][player]
-
-							if numAvailable>(sourceQueue[itemID] or 0) then
-								reagent.costPer = 0
-								reagent.sourceQueue = sourceQueue
-
-								if not reagentAdded[itemID] then
-									reagentAdded[itemID] = reagent
-								else
-									if reagentAdded[itemID].costPer > reagent.costPer then
-										reagentAdded[itemID] = reagent
-									end
-								end
-							end
-						else
-							if GnomeWorks:VendorSellsItem(itemID) then
-								local name,_,_,_,_,_,_,_,_,tex,sellCost = GetItemInfo(itemID)
-
-								reagent.costPer = ((sellCost or 0) +1) * 4 * numNeeded
-								reagent.sourceQueue = GnomeWorks.data.vendorQueue[player]
-
-								if not reagentAdded[itemID] then
-									reagentAdded[itemID] = reagent
-								else
-									if reagentAdded[itemID].costPer > reagent.costPer then
-										reagentAdded[itemID] = reagent
-									end
-								end
-							else
-								sourceQueue = GnomeWorks.data.auctionQueue[player]
-
-								numAvailable = (GnomeWorks.data.inventoryData.auctionHouse[itemID] or 0) - (sourceQueue[itemID] or 0)
-
-								if numAvailable >= numNeeded then
-									reagent.costPer = GnomeWorks:GetAuctionCost(itemID, numNeeded, sourceQueue[itemID] or 0)
-
-									if not reagentAdded[itemID] then
-										reagentAdded[itemID] = reagent
-									else
-										if reagentAdded[itemID].costPer > reagent.costPer then
-											reagentAdded[itemID] = reagent
-										end
-									end
-
-									reagent.sourceQueue = sourceQueue
-								else
-									reagent.costPer = LARGE_NUMBER
-								end
-							end
-
-
-							if reagent.command == "create" then
-								local oldCount = reagent.count
-								local oldCost = reagent.costPer
-
-								local resultsReagent,reagentsReagent,tradeID = GnomeWorks:GetRecipeData(reagent.recipeID,player)
-
-								reagent.count = oldCount + math.ceil(numNeeded / resultsReagent[itemID])
-
-								reagent.costPer = AdjustQueueCounts(player, reagent) / resultsReagent[itemID] - costPer
-
-								if reagent.count > oldCount then
-									reagent.count = oldCount
-
-									if not reagentAdded[itemID] then
-										reagentAdded[itemID] = reagent
-									else
-										if reagentAdded[itemID].costPer > reagent.costPer then
-											reagentAdded[itemID] = reagent
-										end
-									end
-								end
-							end
-						end
-					end
-				end
-
-				for itemID,numNeeded in pairs(reagents) do
-					if reagentAdded[itemID] then
-						local stillNeeded = count*numNeeded - (entry.reserved[itemID] or 0)
-
-						if stillNeeded<numNeeded then
-							numNeeded = stillNeeded
-						end
-
-						local reagent = reagentAdded[itemID]
-
-						if reagent.command == "collect" then
-							entry.reserved[itemID] = (entry.reserved[itemID] or 0) + numNeeded
-							reagent.sourceQueue[itemID] = (reagent.sourceQueue[itemID] or 0) + numNeeded
-							reagent.count = reagent.count + numNeeded
-
-							cost = cost + reagent.costPer
-						elseif reagent.command == "create" then
-							local resultsReagent,reagentsReagent,tradeID = GnomeWorks:GetRecipeData(reagent.recipeID,player)
-
-							entry.reserved[itemID] = (entry.reserved[itemID] or 0) + resultsReagent[itemID]
-							reagent.sourceQueue[itemID] = (reagent.sourceQueue[itemID] or 0) + resultsReagent[itemID]
-
-							reagent.count = oldCount + math.ceil(numNeeded / resultsReagent[itemID])
-
-							cost = cost + reagent.costPer
-
-							if tradeID == 100001 then					-- vendor conversion
-								local vendorQueue = GnomeWorks.data.vendorQueue[player]
-								vendorQueue[itemID] = (vendorQueue[itemID] or 0) + reagent.count
-
-								if vendorQueue[itemID] == 0 then
-									vendorQueue[itemID] = nil
-								end
-							end
-						end
-
-					end
-				end
-
---[[
-								entry.reserved[itemID] = entry.reserved[itemID] + reagent.count * resultsReagent[itemID]
-
-
-								for itemID,numNeeded in pairs(reagentsReagent) do
-									GnomeWorks:ReserveItemForQueue(player, itemID, numNeeded * reagent.count)
-								end
-
-								for itemID,numMade in pairs(resultsReagent) do
-									GnomeWorks:ReserveItemForQueue(player, itemID, -numMade * reagent.count)
-								end
-
-								if tradeID == 100001 then					-- vendor conversion
-									local vendorQueue = GnomeWorks.data.vendorQueue[player]
-									vendorQueue[itemID] = (vendorQueue[itemID] or 0) + reagent.count
-
-									if vendorQueue[itemID] == 0 then
-										vendorQueue[itemID] = nil
-									end
-								end
-							end
-
-		]]
-			end
---print("adjusting recipe iteration count and reserved",GnomeWorks:GetRecipeName(entry.recipeID))
-			if not entry.manualEntry then
-				for itemID in pairs(entry.reserved) do
---if itemID == 43122 or entry.itemID == 43122 then
---	print("    ",(GetItemInfo(itemID)),entry.count, entry.reserved[itemID])
---end
-					entry.count = math.min(entry.count, math.floor(entry.reserved[itemID]/reagents[itemID]))
-				end
-			end
-		end
-
-		return cost
-	end
 
 
 	local function CalculateCheapestPath(recipeID, player, inventoryDelta, auctionDelta)
@@ -421,6 +211,7 @@ do
 
 			local cost = 0
 
+			local shoppingQueueData = GnomeWorks.data.shoppingQueueData[player]
 
 			if not entry.reserved then
 				entry.reserved = {}
@@ -451,15 +242,15 @@ do
 							numAvailable = GnomeWorks:GetFactionInventoryCount(itemID, player)
 						end
 
-						sourceQueue = GnomeWorks.data[reagent.source.."Queue"][player]
+						sourceQueue = shoppingQueueData[reagent.source]
 
 						numAvailable = numAvailable - (sourceQueue[itemID] or 0)
 					elseif GnomeWorks:VendorSellsItem(reagent.itemID) then
-						sourceQueue = GnomeWorks.data.vendorQueue[player]
+						sourceQueue = shoppingQueueData.vendor
 					else
-						sourceQueue = GnomeWorks.data.auctionQueue[player]
+						sourceQueue = shoppingQueueData.auction
 
-						numAvailable = GnomeWorks.data.inventoryData.auctionHouse[itemID] or 0
+						numAvailable = GnomeWorks.data.auctionInventory[itemID] or 0
 
 						numAvailable = numAvailable - (sourceQueue[itemID] or 0)
 					end
@@ -514,7 +305,7 @@ do
 					end
 
 					if tradeID == 100001 then					-- vendor conversion
-						local vendorQueue = GnomeWorks.data.vendorQueue[player]
+						local vendorQueue = shoppingQueueData.vendor
 						vendorQueue[itemID] = (vendorQueue[itemID] or 0) + reagent.count
 
 						if vendorQueue[itemID] == 0 then
@@ -547,6 +338,8 @@ do
 				entry.reserved[itemID] = entry.reserved[itemID] - (numNeeded * count)
 			end
 
+			local shoppingQueueData = GnomeWorks.data.shoppingQueueData[player]
+
 
 --			for k,reagent in ipairs(entry.subGroup.entries) do
 			for k=#entry.subGroup.entries,1,-1 do
@@ -560,11 +353,11 @@ do
 						local sourceQueue
 
 						if reagent.source then
-							sourceQueue = GnomeWorks.data[reagent.source.."Queue"][player]
+							sourceQueue = shoppingQueueData[reagent.source]
 						elseif GnomeWorks:VendorSellsItem(reagent.itemID) then
-							sourceQueue = GnomeWorks.data.vendorQueue[player]
+							sourceQueue = shoppingQueueData.vendor
 						else
-							sourceQueue = GnomeWorks.data.auctionQueue[player]
+							sourceQueue = shoppingQueueData.auction
 						end
 
 						if sourceQueue[itemID] then
@@ -823,7 +616,7 @@ do
 			for itemID, numNeeded in pairs(GnomeWorksDB.reagents[recipeID]) do
 				local needed = count * numNeeded
 
-				newEntry.reserved[itemID] = math.min(needed, GnomeWorks:GetInventoryCount(itemID, player, "bag queue"))
+				newEntry.reserved[itemID] = math.min(needed, GnomeWorks:GetInventoryCount(itemID, GnomeWorks.player, "bag queue"))
 			end
 		end
 
@@ -902,6 +695,7 @@ do
 
 		local source = GnomeWorks.data.itemSource
 
+		local collectInventories = GnomeWorksDB.config.collectInventories
 
 
 		local stillNeeded = numNeeded - GnomeWorks:GetInventoryCount(reagentID, player, "bag")
@@ -1185,33 +979,23 @@ do
 
 
 	function BuildSourceQueues(player, queue)
-		local vendorQueue = GnomeWorks.data.vendorQueue[player]
-		local auctionQueue = GnomeWorks.data.auctionQueue[player]
-		local bankQueue = GnomeWorks.data.bankQueue[player]
-		local guildBankQueue = GnomeWorks.data.guildBankQueue[player]
-		local altQueue = GnomeWorks.data.altQueue[player]
-		local mailQueue = GnomeWorks.data.mailQueue[player]
-
 		if queue then
+			local shoppingQueueData = self.data.shoppingQueueData[player]
+
 			for k,entry in ipairs(queue) do
 				if entry.command == "collect" then
 					local sourceQueue
 
 					if not entry.source then
 						if GnomeWorks:VendorSellsItem(entry.itemID) then
-							sourceQueue = vendorQueue
+							sourceQueue = shoppingQueueData.vendor
 						else
-							sourceQueue = auctionQueue
+							sourceQueue = shoppingQueueData.auction
 						end
-					elseif entry.source == "bank" then
-						sourceQueue = bankQueue
-					elseif entry.source == "guildBank" then
-						sourceQueue = guildBankQueue
-					elseif entry.source == "mail" then
-						sourceQueue = mailQueue
-					elseif entry.source == "alt" then
-						sourceQueue = altQueue
+					else
+						sourceQueue = shoppingQueueData[entry.source]
 					end
+
 
 					if sourceQueue then
 						sourceQueue[entry.itemID] = (sourceQueue[entry.itemID] or 0) + entry.count
@@ -1223,6 +1007,8 @@ do
 
 				elseif entry.command == "create" then
 					local results, reagents, tradeID = GnomeWorks:GetRecipeData(entry.recipeID)
+
+					local vendorQueue = shoppingQueueData.vendor
 
 					if tradeID == 100001 then					-- vendor conversion
 						vendorQueue[entry.itemID] = (vendorQueue[entry.itemID] or 0) + entry.count
@@ -1278,14 +1064,9 @@ do
 
 			self.data.inventoryData[player].queue = table.wipe(self.data.inventoryData[player].queue or {})
 
-			self.data.vendorQueue[player] = table.wipe(self.data.vendorQueue[player] or {})
-			self.data.auctionQueue[player] = table.wipe(self.data.auctionQueue[player] or {})
-			self.data.bankQueue[player] = table.wipe(self.data.bankQueue[player] or {})
-			self.data.guildBankQueue[player] = table.wipe(self.data.guildBankQueue[player] or {})
-			self.data.altQueue[player] = table.wipe(self.data.altQueue[player] or {})
-			self.data.mailQueue[player] = table.wipe(self.data.mailQueue[player] or {})
-			self.data.auctionQueue[player] = table.wipe(self.data.auctionQueue[player] or {})
-
+			for shoppingList,data in pairs(self.data.shoppingQueueData[player]) do
+				table.wipe(data)
+			end
 
 --			table.wipe(GnomeWorks.data.skillUpRanks)
 
@@ -1349,7 +1130,7 @@ do
 				end
 
 				if q.command == "create" and (q.count or 0) > 0 then
-					local count = GnomeWorks:InventoryRecipeIterations(q.recipeID, queuePlayer, "bag")
+					local count = GnomeWorks:InventoryRecipeIterations(q.recipeID, queuePlayer)
 					if count>0 then
 						return q, count
 					end
@@ -1571,11 +1352,14 @@ do
 		local function ClearQueue()
 			table.wipe(GnomeWorks.data.queueData[queuePlayer])
 			table.wipe(GnomeWorks.data.inventoryData[queuePlayer].queue)
+			for inv, data in pairs (GnomeWorks.data.craftabilityData[queuePlayer]) do
+				table.wipe(data)
+			end
+
 			table.wipe(GnomeWorks.data.skillUpRanks)
 
-			GnomeWorks:InventoryScan()
-
-			GnomeWorks:SendMessageDispatch("QueueChanged SkillRanksChanged")
+			GnomeWorks:InventoryProcess()
+			GnomeWorks:SendMessageDispatch("QueueChanged SkillRanksChanged SkillListChanged")
 		end
 
 
@@ -1617,7 +1401,10 @@ do
 			elseif entry then
 				local _,_,tradeID = GnomeWorks:GetRecipeData(entry.recipeID)
 --print(entry.count)
-				button:SetFormattedText("Process %s x %d",GnomeWorks:GetRecipeName(entry.recipeID) or "spell:"..entry.recipeID,math.min(entry.numCraftable or 1,entry.count or 1))
+
+				local count = math.max(math.min(craftable or 1,entry.count or 1),1)
+
+				button:SetFormattedText("Process %s x %d",GnomeWorks:GetRecipeName(entry.recipeID) or "spell:"..entry.recipeID,count)
 				button:Enable()
 
 				local pseudoTrade = GnomeWorks.data.pseudoTradeData[tradeID]
@@ -2019,6 +1806,7 @@ do
 								local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,GnomeWorks.player)				--GnomeWorksDB.results[entry.recipeID]
 --								local reagents = GnomeWorksDB.reagents[entry.recipeID]
 
+
 								if entry then
 									GameTooltip:SetOwner(rowFrame, "ANCHOR_TOPRIGHT")
 									GameTooltip:ClearLines()
@@ -2043,6 +1831,8 @@ do
 											GameTooltip:AddDoubleLine("Required", required)
 
 											GameTooltip:AddLine("Current Stock:",1,1,1)
+
+											local inventoryIndex = GnomeWorksDB.config.inventoryIndex
 
 											for i,key in pairs(inventoryIndex) do
 												if key ~= "vendor" then

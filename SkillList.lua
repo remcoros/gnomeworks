@@ -73,6 +73,7 @@ do
 		[100001] = true,		-- "Vendor Conversion",
 	}
 
+
 	local pseudoTrades = {
 		[51005] = GetSpellInfo(51005),			-- milling
 		[13262] = GetSpellInfo(13262),			-- disenchant
@@ -200,10 +201,44 @@ do
 DebugSpam("parsing skill list")
 		local playerName = UnitName("player")
 
-		self.data.playerData[playerName] = { links = {}, build = clientBuild, guild = GetGuildInfo("player"), specializations = {} }
+		local guild = GetGuildInfo("player")
 
+
+		if not self.data.playerData[playerName] then
+			self.data.playerData[playerName] = { links = {}, guildInfo = {}, specializations = {} }
+		end
 
 		local playerData = self.data.playerData[playerName]
+
+		if not playerData.link then
+			playerData.links = {}
+		end
+
+		if not playerData.guildInfo then
+			playerData.guildInfo = {}
+		end
+
+		if not playerData.specializations then
+			playerData.specializations = {}
+		end
+
+		table.wipe(playerData.links)
+
+		playerData.build = clientBuild
+
+		playerData.guild = guild
+
+		if guild then
+			if playerData.guildInfo.name ~= guild then
+				playerData.guildInfo.name = guild
+				playerData.guildInfo.tabs = { true,true,true,true,true,true } -- default to full access until scan says otherwise
+			end
+		else
+			table.wipe(playerData.guildInfo)
+		end
+
+--		{ links = {}, build = clientBuild, guild = GetGuildInfo("player"), guildInfo = { name = GetGuildInfo("player"), tabs = {} }, specializations = {} }
+
 
 		for k,id in pairs(tradeIDList) do
 			if not fakeTrades[id] then
@@ -215,6 +250,7 @@ DebugSpam("found ", link, tradeLink)
 
 					if unlinkableTrades[id] then
 						local level = "1:1"
+
 
 						if levelBasis[id] then
 							local _,link = GetSpellLink(levelBasis[id])
@@ -739,6 +775,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 						knownSpells[recipeID] = true
 
 
+
 						if currentGroup then
 --							GnomeWorks:RecipeGroupAddRecipe(currentGroup, recipeID, i, true)
 						else
@@ -835,6 +872,8 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 								knownItems[itemID] = true
 							end
 						end
+
+
 					end
 				else
 					gotNil = true
@@ -863,7 +902,15 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		end
 
 
-		self:InventoryScan()
+
+		for inv, data in pairs(self.data.craftabilityData[self.player]) do
+			table.wipe(data)
+		end
+
+
+--		self:InventoryScan()
+
+
 
 -- re-regsiter the update events again now that we're done scanning
 --		RegisterUpdateEvents()
@@ -1158,7 +1205,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		player = player or self.player
 
 		if self.data.knownSpells[player] and self.data.knownSpells[player][recipeID] then
-			return true
+			return true,true
 		else
 			local skillNeeded = self.data.trainableSpells[recipeID]
 			if skillNeeded then
@@ -1167,11 +1214,11 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 				local rank,maxRank,estimatedRank = self:GetTradeSkillRank(player, tradeID)
 
 				if (estimatedRank or rank ) >= skillNeeded then
-					return true
+					return true, false
 				end
 			end
 
-			return false
+			return false,false
 		end
 	end
 end

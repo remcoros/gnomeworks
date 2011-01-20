@@ -116,7 +116,7 @@ do
 
 						if (singleItemID and itemID == singleItemID) or (not singleItemID and itemID) then
 
-							local count = singleItemCount or self.data.bankQueue[player][itemID]
+							local count = singleItemCount or self.data.shoppingQueueData[player].bank[itemID]
 
 							if count and count > 0 then
 								local _,numAvailable = GetContainerItemInfo(bag, i)
@@ -145,7 +145,7 @@ do
 									if singleItemCount then
 										singleItemCount = singleItemCount - numMoved
 									else
-										self.data.bankQueue[player][itemID] = self.data.bankQueue[player][itemID] - numMoved
+										self.data.shoppingQueue[player].bank[itemID] = self.data.shoppingQueue[player].bank[itemID] - numMoved
 									end
 
 									self:print(string.format("collecting %s x %s from bank",itemName,numMoved))
@@ -201,7 +201,7 @@ do
 
 		self.atBank = true
 
-		local bankQueue = self.data.bankQueue[(UnitName("player"))]
+		local bankQueue = self.data.shoppingQueueData[(UnitName("player"))].bank
 
 		if bankQueue and next(bankQueue) then
 			self:ShoppingListShow((UnitName("player")))
@@ -225,7 +225,7 @@ do
 
 		self.atGuildBank = true
 
-		local guildBankQueue = self.data.guildBankQueue[(UnitName("player"))]
+		local guildBankQueue = self.data.shoppingQueueData[(UnitName("player"))].guildBank
 
 		if guildBankQueue and next(guildBankQueue) then
 			self:ShoppingListShow((UnitName("player")))
@@ -248,7 +248,7 @@ do
 		local itemMoved
 		local bagErr
 
-		local player = self.player or UnitName("player")
+		local player = UnitName("player")
 		local playerData = self.data.playerData
 
 		local guild = playerData[player].guild or GetGuildInfo("player")
@@ -277,7 +277,7 @@ do
 						local itemID = tonumber(string.match(link, "item:(%d+)"))
 
 						if (singleItemID and itemID == singleItemID) or (not singleItemID and itemID) then
-							local count = singleItemCount or self.data.guildBankQueue[player][itemID]
+							local count = singleItemCount or self.data.shoppingQueueData[player].guildBank[itemID]
 
 							if count and count > 0 then
 								ClearCursor()
@@ -302,7 +302,7 @@ do
 									if singleItemCount then
 										singleItemCount = singleItemCount - numMoved
 									else
-										self.data.guildBankQueue[player][itemID] = self.data.guildBankQueue[player][itemID] - numMoved
+										self.data.shoppingQueueData[player].guildBank[itemID] = self.data.shoppingQueueData[player].guildBank[itemID] - numMoved
 									end
 
 									self:print(string.format("collecting %s x %s from guild bank",itemName,numMoved))
@@ -335,35 +335,46 @@ do
 
 		local itemMoved
 
-		local player = self.player or UnitName("player")
-		local playerData = self.data.playerData
+		local player = UnitName("player")
+		local playerData = self.data.playerData[player]
 
-		local guild = playerData[player].guild or GetGuildInfo("player")
+		local guild = GetGuildInfo("player")
 
-		local key = "GUILD:"..guild
+		playerData.guildInfo.name = guild
 
-		if not self.data.inventoryData[key] then
-			self.data.inventoryData[key] = { bank = {} }
+		if not playerData.guildInfo.tabs then
+			playerData.guildInfo.tabs = {}
 		end
 
-		local invData = self.data.inventoryData[key].bank
+
+
+		if not self.data.guildInventory[guild] then
+			self.data.guildInventory[guild] = {}
+		end
+
+		local invData = self.data.guildInventory[guild]
 
 
 		table.wipe(invData)
+		table.wipe(playerData.guildInfo.tabs)
 
 
 		-- temporarily disable bag update scanning while we're grabbing items from the bank.  we'll do a manual adjustment after each retrieval
 		self:UnregisterEvent("GUILDBANKBAGSLOTS_CHANGED")
 		self:UnregisterEvent("BAG_UPDATE")
 
-		for id,cache in pairs(bagCache) do
-			table.wipe(cache)
-		end
 
 		local numTabs = GetNumGuildBankTabs()
 
+
 		for tab=1,numTabs do
 			local name, icon, isViewable, canDeposit, numWithdrawals, remainingWithdrawals = GetGuildBankTabInfo(tab)
+
+			invData[tab] = {}
+
+			if numWithdrawals>0 then
+				playerData.guildInfo.tabs[tab] = true
+			end
 
 			for slot=1,98 do
 				if GetGuildBankItemInfo(tab,slot) then
@@ -373,8 +384,8 @@ do
 						local _,numAvailable = GetGuildBankItemInfo(tab, slot)
 						local itemID = tonumber(string.match(link, "item:(%d+)"))
 
-						if self.data.reagentUsage[itemID] or self.data.itemSource[itemID] then
-							invData[itemID] = (invData[itemID] or 0) + numAvailable
+						if self.data.trackedItems[itemID] then
+							invData[tab][itemID] = (invData[tab][itemID] or 0) + numAvailable
 						end
 					else
 						bankScanComplete = false
@@ -387,6 +398,23 @@ do
 
 		self:RegisterEvent("GUILDBANKBAGSLOTS_CHANGED")
 		self:RegisterEvent("BAG_UPDATE")
+
+		local dependency
+
+		for k,inv in ipairs(GnomeWorksDB.config.inventoryIndex) do
+			if inv == "guildBank" then
+				dependency = k
+				break
+			end
+		end
+
+		for playerName, playerData in pairs(self.data.playerData) do
+			if playerData.guild == guild then
+				for i=dependency,#GnomeWorksDB.config.inventoryIndex do
+					table.wipe(self.data.craftabilityData[playerName][GnomeWorksDB.config.inventoryIndex[i]])
+				end
+			end
+		end
 
 		self:InventoryScan()
 

@@ -4,6 +4,9 @@ local modName, modTable = ...
 
 local VERSION = ("@project-revision@")
 
+if type(VERSION) ~= "number" then
+	VERSION = 111
+end
 
 
 GnomeWorks = { plugins = {} }
@@ -17,35 +20,278 @@ LibStub("AceTimer-3.0"):Embed(GnomeWorks)
 
 
 
+do
+	local f = CreateFrame("Frame")
+
+
+	f:SetScript("OnEvent",function(f,...)
+		print(...)
+	end)
+
+--	f:RegisterAllEvents()
+
+end
+
+
+
+do
+	local f = CreateFrame("Frame")
+
+	local timer = {}
+	local handler = {}
+	local failure = {}
+
+
+--	GnomeWorks:ExecuteOnEvent("UPDATE_PENDING_MAIL", ProcessPurchase, entry, 0.25, ReportFailedPurchase)
+
+
+
+	function GnomeWorks:ExecuteOnEvent(event, funcSuccess, argSuccess, timeOut, funcFail, argFail)
+		timer[event] = timeOut
+		handler[event] = { funcSuccess, argSuccess }
+		failure[event] = { funcFail, argFail }
+
+		f:RegisterEvent(event)
+	end
+
+
+	local function RemoveEvent(event)
+		timer[event] = nil
+		handler[event] = nil
+		failure[event] = nil
+		f:UnregisterEvent(event)
+	end
+
+
+	local function EventHandler(frame, event, ...)
+		if handler[event] then
+			local func,arg = unpack(handler[event])
+
+			func(arg,...)
+			RemoveEvent(event)
+		end
+	end
+
+
+	local function OnUpdate(frame, elapsed)
+		for event in pairs(failure) do
+			if timer[event] then
+				timer[event] = timer[event] - elapsed
+				if timer[event] < 0 then
+					local func,arg = unpack(failure[event])
+
+					if func then
+						func(arg)
+					end
+
+					RemoveEvent(event)
+				end
+			end
+		end
+	end
+
+
+	f:SetScript("OnUpdate", OnUpdate)
+
+	f:SetScript("OnEvent", EventHandler)
+
+end
+
+
+do
+	local tipBackDrop = {
+			bgFile="Interface\\Tooltips\\UI-Tooltip-Background",
+			edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",
+			tile=true,
+			tileSize = 16,
+			edgeSize = 16,
+			insets = { left = 5, right = 5, top = 5, bottom = 4 }
+		}
+
+	local pluginInputBox = CreateFrame("Frame", nil, UIParent)
+
+	pluginInputBox:SetBackdrop(tipBackDrop)
+	pluginInputBox:SetBackdropBorderColor(TOOLTIP_DEFAULT_COLOR.r, TOOLTIP_DEFAULT_COLOR.g, TOOLTIP_DEFAULT_COLOR.b)
+	pluginInputBox:SetBackdropColor(TOOLTIP_DEFAULT_BACKGROUND_COLOR.r, TOOLTIP_DEFAULT_BACKGROUND_COLOR.g, TOOLTIP_DEFAULT_BACKGROUND_COLOR.b)
+
+	pluginInputBox:SetHeight(40)
+	pluginInputBox:SetWidth(150)
+	pluginInputBox:Hide()
+
+	do
+		local label = pluginInputBox:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		label:SetPoint("TOPLEFT",5,-5)
+		label:SetHeight(13)
+		label:SetPoint("RIGHT",-5,0)
+		label:SetJustifyH("LEFT")
+
+		pluginInputBox.label = label
+
+		local editBox = CreateFrame("EditBox",nil,pluginInputBox)
+		editBox:SetPoint("BOTTOMLEFT",5,5)
+		editBox:SetHeight(13)
+		editBox:SetPoint("RIGHT",-5,0)
+		editBox:SetJustifyH("LEFT")
+
+		editBox:SetAutoFocus(true)
+
+		editBox:SetScript("OnEnterPressed",function(f) pluginInputBox:Hide() EditBox_ClearFocus(f) pluginInputBox:SetVariable(f:GetText()) end)
+		editBox:SetScript("OnEscapePressed", function(f) pluginInputBox:Hide() EditBox_ClearFocus(f) end)
+		editBox:SetScript("OnEditFocusLost", EditBox_ClearHighlight)
+		editBox:SetScript("OnEditFocusGained", EditBox_HighlightText)
+
+		editBox:EnableMouse(true)
+		editBox:SetFontObject("GameFontHighlightSmall")
+
+		pluginInputBox.editBox = editBox
+
+		pluginInputBox:SetScript("OnUpdate", function(p)
+			UIDropDownMenu_StopCounting(p.button:GetParent())
+		end)
+
+
+		pluginInputBox:SetScript("OnHide", function(p)
+			p:Hide()
+		end)
+	end
+
+
+
+	local function AddButton(plugin, text, func)
+		local new = { text = text, func = func }
+
+		table.insert(plugin.menuList, new)
+
+		return new
+	end
+
+
+	function pluginInputBox:SetVariable(value)
+		local varTable = pluginInputBox.varTable
+		varTable.value = value
+		pluginInputBox.plugin:Update()
+
+		varTable.menuButton.text = string.format(varTable.format, varTable.value)
+		pluginInputBox.button:SetText(varTable.menuButton.text)
+	end
+
+
+
+	local function DoTextEntry(button, plugin, var)
+		pluginInputBox.label:SetText(plugin.variables[var].label)
+		pluginInputBox.editBox:SetText(plugin.variables[var].value)
+		pluginInputBox:Show()
+		pluginInputBox:SetPoint("TOPLEFT",button,"TOPRIGHT",10,0)
+
+		pluginInputBox.plugin = plugin
+		pluginInputBox.varTable = plugin.variables[var]
+		pluginInputBox.button = button
+
+--		UIDropDownMenu_StopCounting(button:GetParent())
+		pluginInputBox:SetParent(button)
+	end
+
+
+	local function AddInput(plugin, var)
+		if plugin.variables[var] then
+			local new = {
+				arg1 = plugin,
+				arg2 = var,
+				notCheckable = true,
+				func = DoTextEntry,
+				keepShownOnClick = true,
+			}
+
+
+			new.text = string.format(plugin.variables[var].format, plugin.variables[var].value)
+
+			plugin.variables[var].menuButton = new
+
+			table.insert(plugin.menuList, new)
+
+			return new
+		else
+			GnomeWorks:warning(plugin.name,"tried to add an input entry a non-existant variable ("..(var or "nil")..")")
+		end
+	end
+
+
+	--[[
+
+		GnomeWorks:RegisterPlugin(name, shortName)
+
+		name - name of plugin (eg "LilSparky's Workshop")
+		initialize - function to call prior to initializing gnomeworks
+
+		returns plugin table (used for connecting other functions to plugin)
+	]]
+
+	function GnomeWorks:RegisterPlugin(name, initialize)
+		local plugin = {
+			name = name,
+			AddButton = AddButton,
+			AddInput = AddInput,
+			enabled = true,
+			initialize = initialize,
+			menuList = {
+			},
+			variables = {
+			},
+			Update = function() end,
+		}
+
+		GnomeWorks.plugins[name] = plugin
+
+		return plugin
+	end
+end
 
 
 do
 	GnomeWorks.system = {
-		inventoryIndex = { "bag", "vendor", "bank", "mail", "guildBank", "alt" },
+		inventoryIndex = { "bag", "vendor", "bank", "mail", "sale", "guildBank", "alt" },
 
 		inventoryColorBlindTag = {
 			bag = "",
 			vendor = "v",
 			bank = "b",
 			mail = "m",
+			sale = "s",
 			guildBank = "g",
 			alt = "a",
 			auction = "$",
 		},
 
 		inventoryColors = {
-			bag = "|cffffff80",
-			vendor = "|cff80ff80",
-			bank =  "|cffffa050",
-			guildBank = "|cff5080ff",
-			alt = "|cffff80ff",
-			auction = "|cffb0b000",
-			mail = "|cff60fff0",
+			bag = 		"|cffffff80",		-- yellow
+			vendor = 	"|cff80ff80",		-- green
+			bank =  	"|cffffa050",		-- salmon
+			guildBank = "|cff5080ff",		-- blue
+			alt = 		"|cffff80ff",		-- pink
+			auction = 	"|cffb0b000",		-- gold
+			mail = 		"|cff60fff0",		-- teal
+			sale = 		"|cff30b080",		-- dark green
 		},
 
 		inventoryFormat = {},
 
 		inventoryTags = {},
+
+		factionContainer = "guildBank",
+
+		inventoryBasis = {
+			bag = "bag queue",
+			vendor = "bag vendor queue",
+			bank = "bag vendor bank queue",
+			mail = "bag vendor bank mail queue",
+			sale = "bag vendor bank mail sale queue",
+			guildBank = "bag vendor bank mail sale guildBank queue",
+		},
+
+
+		containerIndex = { "bag", "bank", "mail", "sale" },
+
+		collectInventories = { "bank", "mail", "sale", "guildBank", "alt" },
 	}
 
 
@@ -53,9 +299,9 @@ do
 		GnomeWorks.system.inventoryTags[k] = v..k
 
 		if ( ENABLE_COLORBLIND_MODE == "1" ) then
-			GnomeWorks.system.inventoryFormat[k] = string.format("%%d|cffa0a0a0%s|r", GnomeWorks.system.inventoryColorBlindTag[k])
+			GnomeWorks.system.inventoryFormat[k] = string.format("%%s|cffa0a0a0%s|r", GnomeWorks.system.inventoryColorBlindTag[k])
 		else
-			GnomeWorks.system.inventoryFormat[k] = string.format("%s%%d|r",v)
+			GnomeWorks.system.inventoryFormat[k] = string.format("%s%%s|r",v)
 		end
 	end
 
@@ -80,6 +326,22 @@ local defaultConfig = {
 	scrollFrameLineHeight = 15,
 	currentGroup = { self = {}, alt = {} },
 	currentFilter = { self = {}, alt = {} },
+
+	inventoryTracked = {
+		bag = true,
+		vendor = true,
+		bank = true,
+		guildBank = true,
+		alt = true,
+		mail = true,
+		sale = true
+	},
+
+	inventoryIndex = { "bag", "vendor", "bank", "mail", "sale", "guildBank", "alt" },
+
+	containerIndex = { "bag", "bank", "mail", "sale" },
+
+	collectInventories = { "bank", "mail", "sale", "guildBank", "alt" },
 }
 
 
@@ -153,6 +415,14 @@ do
 
 		GnomeWorks:print("Initializing (r"..VERSION..")")
 
+		if (GnomeWorksDB.gwVersion or 0) < 111 then
+			GnomeWorksDB.serverData = {}
+			GnomeWorks:warning("deleting server data due to format change")
+		end
+
+		GnomeWorksDB.gwVersion = VERSION
+
+
 		local player = UnitName("player")
 
 		LoadAddOn("Blizzard_TradeSkillUI")
@@ -175,7 +445,7 @@ do
 
 		local function DeepCopy(src,dst)
 			for k,v in pairs(src) do
-				if not dst[k] then
+				if dst[k] == nil then
 					dst[k] = v
 				else
 					if type(v) == "table" then
@@ -211,7 +481,7 @@ do
 			end
 		end
 
-		InitDBTables("config", "serverData", "vendorItems", "results", "names", "reagents", "tradeIDs", "skillUps", "vendorOnly")
+		InitDBTables("serverData", "vendorItems", "results", "names", "reagents", "tradeIDs", "skillUps", "vendorOnly")
 
 
 
@@ -232,6 +502,9 @@ do
 				end
 			end
 		end
+
+
+		InitServerDBTables(factionServer, "guildInventory", "auctionInventory")
 
 
 --		InitServerDBTables(factionServer, "auctionData")
@@ -259,19 +532,40 @@ do
 			end
 		end
 
-		for k, player in pairs({ player, "All Recipes" } ) do
-			InitServerPlayerDBTables(factionServer, player, "playerData", "inventoryData", "queueData", "recipeGroupData", "cooldowns", "vendorQueue","bankQueue","guildBankQueue","auctionQueue","altQueue","mailQueue","auctionQueue","knownSpells", "knownItems")
 
-			for k, container in pairs({ "bag", "bank", "mail", "craftedBag", "craftedBank", "craftedMail", "craftedGuildBank"}) do
-				if not GnomeWorks.data.inventoryData[player][container] then
-					GnomeWorks.data.inventoryData[player][container] = {}
+		for k, player in pairs({ player, "All Recipes" } ) do
+			InitServerPlayerDBTables(factionServer, player, "playerData", "inventoryData", "craftabilityData", "shoppingQueueData", "queueData", "recipeGroupData", "cooldowns", "knownSpells", "knownItems")
+
+			local invData = GnomeWorks.data.inventoryData[player]
+			local craftabilityData = GnomeWorks.data.craftabilityData[player]
+			local shoppingQueueData = GnomeWorks.data.shoppingQueueData[player]
+
+			for k, container in pairs(GnomeWorksDB.config.inventoryIndex) do
+				if container ~= "alt" and container ~= "vendor" and container ~= "guildBank" then
+					if not invData[container] then
+						invData[container] = {}
+					end
 				end
+
+				if not craftabilityData[container] then
+					craftabilityData[container] = {}
+				end
+
+				if container ~= "bag" then
+					if not shoppingQueueData[container] then
+						shoppingQueueData[container] = {}
+					end
+				end
+			end
+
+			if not shoppingQueueData.auction then
+				shoppingQueueData.auction = {}
 			end
 		end
 
 		GnomeWorks.data.auctionData = {}
 
-		InitServerPlayerDBTables(factionServer, "auctionHouse", "inventoryData")
+--		InitServerPlayerDBTables(factionServer, "auctionHouse", "inventoryData")
 --		GnomeWorks.data.inventoryData.auctionHouse = {}
 
 		GnomeWorks.data.skillUpRanks = {}
@@ -342,8 +636,10 @@ do
 			end
 		end
 
-
 		GnomeWorks.data.trackedItems = trackedItems
+
+		GnomeWorks:BuildInventoryHeirarchy()
+
 
 
 		GnomeWorks.data.groupList = {}
@@ -351,16 +647,9 @@ do
 --		print("reagetUsage mem usage = ",math.floor(memUsage(reagentUsage)/1024).."kb")
 
 
---		GnomeWorks.data.inventoryData["All Recipes"] = {}
---		GnomeWorks.data.constructionQueue = {}
 		GnomeWorks.data.selectionStack = {}
 
 		GnomeWorks:SendMessageDispatch("AddSpoofedRecipes")
-
---		GnomeWorks:ConstructPseudoTrades("All Recipes")
---		GnomeWorks:ConstructPseudoTrades(player)
-
---		GnomeWorks:PopulateQueues()
 
 
 		GnomeWorks.groupLabel = "By Category"
@@ -392,11 +681,19 @@ do
 	function GnomeWorks:PLAYER_LOGOUT()
 		for inventoryName,inventoryData in pairs(self.data.inventoryData) do
 			for container, containerData in pairs(inventoryData) do
-				if inventoryName ~= "auctionHouse" then
-					for itemID, num in pairs(containerData) do
-						if num == 0 then
-							containerData[itemID] = nil
-						end
+				for itemID, num in pairs(containerData) do
+					if num == 0 then
+						containerData[itemID] = nil
+					end
+				end
+			end
+		end
+
+		for inventoryName,inventoryData in pairs(self.data.craftabilityData) do
+			for container, containerData in pairs(inventoryData) do
+				for itemID, num in pairs(containerData) do
+					if num == 0 then
+						containerData[itemID] = nil
 					end
 				end
 			end
@@ -471,6 +768,9 @@ print(arg1)
 
 
 		GnomeWorks:ScheduleRepeatingTimer(function() GnomeWorks:SendMessageDispatch("HeartBeat") end, 5)
+
+
+		GnomeWorks:InventoryScan()
 
 		return true
 	end

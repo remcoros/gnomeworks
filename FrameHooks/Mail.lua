@@ -23,14 +23,15 @@ do
 
 	local function CheckForAltNeeds()
 		local player = UnitName("player")
+		local topInventory = GnomeWorksDB.config.inventoryIndex[#GnomeWorksDB.config.inventoryIndex]
 
-		for alt, queue in pairs(GnomeWorks.data.altQueue) do
+		for alt,queueData in pairs(GnomeWorks.data.shoppingQueueData) do
 			if alt ~= player then
-				for itemID, numNeeded in pairs(queue) do
+				for itemID, numNeeded in pairs(queueData.alt) do
 					local itemName, itemLink = GetItemInfo(itemID)
 
 					local numOnHand = GetItemCount(itemID)
-					local numAvailable = GnomeWorks:GetInventoryCount(itemID,player,"craftedGuildBank queue")
+					local numAvailable = GnomeWorks:GetCraftableInventoryCount(itemID,player,topInventory)
 
 					if numAvailable then
 						GnomeWorks:printf("%s needs %d x [%s].  you have %d on hand (%d total available)", alt, numNeeded, itemName or "item:"..itemID, numOnHand, numAvailable)
@@ -52,16 +53,22 @@ do
 
 
 	function GnomeWorks:DoMailUpdate()
-		numItems, totalItems = GetInboxNumItems()
+		local numItems, totalItems = GetInboxNumItems()
 		local player = UnitName("player")
+		local newItem
 
 		GnomeWorks.player = player
 
 		local invData = self.data.inventoryData[player].mail
 
-		for itemID,count in pairs(invData) do
-			invData[itemID] = 0
+		if next(invData) then
+			newItem = true
+
+			for itemID,count in pairs(invData) do
+				invData[itemID] = 0
+			end
 		end
+
 
 		for i=1,numItems do
 			local packageIcon, stationeryIcon, sender, subject, money, CODAmount, daysLeft, hasItem, wasRead, wasReturned, textCreated, canReply, isGM = GetInboxHeaderInfo(i)
@@ -69,22 +76,43 @@ do
 			if hasItem then
 				for j=1,ATTACHMENTS_MAX_RECEIVE do
 
-
 					local itemLink = GetInboxItemLink(i,j)
 
 					if itemLink then
-						local name, itemTexture, count, quality, canUse = GetInboxItem(i,j)
+
 						local itemID = tonumber(string.match(itemLink,"item:(%d+)"))
 
-						invData[itemID] = (invData[itemID] or 0) + count
+						if GnomeWorks.data.trackedItems[itemID] then
+							local name, itemTexture, count, quality, canUse = GetInboxItem(i,j)
+
+							invData[itemID] = (invData[itemID] or 0) + count
+
+							newItem = true
+						end
 					end
 				end
 			end
 		end
 
-		GnomeWorks:InventoryScan()
 
-		GnomeWorks:SendMessageDispatch("MailUpdated")
+		if newItem then
+			local dependency
+
+			for k,inv in ipairs(GnomeWorksDB.config.inventoryIndex) do
+				if inv == "mail" then
+					dependency = k
+					break
+				end
+			end
+
+			for i=dependency,#GnomeWorksDB.config.inventoryIndex do
+				table.wipe(self.data.craftabilityData[player][GnomeWorksDB.config.inventoryIndex[i]])
+			end
+
+			self:InventoryScan()
+		end
+
+		self:SendMessageDispatch("MailUpdated")
 	end
 
 

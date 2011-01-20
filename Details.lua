@@ -26,11 +26,11 @@ do
 	local itemColorCrafted = "|cff40a0ff"
 	local itemColorNormal = "|cffffffff"
 
-	local inventoryIndex = { "bag", "bank", "mail", "guildBank", "alt" }
+--	local inventoryIndex = { "bag", "bank", "mail", "guildBank", "alt" }
 
-	local craftedInventoryIndex = { "craftedBag", "craftedBank", "craftedMail", "craftedGuildBank" }
+--	local craftedInventoryIndex = { "craftedBag", "craftedBank", "craftedMail", "craftedGuildBank" }
 
-	local craftedInventoryBasis = { craftedBag = "bag", craftedBank = "bank", craftedMail = "mail", craftedGuildBank = "guildBank" }
+--	local craftedInventoryBasis = { craftedBag = "bag", craftedBank = "bank", craftedMail = "mail", craftedGuildBank = "guildBank" }
 
 	local inventoryColors = GnomeWorks.system.inventoryColors
 	local inventoryFormat = GnomeWorks.system.inventoryFormat
@@ -72,6 +72,15 @@ do
 				return (a.numNeeded or 0) - (b.numNeeded or 0)
 			end,
 			dataField = "numNeeded",
+			draw =	function (rowFrame,cellFrame,entry)
+						cellFrame.text:SetText(entry.numNeeded)
+
+						if entry.numNeeded < entry.totalCraftable then
+							cellFrame.text:SetTextColor(1,0,0)
+						else
+							cellFrame.text:SetTextColor(1,1,1)
+						end
+					end,
 			OnEnter = 	function(cellFrame)
 							if cellFrame:GetParent().rowIndex == 0 then
 								GameTooltip:SetOwner(cellFrame, "ANCHOR_TOPLEFT")
@@ -169,26 +178,9 @@ do
 								GameTooltip:Show()
 							else
 								local entry = cellFrame:GetParent().data
---[[
-								if entry then
-									GameTooltip:SetOwner(cellFrame, "ANCHOR_TOPLEFT")
-									GameTooltip:ClearLines()
-									GameTooltip:AddLine(GnomeWorks.player.."'s inventory")
 
-									local prevCount = 0
+								local shown = 0
 
-
-									for i,key in pairs(inventoryIndex) do
-										local count = entry[key] or 0
-
-										if count ~= prevCount then
-											if count ~= 0 then
-												GameTooltip:AddDoubleLine(inventoryTags[key],count)
-											end
-											prevCount = count
-										end
-									end
-]]
 
 								if entry  then
 									GameTooltip:SetOwner(cellFrame, "ANCHOR_TOPLEFT")
@@ -200,45 +192,57 @@ do
 									local prev = 0
 									local checkGuildBank = GnomeWorks.data.playerData[GnomeWorks.player] and GnomeWorks.data.playerData[GnomeWorks.player].guild
 
+									local inventoryIndex = GnomeWorksDB.config.inventoryIndex
+									local basis = GnomeWorksDB.config.inventoryBasis
+
 									for i,key in pairs(inventoryIndex) do
-										if key ~= "vendor" and (key ~= "guildBank" or checkGuildBank) then
-											local count = (entry[key] or 0) - prev
-											prev = entry[key] or 0
---print(key,count)
-											if count > 0 then --prev ~= count and count ~= 0 then
 
-												if  key == "alt" then
-													GameTooltip:AddDoubleLine(inventoryTags[key], inventoryColors[key]..count)
+										if entry.vendorItem and basis[key] and string.find(basis[key],"vendor") then
+											GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key].."\226\136\158")
+											shown = shown + 1
+											break
+										else
+											if key ~= "vendor" and (key ~= "guildBank" or checkGuildBank) then
+												local count = (entry[key] or 0) - prev
+												prev = entry[key] or 0
+	--print(key,count)
+												if count > 0 then --prev ~= count and count ~= 0 then
 
-													GameTooltip:AddLine("    ")
+													if  key == "alt" then
+														GameTooltip:AddDoubleLine(inventoryTags[key], inventoryColors[key]..count)
 
-													GameTooltip:AddLine("alt item locations:",.8,.8,.8)
-													for inventoryName, containers in pairs(GnomeWorks.data.inventoryData) do
+														shown = shown + 1
 
-														if inventoryName ~= "auctionHouse" and inventoryName ~= UnitName("player") then
+														GameTooltip:AddLine("    ")
 
---					print("hello",GnomeWorks.data.inventoryData[inventoryName].craftedBag)
+														GameTooltip:AddLine("alt item locations:",.8,.8,.8)
+														for inventoryName, containers in pairs(GnomeWorks.data.inventoryData) do
 
-															local altContainer
-															local altCount
+															if inventoryName ~= UnitName("player") then
 
-															for k,inv in ipairs(craftedInventoryIndex) do
-																if containers[inv] and containers[inv][itemID] then
-																	if containers[inv][itemID] > (altCount or 0) then
-																		altContainer = inv
-																		altCount = containers[inv][itemID]
+																local altContainer
+																local altCount
+
+																for k,inv in ipairs(inventoryIndex) do
+																	if containers[inv] and containers[inv][itemID] then
+																		if containers[inv][itemID] > (altCount or 0) then
+																			altContainer = inv
+																			altCount = containers[inv][itemID]
+																		end
 																	end
 																end
-															end
 
-															if altContainer then
-																local container = craftedInventoryBasis[altContainer]
-																GameTooltip:AddDoubleLine("   "..inventoryColors.alt..inventoryName.."/"..container,inventoryColors.alt..altCount)
+																if altContainer then
+																	local container = altContainer
+																	GameTooltip:AddDoubleLine("   "..inventoryColors.alt..inventoryName.."/"..container,inventoryColors.alt..altCount)
+																	shown = shown + 1
+																end
 															end
 														end
+													else
+														GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..count)
+														shown = shown + 1
 													end
-												else
-													GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..count)
 												end
 											end
 										end
@@ -248,6 +252,11 @@ do
 									if entry.reserved>0 then
 										GameTooltip:AddLine(" ")
 										GameTooltip:AddDoubleLine("|cffff0000reserved","|cffff0000"..entry.reserved)
+										shown = shown + 1
+									end
+
+									if shown == 0 then
+										GameTooltip:AddLine("none found",1,0,0)
 									end
 
 									GameTooltip:Show()
@@ -263,6 +272,9 @@ do
 						local low, hi
 						local lowKey, hiKey
 						local lowValue, hiValue
+						local vendor
+
+						local inventoryIndex = GnomeWorksDB.config.inventoryIndex
 
 						for k,inv in ipairs(inventoryIndex) do
 							local value = entry[inv]
@@ -278,6 +290,11 @@ do
 							for i=#inventoryIndex,low+1,-1 do
 								local key = inventoryIndex[i]
 
+								if key == "vendor" and entry.vendorItem then
+									vendor = true
+									break
+								end
+
 								if entry[key] > entry[inventoryIndex[i-1]] then
 									hi = i
 									hiKey = key
@@ -286,14 +303,23 @@ do
 								end
 							end
 
-							if hi and lowValue < hiValue then
+							if vendor then
+								local lowString = string.format(inventoryFormat[lowKey],lowValue)
+								local hiString = string.format(inventoryFormat.vendor,"\226\136\158")
+
+								display = lowString.."+"..hiString
+							elseif hi and lowValue < hiValue then
 								local lowString = string.format(inventoryFormat[lowKey],lowValue)
 								local hiString = string.format(inventoryFormat[hiKey],hiValue-lowValue)
 
 								display = lowString.."+"..hiString
+							elseif lowKey == "vendor" then
+								display = string.format(inventoryFormat.vendor,"\226\136\158")
 							else
 								display = string.format(inventoryFormat[lowKey],lowValue)
 							end
+						elseif entry.vendorItem then
+							display = string.format(inventoryFormat.vendor,"\226\136\158")
 						end
 
 						if entry.reserved > 0 then
@@ -336,55 +362,47 @@ do
 
 									local checkGuildBank = GnomeWorks.data.playerData[GnomeWorks.player] and GnomeWorks.data.playerData[GnomeWorks.player].guild
 
-									for i,key in pairs(inventoryIndex) do
+									local inventoryIndex = GnomeWorksDB.config.inventoryIndex
+
+									local shown = 0
+
+									for i,key in ipairs(inventoryIndex) do
 										if key ~= "vendor" and (key ~= "guildBank" or checkGuildBank) then
 											local count = entry.inventory[key] or 0
---print(key,count)
-											if count > prev then --prev ~= count and count ~= 0 then
 
-												if  key == "alt" then
-													GameTooltip:AddDoubleLine(inventoryTags[key], inventoryColors[key]..count)
-
-													GameTooltip:AddLine("    ")
-
-													GameTooltip:AddLine("alt item locations:",.8,.8,.8)
-													for inventoryName, containers in pairs(GnomeWorks.data.inventoryData) do
-
-														if inventoryName ~= "auctionHouse" and inventoryName ~= UnitName("player") then
-
---					print("hello",GnomeWorks.data.inventoryData[inventoryName].craftedBag)
-
-															local altContainer
-															local altCount
-															local altPrev = 0
-
-															for k,inv in ipairs(craftedInventoryIndex) do
-																if containers[inv] and containers[inv][itemID] then
-																	if containers[inv][itemID] > altPrev then
-																		local count = containers[inv][itemID] - altPrev
-
-																		local container = craftedInventoryBasis[inv]
-																		GameTooltip:AddDoubleLine("   "..inventoryColors.alt..inventoryName.."/"..container,inventoryColors.alt..count)
-
-																		altPrev = containers[inv][itemID]
-																	end
-																end
-															end
---[[
-															if altContainer then
-																local container = craftedInventoryBasis[altContainer]
-																GameTooltip:AddDoubleLine("   "..inventoryColors.alt..inventoryName.."/"..container,inventoryColors.alt..altCount)
-															end
-]]
-														end
-													end
-												else
-													GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..count)
-												end
+											if count ~= 0 then
+												GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..count)
 											end
+
+											shown = shown + 1
 
 											prev = count
 										end
+									end
+
+									if GnomeWorksDB.config.inventoryTracked.alt and entry.inventory.alt>0 then
+										GameTooltip:AddLine("    ")
+
+										GameTooltip:AddLine("alt item locations:",.8,.8,.8)
+										for player, containers in pairs(GnomeWorks.data.inventoryData) do
+											if player ~= GnomeWorks.player then
+												for i,key in ipairs(inventoryIndex) do
+													if key ~= "vendor" and key ~= "guildBank" and key ~= "alt" then
+														local count = containers[key][itemID]
+
+														if count and count > 0 then
+															GameTooltip:AddDoubleLine("   "..inventoryColors.alt..player.."/"..key,inventoryColors.alt..count)
+														end
+													end
+												end
+
+											end
+										end
+									end
+
+
+									if shown == 0 then
+										GameTooltip:AddLine("none found",1,0,0)
 									end
 
 									GameTooltip:Show()
@@ -400,14 +418,20 @@ do
 						local low, hi
 						local lowKey, hiKey
 						local lowValue, hiValue
+						local vendor
+
+						local inventoryIndex = GnomeWorksDB.config.inventoryIndex
 
 						for k,inv in ipairs(inventoryIndex) do
-							local value = entry.inventory[inv]
-							if value>0 then
-								low = k
-								lowKey = inv
-								lowValue = value
-								break
+							if inv ~= "vendor" then
+								local value = entry.inventory[inv]
+
+								if value>0 then
+									low = k
+									lowKey = inv
+									lowValue = value
+									break
+								end
 							end
 						end
 
@@ -415,19 +439,23 @@ do
 							for i=#inventoryIndex,low+1,-1 do
 								local key = inventoryIndex[i]
 
-								if entry.inventory[key] > 0 then
-									hi = i
-									hiKey = key
-									hiValue = entry.inventory[key]
-									break
+								if key ~= "vendor" then
+									if entry.inventory[key] > 0 then
+										hi = i
+										hiKey = key
+										hiValue = entry.inventory[key]
+										break
+									end
 								end
 							end
 
-							if hi and lowValue < hiValue then
+							if hi and lowValue and hiValue then
 								local lowString = string.format(inventoryFormat[lowKey],lowValue)
 								local hiString = string.format(inventoryFormat[hiKey],hiValue)
 
 								display = lowString.."+"..hiString
+							elseif lowKey == "vendor" then
+								display = string.format(inventoryFormat.vendor,"\226\136\158")
 							else
 								display = string.format(inventoryFormat[lowKey],lowValue)
 							end
@@ -548,38 +576,39 @@ do
 
 		local function UpdateRowData(scrollFrame,entry,firstCall)
 			local player = GnomeWorks.player
+			local itemID = entry.id
 
-			local bag = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "craftedBag")
-			local bank = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "craftedBank")
-			local mail = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "craftedMail")
-			local guildBank = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "craftedGuildBank")
-			local alt = GnomeWorks:GetInventoryCount(entry.id, "faction", "craftedMail")
+			if GnomeWorks:VendorSellsItem(itemID) then
+				entry.vendorItem = true
+			else
+				entry.vendorItem = false
+			end
+
 
 			entry.reserved = 0 --  math.abs(math.min(0,GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "queue")))
---print("queued",entry.id,GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "queue"))
-			entry.bag = bag -- + entry.reserved
-			entry.bank = bank -- + entry.reserved
-			entry.guildBank = guildBank -- + entry.reserved
-			entry.mail = mail -- + entry.reserved
-			entry.alt = alt -- + entry.reserved
-
-
-			local bag = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "bag")
-			local bank = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "bank")
-			local mail = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "mail")
-			local guildBank = GnomeWorks:GetInventoryCount(entry.id, GnomeWorks.player, "guildBank")
-			local alt = GnomeWorks:GetInventoryCount(entry.id, "faction", "bag bank mail guildBank", GnomeWorks.player)
 
 			if not entry.inventory then
 				entry.inventory = {}
 			end
 
 
-			entry.inventory.bag = bag
-			entry.inventory.bank = bank
-			entry.inventory.guildBank = guildBank
-			entry.inventory.mail = mail
-			entry.inventory.alt = alt
+			if itemID then
+				for k,inv in ipairs(GnomeWorksDB.config.inventoryIndex) do
+					if GnomeWorksDB.config.inventoryTracked[inv] then
+
+						if inv ~= "alt" then
+							entry.inventory[inv] = GnomeWorks:GetInventoryCount(itemID, player, inv)
+							entry[inv] = GnomeWorks:GetCraftableInventoryCount(itemID, player, inv)
+						else
+							entry.inventory.alt = GnomeWorks:GetFactionInventoryCount(itemID, player)
+
+							entry.alt = entry.totalCraftable + GnomeWorks:GetFactionInventoryCount(itemID, player)
+						end
+
+						entry.totalCraftable = entry[inv]
+					end
+				end
+			end
 
 
 			local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice = GetItemInfo(entry.id)
@@ -804,6 +833,8 @@ do
 
 --			local detailNumMadeLabel = detailIcon:CreateFontString(nil,"OVERLAY", "GameFontGreenSmall")
 			local detailNumMadeLabel = detailIcon:CreateFontString(nil,"OVERLAY", "SystemFont_Outline_Small")
+
+			detailNumMadeLabel:SetHeight(9)
 
 			detailNumMadeLabel:SetPoint("BOTTOMRIGHT",-2,2)
 			detailNumMadeLabel:SetPoint("TOPLEFT",0,0)

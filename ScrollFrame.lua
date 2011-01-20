@@ -253,7 +253,7 @@ do
 		local DrawRow = scrollFrame.DrawRow
 
 		if not scrollFrame:IsVisible() then
---			return
+			return
 		end
 
 		scrollFrame.numRows = math.floor(scrollFrame:GetHeight()/scrollFrame.rowHeight)
@@ -427,7 +427,7 @@ do
 	local function UpdateData(scrollFrame, data, depth, firstCall)
 		if scrollFrame:IsVisible() and data and data.entries and depth < 3 then
 
-			for i=1,#data.entries do
+			for i=1,data.numEntries or #data.entries do
 				local entry = data.entries[i]
 
 				entry.depth = depth

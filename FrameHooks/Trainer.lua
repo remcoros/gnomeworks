@@ -7,6 +7,8 @@ do
 	local throttle
 
 	function GnomeWorks:TrainerScan()
+		local addedRecipes
+
 		for i=1, GetNumTrainerServices() do
 			local serviceName, serviceSubText, serviceType, texture, reqLevel = GetTrainerServiceInfo(i)
 
@@ -24,14 +26,17 @@ do
 
 				local skill, level = GetTrainerServiceSkillReq(i)
 
-				if GetSpellInfo(tradeID) == skill then
+				if GetSpellInfo(tradeID) == skill and not self.data.trainableSpells[recipeID] then
 					self.data.trainableSpells[recipeID] = level
 
 					RecipeSkillLevels[1][recipeID] = level
+
+					addedRecipes = true
 				end
 			end
 		end
 
+		GnomeWorks:DoTradeSkillUpdate()
 	end
 
 

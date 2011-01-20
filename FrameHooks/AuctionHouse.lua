@@ -121,6 +121,27 @@ do
 
 
 
+	local function ProcessPurchase(entry)
+		if not entry then
+			return
+		end
+
+		table.remove(buyFrame.sf.data.entries, entry.dataIndex)
+
+		GnomeWorks.data.auctionInventory[reagentID] = GnomeWorks.data.auctionInventory[reagentID] - entry.count
+
+		GnomeWorks.data.inventoryData[UnitName("player")].mail[reagentID] = (GnomeWorks.data.inventoryData[UnitName("player")].mail[reagentID] or 0) + entry.count
+
+		GnomeWorks:InventoryScan()
+		buyFrame.sf:Refresh()
+
+		GnomeWorks:print("Purchased.")
+	end
+
+
+	local function ReportFailedPurchase()
+		GnomeWorks:warning("Could not complete purchase.")
+	end
 
 
 	local function BuyAuctionEntry(entry)
@@ -136,14 +157,8 @@ do
 			GnomeWorks:printf("buying %s x %d for %s",(GetItemInfo(reagentID)),entry.count,QuickMoneyFormat(entry.buyOut))
 
 			PlaceAuctionBid("list", found, entry.buyOut)
-			table.remove(buyFrame.sf.data.entries, entry.dataIndex)
 
-			GnomeWorks.data.inventoryData.auctionHouse[reagentID] = GnomeWorks.data.inventoryData.auctionHouse[reagentID] - entry.count
-
-			GnomeWorks.data.inventoryData[UnitName("player")].mail[reagentID] = (GnomeWorks.data.inventoryData[UnitName("player")].mail[reagentID] or 0) + entry.count
-
-			GnomeWorks:InventoryScan()
-			buyFrame.sf:Refresh()
+			GnomeWorks:ExecuteOnEvent("UPDATE_PENDING_MAIL", ProcessPurchase, entry, 0.25, ReportFailedPurchase)
 		else
 			page = 0
 
@@ -359,8 +374,9 @@ do
 							cellFrame.text:SetPoint("RIGHT", cellFrame, "RIGHT", -8, 0)
 							cellFrame.text:SetText(GetItemInfo(entry.itemID))
 
-							local needed = GnomeWorks.data.auctionQueue[GnomeWorks.player][entry.itemID] or 0
-							local available = GnomeWorks.data.inventoryData.auctionHouse[entry.itemID] or 0
+							local player = GnomeWorks.player or UnitName("player")
+							local needed = GnomeWorks.data.shoppingQueueData[player].auction[entry.itemID] or 0
+							local available = GnomeWorks.data.auctionInventory[entry.itemID] or 0
 
 							if available == 0 then
 								cellFrame.text:SetTextColor(1,0,0)
@@ -640,12 +656,15 @@ do
 				frame.reagentButton:SetNormalTexture(icon)
 				frame.reagentButton:SetPushedTexture(icon)
 
+				local player = self.player or UnitName("player")
 
-				frame.reagentButton.count:SetFormattedText("%d %s (%d pages)",self.data.inventoryData.auctionHouse[reagentID] or 0,(GetItemInfo(reagentID)),page)
+				local auctionQueue = self.data.shoppingQueueData[player].auction
+
+				frame.reagentButton.count:SetFormattedText("%d %s (%d pages)",self.data.auctionInventory[reagentID] or 0,(GetItemInfo(reagentID)),page)
 --print(self.data.auctionQueue[self.player][reagentID], self.player, reagentID)
 
-				if self.data.auctionQueue[self.player] and self.data.auctionQueue[self.player][reagentID] then
-					frame.reagentButton.needed:SetFormattedText("%d Needed",self.data.auctionQueue[self.player][reagentID] or 0)
+				if auctionQueue and auctionQueue[reagentID] then
+					frame.reagentButton.needed:SetFormattedText("%d Needed",auctionQueue[reagentID] or 0)
 					frame.reagentButton.needed:Show()
 				else
 					frame.reagentButton.needed:SetText("Unused in current queue configuration")
@@ -678,8 +697,7 @@ do
 		if count>0 then
 			local newEntry = { count = count, buyOut = buyOut, seller = seller, page = page}
 
-
-			GnomeWorks.data.inventoryData.auctionHouse[reagentID] = (GnomeWorks.data.inventoryData.auctionHouse[reagentID] or 0) + count
+			GnomeWorks.data.auctionInventory[reagentID] = (GnomeWorks.data.auctionInventory[reagentID] or 0) + count
 
 			if not auctionData[reagentID] then
 				auctionData[reagentID] = { newEntry }
@@ -752,7 +770,7 @@ do
 			local name, texture, count, _, _, _, _, _, buyOut, _, _, seller = GetAuctionItemInfo("list",i)
 
 
-			if name == reagentName and buyOut>0 then
+			if name == reagentName and buyOut>0 and reagentID then
 --print(GetAuctionItemInfo("list",i))
 				RecordAuctionEntry(reagentID, count, buyOut, seller, page)
 			end
@@ -770,8 +788,10 @@ do
 				table.sort(auctionData[reagentID], SortAuctionData)
 			end
 
-			if GnomeWorks.data.auctionQueue[self.player] then
-				FlagForPurchase(reagentID, GnomeWorks.data.auctionQueue[self.player][reagentID] or 0)
+			local player = self.player or UnitName("player")
+
+			if GnomeWorks.data.shoppingQueueData[player].auction then
+				FlagForPurchase(reagentID, GnomeWorks.data.shoppingQueueData[player].auction[reagentID] or 0)
 			end
 
 			GnomeWorks:ShowAuctionWindow()
@@ -791,11 +811,13 @@ do
 
 
 	local function AddReagentsToReagentList(queue, reagents)
-		for k,v in ipairs(queue) do
-			if v.command == "collect" then
-				reagents[v.itemID] = true
-			elseif v.command == "create" then
-				AddReagentsToReagentList(v.subGroup.entries, reagents)
+		if queue then
+			for k,v in ipairs(queue) do
+				if v.command == "collect" then
+					reagents[v.itemID] = true
+				elseif v.command == "create" then
+					AddReagentsToReagentList(v.subGroup.entries, reagents)
+				end
 			end
 		end
 	end
@@ -816,8 +838,8 @@ do
 
 		auctionData = self.data.auctionData
 
-		if not GnomeWorks.data.inventoryData.auctionHouse then
-			GnomeWorks.data.inventoryData.auctionHouse = {}
+		if not GnomeWorks.data.auctionInventory then
+			GnomeWorks.data.auctionInventory = {}
 		end
 
 
@@ -825,7 +847,7 @@ do
 			if auctionData[id] then
 				table.wipe(auctionData[id])
 
-				GnomeWorks.data.inventoryData.auctionHouse[id] = nil
+				GnomeWorks.data.auctionInventory[id] = nil
 			end
 		end
 
@@ -856,7 +878,7 @@ do
 				table.wipe(auctionData[itemID])
 			end
 
-			GnomeWorks.data.inventoryData.auctionHouse[itemID] = nil
+			GnomeWorks.data.auctionInventory[itemID] = nil
 
 
 			page = 0
@@ -915,9 +937,100 @@ do
 	end
 
 
+
+	local function WipeDependendInventories(player,key)
+		local inventoryIndex = GnomeWorksDB.config.inventoryIndex
+
+		local dependency
+
+		for k,inv in ipairs(inventoryIndex) do
+			if inv == key then
+				dependency = k
+				break
+			end
+		end
+
+		for i=dependency,#inventoryIndex do
+			table.wipe(GnomeWorks.data.craftabilityData[player][inventoryIndex[i]])
+		end
+
+		GnomeWorks:InventoryScan()
+	end
+
+
+	local ownedPage = 0
+	local ownScanRunning
+
+	function ScanOwnedAuctions()
+		local player = UnitName("player")
+		local numOwned,totalItems = GetNumAuctionItems("owner")
+		local invData = GnomeWorks.data.inventoryData[player].sale
+		local newItem
+
+		local inventoryIndex = GnomeWorksDB.config.inventoryIndex
+
+--print("scanning auctions", numOwned, totalItems, ownedPage)
+		if not ownScanRunning then
+			if next(invData) then
+				newItem = true
+
+				for itemID,count in pairs(invData) do
+					invData[itemID] = 0
+				end
+
+				WipeDependendInventories(player, "sale")
+			end
+
+			ownedPage = 0
+			ownScanRunning = true
+		end
+
+
+		for i=1,numOwned do
+			local name, texture, count, quality, canUse, level, minBid, minIncrement, buyoutPrice, bidAmount, highBidder, owner, saleStatus = GetAuctionItemInfo("owner", i)
+
+			if saleStatus ~= 1 then
+				local link = GetAuctionItemLink("owner",i)
+
+				local itemID = tonumber(string.match(link,"item:(%d+)"))
+--print(i,link, count, itemID)
+
+				if GnomeWorks.data.trackedItems[itemID] then
+					invData[itemID] = (invData[itemID] or 0) + count
+					newItem = true
+				end
+			else
+--				print(name, highBidder)
+			end
+		end
+
+
+		if newItem then
+			WipeDependendInventories(player, "sale")
+		end
+
+		if numOwned  < totalItems and (ownedPage+1)*NUM_AUCTION_ITEMS_PER_PAGE < totalItems then
+			ownedPage = ownedPage + 1
+			GetOwnerAuctionItems(ownedPage)
+		else
+			ownScanRunning = nil
+			ownedPage = 0
+		end
+	end
+
+
+
+
 	function GnomeWorks:AUCTION_HOUSE_SHOW(...)
 		self.atAuctionHouse = true
---		self:BeginReagentScan(GnomeWorks.data.inventoryData[(UnitName("player"))].queue, function() print("DONE WITH SCAN") end)
+
+		local player = (GnomeWorks.data.shoppingQueueData[self.player] and self.player) or UnitName("player")
+
+		GnomeWorks:RegisterEvent("AUCTION_OWNED_LIST_UPDATE", ScanOwnedAuctions)
+
+
+		GetOwnerAuctionItems()
+
 
 
 		if not frame then
@@ -928,11 +1041,9 @@ do
 		end
 
 
-		if not self.player then
-			self.player = UnitName("player")
-		end
 
-		local auctionQueue = self.data.auctionQueue[self.player]
+
+		local auctionQueue = GnomeWorks.data.shoppingQueueData[player].auction
 
 		if auctionQueue and next(auctionQueue) then
 			self:ShoppingListShow(self.player)

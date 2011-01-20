@@ -21,5 +21,6 @@ do
 	GnomeWorks.commands.debug = function(...)
 		GnomeWorks:MessageDispatchTimeReportToggle()
 	end
+
 end
 
