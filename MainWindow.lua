@@ -907,7 +907,7 @@ do
 			width = 60,
 			align = "CENTER",
 			sortCompare = function(a,b)
-				return (a.alt or 0) - (b.alt or 0)
+				return (a.totalCraftable or 0) - (b.totalCraftable or 0)
 			end,
 			enabled = function()
 				return GnomeWorks.tradeID ~= 53428

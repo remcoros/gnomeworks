@@ -145,7 +145,7 @@ do
 									if singleItemCount then
 										singleItemCount = singleItemCount - numMoved
 									else
-										self.data.shoppingQueue[player].bank[itemID] = self.data.shoppingQueue[player].bank[itemID] - numMoved
+										self.data.shoppingQueueData[player].bank[itemID] = self.data.shoppingQueueData[player].bank[itemID] - numMoved
 									end
 
 									self:print(string.format("collecting %s x %s from bank",itemName,numMoved))
