@@ -4,8 +4,8 @@ local modName, modTable = ...
 
 local VERSION = ("@project-revision@")
 
-if tostring(tonumber(VERSION))) ~= VERSION then
-	VERSION = 113
+if tostring(tonumber(VERSION)) ~= VERSION then
+	VERSION = "113"
 end
 
 
@@ -415,7 +415,7 @@ do
 
 		GnomeWorks:print("Initializing (r"..VERSION..")")
 
-		if (GnomeWorksDB.gwVersion or 0) < 111 then
+		if tonumber(GnomeWorksDB.gwVersion or 0) < 111 then
 			GnomeWorksDB.serverData = {}
 			GnomeWorks:warning("deleting server data due to format change")
 		end
