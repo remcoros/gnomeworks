@@ -952,7 +952,9 @@ do
 
 		if dependency then
 			for i=dependency,#inventoryIndex do
-				table.wipe(GnomeWorks.data.craftabilityData[player][inventoryIndex[i]])
+				if GnomeWorks.data.craftabilityData[player][inventoryIndex[i]] then
+					table.wipe(GnomeWorks.data.craftabilityData[player][inventoryIndex[i]])
+				end
 			end
 		end
 
