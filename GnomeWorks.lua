@@ -4,8 +4,8 @@ local modName, modTable = ...
 
 local VERSION = ("@project-revision@")
 
-if type(VERSION) ~= "number" then
-	VERSION = 111
+if tostring(tonumber(VERSION))) ~= VERSION then
+	VERSION = 113
 end
 
 

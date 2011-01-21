@@ -903,8 +903,10 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 
 
-		for inv, data in pairs(self.data.craftabilityData[self.player]) do
-			table.wipe(data)
+		if self.data.craftabilityData[self.player] then
+			for inv, data in pairs(self.data.craftabilityData[self.player]) do
+				table.wipe(data)
+			end
 		end
 
 

@@ -950,8 +950,10 @@ do
 			end
 		end
 
-		for i=dependency,#inventoryIndex do
-			table.wipe(GnomeWorks.data.craftabilityData[player][inventoryIndex[i]])
+		if dependency then
+			for i=dependency,#inventoryIndex do
+				table.wipe(GnomeWorks.data.craftabilityData[player][inventoryIndex[i]])
+			end
 		end
 
 		GnomeWorks:InventoryScan()
