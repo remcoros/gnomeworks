@@ -4,7 +4,7 @@ local modName, modTable = ...
 
 local VERSION = ("@project-revision@")
 
-if tostring(tonumber(VERSION)) ~= VERSION then
+if not tonumber(VERSION) then
 	VERSION = "113"
 end
 
@@ -415,7 +415,7 @@ do
 
 		GnomeWorks:print("Initializing (r"..VERSION..")")
 
-		if tonumber(GnomeWorksDB.gwVersion or 0) < 111 then
+		if GnomeWorks.serverData and tonumber(GnomeWorksDB.gwVersion or 0) < 111 then
 			GnomeWorksDB.serverData = {}
 			GnomeWorks:warning("deleting server data due to format change")
 		end
@@ -641,19 +641,22 @@ do
 		GnomeWorks:BuildInventoryHeirarchy()
 
 
+		GnomeWorks.data.selectionStack = {}
+
+		GnomeWorks:SendMessageDispatch("AddSpoofedRecipes")
+
+
 
 		GnomeWorks.data.groupList = {}
 
 --		print("reagetUsage mem usage = ",math.floor(memUsage(reagentUsage)/1024).."kb")
 
 
-		GnomeWorks.data.selectionStack = {}
-
-		GnomeWorks:SendMessageDispatch("AddSpoofedRecipes")
 
 
 		GnomeWorks.groupLabel = "By Category"
 
+		GnomeWorks:InventoryScan()
 
 
 		GnomeWorks.data.toonList = {}

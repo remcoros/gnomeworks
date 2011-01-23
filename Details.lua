@@ -193,7 +193,7 @@ do
 									local checkGuildBank = GnomeWorks.data.playerData[GnomeWorks.player] and GnomeWorks.data.playerData[GnomeWorks.player].guild
 
 									local inventoryIndex = GnomeWorksDB.config.inventoryIndex
-									local basis = GnomeWorksDB.config.inventoryBasis
+									local basis = GnomeWorks.system.inventoryBasis
 
 									for i,key in pairs(inventoryIndex) do
 

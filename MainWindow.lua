@@ -1200,7 +1200,7 @@ do
 				GnomeWorks.reagentFrame:Hide()
 			end
 
-			if GnomeWorks.detailFrame:IsShown() then
+			if true or GnomeWorks.detailFrame:IsShown() then
 				skillFrame:SetPoint("BOTTOMLEFT",GnomeWorks.detailFrame,"TOPLEFT",0,40)
 			else
 				skillFrame:SetPoint("BOTTOMLEFT",20,55)
@@ -2267,8 +2267,26 @@ do
 		GnomeWorksGroupingMiddle:SetPoint("RIGHT", searchBox,"RIGHT",-22,0)
 --		groupSelection:SetHeight(16)
 
+--function UIDropDownMenu_SetAnchor(dropdown, xOffset, yOffset, point, relativeTo, relativePoint)
+		UIDropDownMenu_SetAnchor(groupSelection, 0,20, "TOPRIGHT", "GnomeWorksGroupingMiddle","BOTTOMRIGHT")
 
 		groupSelection:SetScript("OnShow", function(dropDown) GnomeWorks:RecipeGroupDropdown_OnShow(dropDown) end)
+
+		GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() GnomeWorks:RecipeGroupDropdown_OnShow(groupSelection) end)
+
+
+
+		local groupOperations = CreateFrame("Button", "GnomeWorksGroupOps", groupSelection)
+
+		groupOperations:SetPoint("LEFT",GnomeWorksGroupingMiddle,"RIGHT",6,2)
+		groupOperations:SetWidth(28)
+		groupOperations:SetHeight(28)
+
+		groupOperations:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up")
+		groupOperations:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Down")
+		groupOperations:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Round")
+
+		groupOperations:SetScript("OnClick", GnomeWorks.RecipeGroupOperations_OnClick)
 
 
 

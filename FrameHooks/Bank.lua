@@ -356,7 +356,7 @@ do
 
 
 		table.wipe(invData)
-		table.wipe(playerData.guildInfo.tabs)
+--		table.wipe(playerData.guildInfo.tabs)
 
 
 		-- temporarily disable bag update scanning while we're grabbing items from the bank.  we'll do a manual adjustment after each retrieval
@@ -368,12 +368,15 @@ do
 
 
 		for tab=1,numTabs do
-			local name, icon, isViewable, canDeposit, numWithdrawals, remainingWithdrawals = GetGuildBankTabInfo(tab)
+
+			local canView, canDeposit, canEdit, stacksPerDay = GetGuildBankTabPermissions(tab)
 
 			invData[tab] = {}
 
-			if numWithdrawals>0 then
+			if IsGuildLeader() or stacksPerDay>0 then
 				playerData.guildInfo.tabs[tab] = true
+			else
+				playerData.guildInfo.tabs[tab] = false
 			end
 
 			for slot=1,98 do

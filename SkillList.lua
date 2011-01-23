@@ -897,7 +897,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 		local scanTimeEnd = GetTime()
 
-		
+
 		if self.data.craftabilityData[self.player] then
 			for inv, data in pairs(self.data.craftabilityData[self.player]) do
 				table.wipe(data)
@@ -934,7 +934,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 --local totalUsage = collectgarbage("count")
 --print(totalUsage)
 		collectgarbage("collect")
---print("cleaned up",totalUsage - collectgarbage("count"),"kilobytes of garbage")	
+--print("cleaned up",totalUsage - collectgarbage("count"),"kilobytes of garbage")
 
 
 

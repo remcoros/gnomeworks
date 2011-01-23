@@ -19,6 +19,24 @@ local skillLevel = {
 }
 
 
+local function RemoveLabel(player,tradeID,label)
+	local d
+
+	for k,v in pairs(groupLabels[player..":"..tradeID]) do
+		if v.name == label then
+			d = k
+			break
+		end
+	end
+
+	if d then
+		table.remove(groupLabels[player..":"..tradeID],d)
+
+		groupLabelAdded[player..":"..tradeID..":"..label] = nil
+	end
+end
+
+
 function GnomeWorks:RecipeGroupRename(oldName, newName)
 	local oldKey =  self.player..":"..self.tradeID..":"..oldName
 	local key = self.player..":"..self.tradeID..":"..newName
@@ -35,6 +53,11 @@ function GnomeWorks:RecipeGroupRename(oldName, newName)
 		for groupName, groupData in pairs(list) do
 			groupData.key = key
 		end
+
+		RemoveLabel(self.player,self.tradeID, oldName)
+
+		table.insert(groupLabels[self.player..":"..self.tradeID], { name = newName, subGroup = list })
+		groupLabelAdded[newKey] = true
 	end
 end
 
@@ -174,7 +197,7 @@ function GnomeWorks:RecipeGroupCopy(s, d, noDB)
 	if s and d then
 		local player, tradeID, label = string.split(":", d.key)
 
-		d.index = s.nidex
+		d.index = s.index
 		d.expanded = s.expanded
 		d.entries = {}
 
@@ -598,7 +621,7 @@ end
 
 -- make a db string for saving groups
 function GnomeWorks:RecipeGroupConstructDBString(group)
---DEFAULT_CHAT_FRAME:AddMessage("constructing group db strings "..group.name)
+--print("constructing group db strings "..group.name)
 
 	if group and not group.autoGroup then
 		local key = group.key
@@ -606,22 +629,28 @@ function GnomeWorks:RecipeGroupConstructDBString(group)
 
 		tradeID = tonumber(tradeID)
 
+		local dbTable = {}
+
 		if not self.data.groupList[key].autoGroup then
-			local groupString = group.index
+--			local groupString = group.index
+
+			dbTable[#dbTable+1] = group.index
 
 			for v,entry in pairs(group.entries) do
 				if not entry.subGroup then
-					groupString = groupString..":"..entry.recipeID
+					dbTable[#dbTable+1] = entry.index.."="..entry.recipeID
 				else
-					groupString = groupString..":g"..entry.index	--entry.subGroup.name
+					dbTable[#dbTable+1] = "g"..entry.index	--entry.subGroup.name
 					self:RecipeGroupConstructDBString(entry.subGroup)
 				end
 			end
 
+			local groupString = table.concat(dbTable,":")
+
 			if not self.data.recipeGroupData[key] then
 				self.data.recipeGroupData[key] = {}
 			end
-
+--print(groupString)
 			self.data.recipeGroupData[key][group.name] = groupString
 		end
 	end
@@ -631,7 +660,7 @@ end
 
 
 function GnomeWorks:RecipeGroupPruneList()
-	if self.data.groupList then
+	if false and self.data.groupList then
 		for key, group in pairs(self.data.groupList) do
 			if type(group)=="table" and name ~= OVERALL_PARENT_GROUP_NAME and group.parent == nil then
 				self.data.groupList[key] = nil
@@ -649,6 +678,10 @@ function GnomeWorks:InitGroupList(key, autoGroup)
 		self.data.groupList = {}
 	end
 
+	if not self.data.groupList[key] then
+		self.data.groupList[key] = {}
+	end
+
 	self.data.groupList[key].autoGroup = autoGroup
 end
 
@@ -656,26 +689,31 @@ end
 
 function GnomeWorks:RecipeGroupDeconstructDBStrings()
 -- pass 1: create all groups
+--print("deconstruct group strings")
 	local groupNames = {}
 	local serial = 1
 
 	for key, groupList in pairs(self.data.recipeGroupData) do
 		local player, tradeID, label = string.split(":", key)
 		tradeID = tonumber(tradeID)
+--print(key,groupList)
+--print(player, self.player, tradeID, self.tradeID)
+--assert(self.player)
 
-		if player == self.player and tradeID == self.tradeID and self.data.skillIndexLookup then
+		if player == self.player and tradeID == self.tradeID then
 			self:InitGroupList(key)
 
 			for name,list in pairs(groupList) do
+
 				local group = self:RecipeGroupNew(player, tradeID, label, name)
 
-				local groupContents = { string.split(":",list) }
-				local groupIndex = tonumber(groupContents[1]) or serial
+				local groupContents = string.match(list,"(%d+)")
+				local groupIndex = (groupContents) or serial
 
 				serial = serial + 1
-				group.index = groupIndex
-
-				groupNames[groupIndex] = name
+				group.index = tonumber(groupIndex)
+--print("adding", player, tradeID, label, name, groupIndex)
+				groupNames[label..groupIndex] = name
 			end
 		end
 	end
@@ -686,7 +724,7 @@ function GnomeWorks:RecipeGroupDeconstructDBStrings()
 
 		tradeID = tonumber(tradeID)
 
-		if player == self.player and tradeID == self.trade and self.data.skillIndexLookup then
+		if player == self.player and tradeID == self.tradeID  then
 
 			for name,list in pairs(groupList) do
 				local group = self:RecipeGroupFind(player, tradeID, label, name)
@@ -697,28 +735,32 @@ function GnomeWorks:RecipeGroupDeconstructDBStrings()
 					group.initialized = true
 
 					local groupContents = { string.split(":",list) }
---DEFAULT_CHAT_FRAME:AddMessage(groupContents)
+
 
 					for j=2,#groupContents do
-						local recipeID = groupContents[j]
+--print(groupContents[j])
+						local skillIndex, recipeID = string.match(groupContents[j],"(%d+)=(%d+)")
+						local groupID = string.match(groupContents[j],"g(%d+)")
 
-						if not tonumber(recipeID) then
-							local id = tonumber(string.sub(recipeID,2))
+						if groupID then
+							local id = (groupID)
+--print("linking", player, tradeID, label, id, groupNames[id])
 
 --							local subGroup = self:RecipeGroupNew(player, tradeID, label, groupContents[j])
-							local subGroup = self:RecipeGroupFind(player, tradeID, label, groupNames[id])
+							local subGroup = self:RecipeGroupFind(player, tradeID, label, groupNames[label..id])
 
 							if subGroup then
 								self:RecipeGroupAddSubGroup(group, subGroup, subGroup.index, true)
 							else
 								self:RecipeGroupAddSubGroup(group, subGroup, subGroup.index, true)		--?? wtf?
 							end
-						else
+						elseif recipeID and skillIndex then
 							recipeID = tonumber(recipeID)
---DEFAULT_CHAT_FRAME:AddMessage(recipeID)
-							local index = self.data.skillIndexLookup[player][recipeID]
---DEFAULT_CHAT_FRAME:AddMessage("adding recipe "..recipeID.." to "..group.name.."/"..player..":"..index)
-							self:RecipeGroupAddRecipe(group, recipeID, index, true)
+							skillIndex = tonumber(skillIndex)
+--print(recipeID)
+
+--print("adding recipe ",recipeID," to ",group.name,"/",player,":",skillIndex)
+							self:RecipeGroupAddRecipe(group, recipeID, skillIndex, true)
 						end
 					end
 				end
@@ -746,13 +788,19 @@ end
 
 do
 	-- Called when the user selects an item in the group drop down
-	function RecipeGroupSelect(menuFrame,group,dropDown)
-	DebugSpam("select grouping",label,dropDown)
+	function RecipeGroupSelect(menuButton, group)
+--	DebugSpam("select grouping",label,dropDown)
 --		self:SetTradeSkillOption("grouping", label)
 		CloseDropDownMenus()
 
+		if not group then
+			group = groupLabels[GnomeWorks.player..":"..GnomeWorks.tradeID][1].subGroup
+		end
+
+
 		GnomeWorks.groupLabel = group.label
 		GnomeWorks.group = group.name
+
 
 		if IsTradeSkillLinked() or IsTradeSkillGuild() then
 			GnomeWorksDB.config.currentGroup.alt[GnomeWorks.tradeID] = group.label.."/"..group.name
@@ -760,7 +808,7 @@ do
 			GnomeWorksDB.config.currentGroup.self[GnomeWorks.tradeID] = group.label.."/"..group.name
 		end
 
-		GnomeWorks:RecipeGroupDropdown_OnShow(dropDown)
+--		GnomeWorks:RecipeGroupDropdown_OnShow(dropDown)
 
 --		self:RecipeGroupGenerateAutoGroups()
 --		self:SortAndFilterRecipes()
@@ -772,8 +820,17 @@ do
 
 	function GnomeWorks:RecipeGroupIsLocked()
 --		if self.groupLabel == "Flat" or self.groupLabel == "By Category" then return true end
+		local group = self:RecipeGroupFind(self.player, self.tradeID, self.groupLabel)
 
-		return self:GetTradeSkillOption(self.groupLabel.."-locked")
+		if group and group.locked then
+			return true
+		end
+
+
+		return false
+--		if self.config.lockedGroup[self.groupLabel] then
+--			return true
+--		end
 	end
 
 
@@ -814,12 +871,18 @@ do
 
 							entry.func = RecipeGroupSelect
 							entry.arg1 = group
-							entry.arg2 = menuFrame
 
 							entry.checked = false
 
-							if level == 1 and GnomeWorks.groupLabel == group.label and not GnomeWorks.group then
-								entry.checked = true
+							entry.colorCode = nil
+
+
+							if level == 1 and GnomeWorks.groupLabel == group.label then
+								if not GnomeWorks.group then
+									entry.checked = true
+								else
+									entry.colorCode = "|cffc0ffc0"
+								end
 							end
 
 							if GnomeWorks.groupLabel == group.label and GnomeWorks.group == group.name then
@@ -846,13 +909,14 @@ do
 		dropDown.displayMode = "MENU"
 		self:RecipeGroupDeconstructDBStrings()
 
+
 		local groupLabel = self.groupLabel or "By Category"
 
 		if self.group and self.group ~= OVERALL_PARENT_GROUP_NAME then
 			groupLabel = groupLabel.."/"..self.group
 		end
 
-		UIDropDownMenu_SetSelectedName(dropDown, groupLabel, true)
+--		UIDropDownMenu_SetSelectedID(dropDown, groupLabel, true)
 		UIDropDownMenu_SetText(dropDown, "Group "..groupLabel)
 	end
 
@@ -866,207 +930,170 @@ do
 		self:UpdateTradeSkillWindow()
 	end
 	]]
-end
 
 
 
--- Called when the grouping operators drop down is displayed
-function GnomeWorks:RecipeGroupOperations_OnClick()
-	if not RecipeGroupOpsMenu then
-		RecipeGroupOpsMenu = CreateFrame("Frame", "RecipeGroupOpsMenu", UIParent, "UIDropDownMenuTemplate")
-	end
-
-	UIDropDownMenu_Initialize(RecipeGroupOpsMenu, GnomeWorksRecipeGroupOpsMenu_Init, "MENU")
-	ToggleDropDownMenu(1, nil, RecipeGroupOpsMenu, this, this:GetWidth(), 0)
-end
-
-
--- The method we use the initialize the group ops drop down.
-function GnomeWorksRecipeGroupOpsMenu_Init(menuFrame,level)
-    if level == 1 then
-		local entry = {}
-		local null = {}
-
-		null.text = ""
-		null.disabled = true
-
-
-
-		entry.text = "New"
-		entry.value = "New"
-
-		entry.func = self.RecipeGroupOpNew
-
-		UIDropDownMenu_AddButton(entry)
-
-
-
-		entry.text = "Copy"
-		entry.value = "Copy"
-
-		entry.func = self.RecipeGroupOpCopy
-
-		UIDropDownMenu_AddButton(entry)
-
-
-		entry.text = "Rename"
-		entry.value = "Rename"
-
-		entry.func = self.RecipeGroupOpRename
-
-		UIDropDownMenu_AddButton(entry)
-
-
-		entry.text = "Lock/Unlock"
-		entry.value = "Lock/Unlock"
-
-		entry.func = self.RecipeGroupOpLock
-
-		UIDropDownMenu_AddButton(entry)
-
-
-
-		entry.text = "Delete"
-		entry.value = "Delete"
-
-		entry.func = self.RecipeGroupOpDelete
-
-		UIDropDownMenu_AddButton(entry)
-	end
-
-end
-
-
-function GnomeWorks:RecipeGroupOpNew()
-	local label = "Custom"
-	local serial = 1
-	local player = self.player
-	local tradeID = self.tradeID
-
-	local groupList = self.data.groupList
-
-	while groupList[player..":"..tradeID..":"..label] do
-		serial = serial + 1
-		label = "Custom "..serial
-	end
-
-	local newMain = self:RecipeGroupNew(player, tradeID, label)
-
-	for recipeID,recipe in pairs(self.data.recipeList) do
-		if recipe.tradeID == tradeID then
-			local index = self.data.skillIndexLookup[player][recipeID]
-
-			if index then
-				self:RecipeGroupAddRecipe(newMain, recipeID, index, true)
-			end
-		end
-	end
-
-	self:RecipeGroupConstructDBString(newMain)
-
-	self:SetTradeSkillOption("grouping", label)
-	self.groupLabel = label
-
-	UIDropDownMenu_SetSelectedName(GnomeWorksRecipeGroupDropdown, label, true)
-	UIDropDownMenu_SetText(GnomeWorksRecipeGroupDropdown, label)
-
-	self:SortAndFilterRecipes()
-end
-
-
-function GnomeWorks:RecipeGroupOpCopy()
-	local label = "Custom"
-	local serial = 1
-	local player = self.player
-	local tradeID = self.tradeID
-
-	local groupList = self.data.groupList
-
-	while groupList[player..":"..tradeID..":"..label] do
-		serial = serial + 1
-		label = "Custom "..serial
-	end
-
-	local newMain = self:RecipeGroupNew(player, tradeID, label)
-	local oldMain = self:RecipeGroupFind(player, tradeID, self.groupLabel)
-
-	self:RecipeGroupCopy(oldMain, newMain, false)
-
-	self:RecipeGroupConstructDBString(newMain)
-
-	self:SetTradeSkillOption("grouping", label)
-	self.groupLabel = label
-
-	UIDropDownMenu_SetSelectedName(GnomeWorksRecipeGroupDropdown, label, true)
-	UIDropDownMenu_SetText(GnomeWorksRecipeGroupDropdown, label)
-
-	self:SortAndFilterRecipes()
-end
-
-
-
-function GnomeWorks:GroupNameEditSave()
-	local newName = GroupButtonNameEdit:GetText()
-
-	self:RecipeGroupRename(self.groupLabel, newName)
-
-	GroupButtonNameEdit:Hide()
-	GnomeWorksRecipeGroupDropdownText:Show()
-	GnomeWorksRecipeGroupDropdownText:SetText(newName)
-
-	self.groupLabel = newName
-end
-
-
-function GnomeWorks:RecipeGroupOpRename()
-	if not self:RecipeGroupIsLocked() then
-		GroupButtonNameEdit:SetText(self.groupLabel)
-		GroupButtonNameEdit:SetParent(GnomeWorksRecipeGroupDropdownText:GetParent())
-
-		local numPoints = GnomeWorksRecipeGroupDropdownText:GetNumPoints()
-
-		for p=1,numPoints do
-			GroupButtonNameEdit:SetPoint(GnomeWorksRecipeGroupDropdownText:GetPoint(p))
-		end
-
-
-		GroupButtonNameEdit:Show()
-		GnomeWorksRecipeGroupDropdownText:Hide()
-	end
-end
-
-
-function GnomeWorks:RecipeGroupOpLock()
-	local label = self.groupLabel
-
-	if label ~= "Blizzard" and label ~= "Flat" then
-		self:ToggleTradeSkillOption(label.."-locked")
-	end
-end
-
-
-function GnomeWorks:RecipeGroupOpDelete()
-	if not self:RecipeGroupIsLocked() then
+	function GnomeWorks:RecipeGroupOpNew()
+		local label = "Custom"
+		local serial = 1
 		local player = self.player
 		local tradeID = self.tradeID
+
+		local groupList = self.data.groupList
+
+		while groupList[player..":"..tradeID..":"..label] do
+			serial = serial + 1
+			label = "Custom "..serial
+		end
+
+		local newMain = self:RecipeGroupNew(player, tradeID, label)
+		local oldMain = self:RecipeGroupFind(player, tradeID, "Flat")
+
+		self:RecipeGroupCopy(oldMain, newMain, false)
+
+		self:RecipeGroupConstructDBString(newMain)
+
+		RecipeGroupSelect(nil,newMain)
+	end
+
+
+	function GnomeWorks:RecipeGroupOpCopy()
+		local label = "Custom"
+		local serial = 1
+		local player = self.player
+		local tradeID = self.tradeID
+
+		local groupList = self.data.groupList
+
+		while groupList[player..":"..tradeID..":"..label] do
+			serial = serial + 1
+			label = "Custom "..serial
+		end
+
+		local newMain = self:RecipeGroupNew(player, tradeID, label)
+		local oldMain = self:RecipeGroupFind(player, tradeID, self.groupLabel)
+
+		self:RecipeGroupCopy(oldMain, newMain, false)
+
+		self:RecipeGroupConstructDBString(newMain)
+
+		RecipeGroupSelect(nil,newMain)
+	end
+
+
+
+	function GnomeWorks:GroupNameEditSave()
+		local newName = GroupButtonNameEdit:GetText()
+
+		self:RecipeGroupRename(self.groupLabel, newName)
+
+		GroupButtonNameEdit:Hide()
+		GnomeWorksRecipeGroupDropdownText:Show()
+		GnomeWorksRecipeGroupDropdownText:SetText(newName)
+
+		self.groupLabel = newName
+	end
+
+
+	function GnomeWorks:RecipeGroupOpRename()
+		if not self:RecipeGroupIsLocked() then
+			GroupButtonNameEdit:SetText(self.groupLabel)
+			GroupButtonNameEdit:SetParent(GnomeWorksRecipeGroupDropdownText:GetParent())
+
+			local numPoints = GnomeWorksRecipeGroupDropdownText:GetNumPoints()
+
+			for p=1,numPoints do
+				GroupButtonNameEdit:SetPoint(GnomeWorksRecipeGroupDropdownText:GetPoint(p))
+			end
+
+
+			GroupButtonNameEdit:Show()
+			GnomeWorksRecipeGroupDropdownText:Hide()
+		end
+	end
+
+
+	function GnomeWorks:RecipeGroupOpLock()
 		local label = self.groupLabel
 
-		self.data.groupList[player..":"..tradeID..":"..label] = nil
-		self.data.recipeGroupData[player..":"..tradeID..":"..label] = nil
-
-		collectgarbage("collect")
-
-
-		label = "Blizzard"
-
-		self:SetTradeSkillOption("grouping", label)
-		self.groupLabel = label
-
-		UIDropDownMenu_SetSelectedName(GnomeWorksRecipeGroupDropdown, label, true)
-		UIDropDownMenu_SetText(GnomeWorksRecipeGroupDropdown, label)
-
-		self:SortAndFilterRecipes()
-		self:UpdateTradeSkillFrame()
+		if label ~= "Blizzard" and label ~= "Flat" then
+--			self:ToggleTradeSkillOption(label.."-locked")
+		end
 	end
+
+
+	function GnomeWorks:RecipeGroupOpDelete()
+		if not self:RecipeGroupIsLocked() then
+			local player = self.player
+			local tradeID = self.tradeID
+			local label = self.groupLabel
+
+			self.data.groupList[player..":"..tradeID..":"..label] = nil
+			self.data.recipeGroupData[player..":"..tradeID..":"..label] = nil
+
+
+			RemoveLabel(player,tradeID,label)
+
+
+
+
+			collectgarbage("collect")
+
+			RecipeGroupSelect()
+		end
+	end
+
+
+
+	local groupOpMenu = {
+		{
+			text = "New",
+			func = function() GnomeWorks:RecipeGroupOpNew() end,
+			notCheckable = true,
+
+		},
+		{
+			text = "Copy",
+			func = function() GnomeWorks:RecipeGroupOpCopy() end,
+			notCheckable = true,
+		},
+		{
+			text = "Rename",
+			func = function() GnomeWorks:RecipeGroupOpRename() end,
+			notCheckable = true,
+		},
+--[[
+		{
+			text = "Lock/Unlock",
+			func = function() GnomeWorks:RecipeGroupOpLock() end,
+			notCheckable = true,
+		},
+]]
+		{
+			text = "Delete",
+			func = function() GnomeWorks:RecipeGroupOpDelete() end,
+			notCheckable = true,
+		},
+	}
+
+
+	-- Called when the grouping operators drop down is displayed
+	function GnomeWorks:RecipeGroupOperations_OnClick()
+		if not RecipeGroupOpsMenu then
+			CreateFrame("Frame", "GWRecipeGroupOpsMenu", UIParent, "UIDropDownMenuTemplate")
+		end
+
+		local x, y = GetCursorPosition()
+		local uiScale = UIParent:GetEffectiveScale()
+
+		EasyMenu(groupOpMenu, GWRecipeGroupOpsMenu, UIParent, x/uiScale,y/uiScale, "MENU", 5)
+	--	UIDropDownMenu_Initialize(RecipeGroupOpsMenu, GnomeWorksRecipeGroupOpsMenu_Init, "MENU")
+	--	ToggleDropDownMenu(1, nil, RecipeGroupOpsMenu, this, this:GetWidth(), 0)
+	end
+
 end
+
+
+
+
 
