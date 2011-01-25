@@ -30,16 +30,16 @@ local function RemoveLabel(player,tradeID,label)
 	end
 
 	if d then
-		table.remove(groupLabels[player..":"..tradeID],d)
-
 		groupLabelAdded[player..":"..tradeID..":"..label] = nil
+
+		return table.remove(groupLabels[player..":"..tradeID],d)
 	end
 end
 
 
 function GnomeWorks:RecipeGroupRename(oldName, newName)
 	local oldKey =  self.player..":"..self.tradeID..":"..oldName
-	local key = self.player..":"..self.tradeID..":"..newName
+	local newKey = self.player..":"..self.tradeID..":"..newName
 
 	if self.data.groupList[oldKey] then
 		self.data.groupList[newKey] = self.data.groupList[oldKey]
@@ -47,16 +47,22 @@ function GnomeWorks:RecipeGroupRename(oldName, newName)
 
 		local list = self.data.groupList[newKey]
 
-		self.data.recipeGroupData[key] = self.data.recipeGroupData[oldKey]
+		self.data.recipeGroupData[newKey] = self.data.recipeGroupData[oldKey]
 		self.data.recipeGroupData[oldKey] = nil
 
 		for groupName, groupData in pairs(list) do
-			groupData.key = key
+			groupData.key = newKey
+			groupData.label = newName
 		end
 
-		RemoveLabel(self.player,self.tradeID, oldName)
+		for k,v in pairs(groupLabels[self.player..":"..self.tradeID]) do
+			if v.name == oldName then
+				v.name = newName
+				break
+			end
+		end
 
-		table.insert(groupLabels[self.player..":"..self.tradeID], { name = newName, subGroup = list })
+		groupLabelAdded[oldKey] = nil
 		groupLabelAdded[newKey] = true
 	end
 end
@@ -204,6 +210,8 @@ function GnomeWorks:RecipeGroupCopy(s, d, noDB)
 		for i=1,#s.entries do
 			if s.entries[i].subGroup then
 				local newGroup = self:RecipeGroupNew(player, tradeID, label, s.entries[i].name)
+
+				newGroup.manualEntry = true
 
 				self:RecipeGroupCopy(s.entries[i].subGroup, newGroup, noDB)
 
@@ -467,6 +475,8 @@ function GnomeWorks:RecipeGroupRenameEntry(entry, name)
 		end
 
 		self:RecipeGroupConstructDBString(entry.parent)
+
+		return name
 	end
 end
 
@@ -707,6 +717,8 @@ function GnomeWorks:RecipeGroupDeconstructDBStrings()
 
 				local group = self:RecipeGroupNew(player, tradeID, label, name)
 
+				group.manualEntry = true
+
 				local groupContents = string.match(list,"(%d+)")
 				local groupIndex = (groupContents) or serial
 
@@ -746,20 +758,17 @@ function GnomeWorks:RecipeGroupDeconstructDBStrings()
 							local id = (groupID)
 --print("linking", player, tradeID, label, id, groupNames[id])
 
---							local subGroup = self:RecipeGroupNew(player, tradeID, label, groupContents[j])
 							local subGroup = self:RecipeGroupFind(player, tradeID, label, groupNames[label..id])
 
 							if subGroup then
 								self:RecipeGroupAddSubGroup(group, subGroup, subGroup.index, true)
 							else
-								self:RecipeGroupAddSubGroup(group, subGroup, subGroup.index, true)		--?? wtf?
+								GnomeWorks:error("can't properly construct recipe groups")
 							end
 						elseif recipeID and skillIndex then
 							recipeID = tonumber(recipeID)
 							skillIndex = tonumber(skillIndex)
---print(recipeID)
 
---print("adding recipe ",recipeID," to ",group.name,"/",player,":",skillIndex)
 							self:RecipeGroupAddRecipe(group, recipeID, skillIndex, true)
 						end
 					end
@@ -787,6 +796,54 @@ end
 
 
 do
+	local groupNameEdit = CreateFrame("EditBox", nil, UIParent)
+
+	groupNameEdit:SetWidth(300)
+	groupNameEdit:SetHeight(16)
+
+
+--[[
+	<EditBox name="GroupButtonNameEdit" historyLines="0" autoFocus="true" hidden="true">
+		<Size>
+  			<AbsDimension x="293" y="16" />
+  		</Size>
+		<FontString inherits="GameFontNormalSmall" justifyH="RIGHT">
+			<Anchors>
+				<Anchor point="LEFT">
+					<Offset>
+						<AbsDimension x="20" y="0" />
+					</Offset>
+				</Anchor>
+			</Anchors>
+			<Color r="1" g="1" b="1" a="1"/>
+		</FontString>
+		<Scripts>
+			<OnClick>
+			</OnClick>
+			<OnTabPressed>
+				Skillet:GroupNameEditSave()
+			</OnTabPressed>
+			<OnEnterPressed>
+				Skillet:GroupNameEditSave()
+			</OnEnterPressed>
+			<OnEscapePressed>
+				this:ClearFocus()
+			</OnEscapePressed>
+			<OnTextChanged>
+			</OnTextChanged>
+			<OnEditFocusLost>
+				this:Hide()
+				SkilletRecipeGroupDropdownButton:Show()
+				Skillet:UpdateTradeSkillWindow()
+			</OnEditFocusLost>
+			<OnEditFocusGained>
+				this:HighlightText()
+			</OnEditFocusGained>
+		</Scripts>
+	</EditBox>
+]]
+
+
 	-- Called when the user selects an item in the group drop down
 	function RecipeGroupSelect(menuButton, group)
 --	DebugSpam("select grouping",label,dropDown)
@@ -834,67 +891,65 @@ do
 	end
 
 
-	local function DropDown_Init(menuFrame,level,entries,depth,parent)
-		if not depth then
-			depth = 1
+	local function DropDown_Init(menuFrame,level)
+		local entries
+
+		if level == 1 then
 			if GnomeWorks.tradeID and GnomeWorks.player then
 				entries = groupLabels[GnomeWorks.player..":"..GnomeWorks.tradeID]
 			end
+		elseif UIDROPDOWNMENU_MENU_VALUE and type(UIDROPDOWNMENU_MENU_VALUE)=="table" then
+			entries = UIDROPDOWNMENU_MENU_VALUE.entries
+		end
+
+		if not entries then
+			return 0
 		end
 
 		local numGroupsAdded = 0
 
 		local entry = {}
 
-		if entries and level then
-			for i=1,#entries do
-				if entries[i].subGroup then
-					if depth <= level then
-						local group = entries[i].subGroup
 
-						if UIDROPDOWNMENU_MENU_VALUE == group then
-							DropDown_Init(menuFrame,level,group.entries,depth+1,group)
-						end
+		for i=1,#entries do
+			if entries[i].subGroup then
+				local group = entries[i].subGroup
 
-						if depth == level  then
-							entry.hasArrow = false
+				entry.hasArrow = false
 
-							for k,v in ipairs(group.entries) do
-								if v.subGroup then
-									entry.hasArrow = true
-									break
-								end
-							end
-
-							entry.text = entries[i].name
-							entry.value = group
-
-							entry.func = RecipeGroupSelect
-							entry.arg1 = group
-
-							entry.checked = false
-
-							entry.colorCode = nil
-
-
-							if level == 1 and GnomeWorks.groupLabel == group.label then
-								if not GnomeWorks.group then
-									entry.checked = true
-								else
-									entry.colorCode = "|cffc0ffc0"
-								end
-							end
-
-							if GnomeWorks.groupLabel == group.label and GnomeWorks.group == group.name then
-								entry.checked = true
-							end
-
-							UIDropDownMenu_AddButton(entry, level)
-						end
+				for k,v in ipairs(group.entries) do
+					if v.subGroup then
+						entry.hasArrow = true
+						break
 					end
-
-					numGroupsAdded = numGroupsAdded + 1
 				end
+
+				entry.text = entries[i].name
+				entry.value = group
+
+				entry.func = RecipeGroupSelect
+				entry.arg1 = group
+
+				entry.checked = false
+
+				entry.colorCode = nil
+
+
+				if level == 1 and GnomeWorks.groupLabel == group.label then
+					if not GnomeWorks.group then
+						entry.checked = true
+					else
+						entry.colorCode = "|cffc0ffc0"
+					end
+				end
+
+				if GnomeWorks.groupLabel == group.label and GnomeWorks.group == group.name then
+					entry.checked = true
+				end
+
+				UIDropDownMenu_AddButton(entry, level)
+
+				numGroupsAdded = numGroupsAdded + 1
 			end
 		end
 
@@ -917,7 +972,7 @@ do
 		end
 
 --		UIDropDownMenu_SetSelectedID(dropDown, groupLabel, true)
-		UIDropDownMenu_SetText(dropDown, "Group "..groupLabel)
+		UIDropDownMenu_SetText(dropDown, "Group |cffc0ffc0"..groupLabel)
 	end
 
 
@@ -982,33 +1037,30 @@ do
 
 
 
-	function GnomeWorks:GroupNameEditSave()
-		local newName = GroupButtonNameEdit:GetText()
+	local function GroupNameEditSave(editBox)
+		local newName = editBox:GetText()
 
-		self:RecipeGroupRename(self.groupLabel, newName)
+		GnomeWorks:RecipeGroupRename(GnomeWorks.groupLabel, newName)
 
-		GroupButtonNameEdit:Hide()
-		GnomeWorksRecipeGroupDropdownText:Show()
-		GnomeWorksRecipeGroupDropdownText:SetText(newName)
+		editBox:Hide()
+		GnomeWorksGroupingText:Show()
+		GnomeWorksGroupingText:SetText("Group |cffc0ffc0"..newName)
 
-		self.groupLabel = newName
+		GnomeWorks.groupLabel = newName
 	end
 
 
 	function GnomeWorks:RecipeGroupOpRename()
 		if not self:RecipeGroupIsLocked() then
-			GroupButtonNameEdit:SetText(self.groupLabel)
-			GroupButtonNameEdit:SetParent(GnomeWorksRecipeGroupDropdownText:GetParent())
+			groupNameEdit:SetText(self.groupLabel)
+			groupNameEdit:SetParent(GnomeWorksGrouping)
+			groupNameEdit:SetPoint("LEFT", GnomeWorksGroupingLeft, "RIGHT",0,0)
+			groupNameEdit:SetPoint("RIGHT", GnomeWorksGroupingRight, "LEFT",0,0)
 
-			local numPoints = GnomeWorksRecipeGroupDropdownText:GetNumPoints()
+			groupNameEdit:Show()
+			GnomeWorksGroupingText:Hide()
+			groupNameEdit:SetFocus()
 
-			for p=1,numPoints do
-				GroupButtonNameEdit:SetPoint(GnomeWorksRecipeGroupDropdownText:GetPoint(p))
-			end
-
-
-			GroupButtonNameEdit:Show()
-			GnomeWorksRecipeGroupDropdownText:Hide()
 		end
 	end
 
@@ -1090,6 +1142,18 @@ do
 	--	UIDropDownMenu_Initialize(RecipeGroupOpsMenu, GnomeWorksRecipeGroupOpsMenu_Init, "MENU")
 	--	ToggleDropDownMenu(1, nil, RecipeGroupOpsMenu, this, this:GetWidth(), 0)
 	end
+
+
+
+	groupNameEdit:SetScript("OnTabPressed", GroupNameEditSave)
+	groupNameEdit:SetScript("OnEnterPressed", GroupNameEditSave)
+	groupNameEdit:SetScript("OnEscapePressed", function(f) f:ClearFocus() end)
+	groupNameEdit:SetScript("OnEditFocusLost", function(f) f:Hide() GnomeWorksGroupingText:Show() end)
+	groupNameEdit:SetScript("OnEditFocusGained", function(f) f:HighlightText() end)
+
+	groupNameEdit:SetAutoFocus(false)
+
+	groupNameEdit:SetFontObject("GameFontHighlightSmall")
 
 end
 

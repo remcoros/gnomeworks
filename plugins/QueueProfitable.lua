@@ -27,7 +27,7 @@ do
 					local value = LSW:GetSkillValue(recipeID)/10000
 
 					if results and cost and value then
-						local onHand = GnomeWorks:GetFactionInventoryCount(next(results))
+						local onHand = GnomeWorks:GetFactionInventoryCount((next(results)))
 
 						local count = tonumber(plugin.variables.queueCount.value) - onHand
 

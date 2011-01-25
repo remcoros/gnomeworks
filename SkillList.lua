@@ -685,21 +685,27 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		local currentGroup = nil
 
 
-		local mainGroup = self:RecipeGroupNew(player,tradeID,"By Category")
+		local mainGroup
+		local slotGroup
 
-		mainGroup.locked = true
-		mainGroup.autoGroup = true
+		if GetTradeSkillSubClasses() then
+			mainGroup = self:RecipeGroupNew(player,tradeID,"By Category")
 
-		self:RecipeGroupClearEntries(mainGroup)
+			mainGroup.locked = true
+			mainGroup.autoGroup = true
+
+			self:RecipeGroupClearEntries(mainGroup)
+		end
 
 
-		local slotGroup = self:RecipeGroupNew(player,tradeID,"By Slot")
+		if GetTradeSkillInvSlots() then
+			slotGroup = self:RecipeGroupNew(player,tradeID,"By Slot")
 
-		slotGroup.locked = true
-		slotGroup.autoGroup = true
+			slotGroup.locked = true
+			slotGroup.autoGroup = true
 
-		self:RecipeGroupClearEntries(slotGroup)
-
+			self:RecipeGroupClearEntries(slotGroup)
+		end
 
 
 		local flatGroup = self:RecipeGroupNew(player,tradeID,"Flat")
@@ -892,8 +898,15 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 --	DebugSpam("Scan Complete")
 
 
-		self:ScanCategoryGroups(mainGroup)
-		self:ScanSlotGroups(slotGroup)
+		if mainGroup then
+			self:ScanCategoryGroups(mainGroup)
+		end
+
+
+		if slotGroup then
+			self:ScanSlotGroups(slotGroup)
+		end
+
 
 		local scanTimeEnd = GetTime()
 
@@ -922,9 +935,11 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 		if numHeaders > 0 and not gotNil then
 			dataScanned[key] = true
+--print(key, "data scanned")
 
 			self:AddTrainableSkills(player, tradeID)
 		else
+--print(key, "not scanned")
 			self:ScheduleTimer("ScanTrade",2)
 		end
 
@@ -952,6 +967,14 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		return skillData, player, tradeID
 	end
 
+
+	function GnomeWorks:IsTradeSkillDataCurrent(player, tradeID)
+		if player and tradeID then
+			local key = player..":"..tradeID
+--print("is it scanned?",key, dataScanned[key])
+			return dataScanned[key]
+		end
+	end
 
 --[[
 	function SkilletData:EnchantingRecipeSlotAssign(recipeID, slot)

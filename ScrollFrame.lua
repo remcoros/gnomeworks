@@ -114,11 +114,11 @@ do
 
 				if scrollFrame.firstSelection < index then
 					for i=scrollFrame.firstSelection,index do
-						scrollFrame.selection[i] = true
+						scrollFrame.selection[scrollFrame.dataMap[i]] = true
 					end
 				else
 					for i=index,scrollFrame.firstSelection do
-						scrollFrame.selection[i] = true
+						scrollFrame.selection[scrollFrame.dataMap[i]] = true
 					end
 				end
 
@@ -156,11 +156,12 @@ do
 
 		if rowFrame.rowIndex > 0 and scrollFrame.selectable then
 			local index = rowFrame.rowIndex + (scrollFrame.scrollOffset or 0)
+			local dataIndex = scrollFrame.dataMap[index]
 
 			if IsControlKeyDown() then
-				scrollFrame.selection[index] = (scrollFrame.selection[index] == nil) or nil
+				scrollFrame.selection[dataIndex] = (scrollFrame.selection[dataIndex] == nil) or nil
 			else
-				if not scrollFrame.selection[index] and not IsShiftKeyDown() then
+				if not scrollFrame.selection[dataIndex] and not IsShiftKeyDown() then
 					table.wipe(scrollFrame.selection)
 				end
 			end
@@ -172,16 +173,16 @@ do
 
 				if scrollFrame.firstSelection < index then
 					for i=scrollFrame.firstSelection,index do
-						scrollFrame.selection[i] = true
+						scrollFrame.selection[scrollFrame.dataMap[i]] = true
 					end
 				else
 					for i=index,scrollFrame.firstSelection do
-						scrollFrame.selection[i] = true
+						scrollFrame.selection[scrollFrame.dataMap[i]] = true
 					end
 				end
 			end
 
-			scrollFrame.selection[index] = true
+			scrollFrame.selection[dataIndex] = true
 
 			for i=1,scrollFrame.numRows do
 				scrollFrame:DrawRowHighlight(scrollFrame.rowFrame[i])
@@ -383,7 +384,7 @@ do
 				entry.depth = depth
 
 				if entry.subGroup then
-					if entry.subGroup.numVisible>0 then
+					if ((entry.subGroup.numEntries or #entry.subGroup.entries) == 0 and entry.subGroup.manualEntry) or entry.subGroup.numVisible>0 then
 						if scrollFrame.childrenFirst then
 							if entry.subGroup.expanded then
 								num = num + FilterData(scrollFrame, entry.subGroup, depth+1, num+index)
@@ -909,6 +910,51 @@ do
 		end
 
 
+		local editBox = CreateFrame("EditBox", nil, UIParent)
+
+		local function EditBoxSave(editBox)
+			editBox.cellFrame.text:Show()
+			editBox:Hide()
+
+			editBox.callBack(editBox.cellFrame, editBox:GetText())
+		end
+
+
+		local function EditBoxExit(editBox)
+			editBox.cellFrame.text:Show()
+			editBox:Hide()
+		end
+
+
+
+		local function CellFrameEdit(cellFrame, text, callBack)
+			editBox:SetParent(cellFrame)
+			editBox:SetAllPoints(cellFrame.text)
+			editBox:SetFontObject(cellFrame.scrollFrame.columnHeaders[cellFrame.index].font)
+			editBox.callBack = callBack
+			editBox.cellFrame = cellFrame
+			editBox.entry = cellFrame:GetParent().data
+
+			editBox:SetText(text)
+			editBox:HighlightText()
+			editBox:SetFocus()
+			editBox:Show()
+			cellFrame.text:Hide()
+		end
+
+
+		editBox:SetScript("OnTabPressed", EditBoxSave)
+		editBox:SetScript("OnEnterPressed", EditBoxSave)
+		editBox:SetScript("OnEscapePressed", function(f) f:ClearFocus() end)
+		editBox:SetScript("OnEditFocusLost", EditBoxExit)
+--		editBox:SetScript("OnEditFocusGained", function(f) f:HighlightText() end)
+
+--		editBox:SetAutoFocus(false)
+
+		editBox:SetFontObject("GameFontHighlightSmall")
+
+		editBox:Hide()
+
 
 		sf.InitColumns = function(scrollFrame, rowFrame)
 			local width = rowFrame:GetWidth()
@@ -926,6 +972,7 @@ do
 				for i=1,#headers do
 					if not rowFrame.cols[i] then
 						local c = CreateFrame("Button", nil, rowFrame)
+
 						c.index = i
 						c.scrollFrame = scrollFrame
 
@@ -958,9 +1005,24 @@ do
 						c.text:SetPoint("RIGHT", c, "RIGHT", -2,0)
 						c.text:SetJustifyH((rowFrame.rowIndex==0 and headers[i].headerAlign) or headers[i].align or "LEFT")
 
-						c.OnClick = function(frame,mb) local func = frame.scrollFrame.columnHeaders[frame.index].OnClick if func then func(frame,mb) end end
+						c.OnClick = function(frame,mb)
+							local func = frame.scrollFrame.columnHeaders[frame.index].OnClick
+							local now = GetTime()
+							local last = frame.lastClick or 0
+
+							if func
+								then func(frame,mb,now-last)
+							end
+
+							frame.lastClick = now
+						end
+
 						c.OnEnter = function(frame,mb) local func = frame.scrollFrame.columnHeaders[frame.index].OnEnter if func then func(frame,mb) end end
 						c.OnLeave = function(frame,mb) local func = frame.scrollFrame.columnHeaders[frame.index].OnLeave if func then func(frame,mb) end end
+
+
+						c.Edit = CellFrameEdit
+
 
 						rowFrame.cols[i] = c
 
@@ -1004,6 +1066,7 @@ do
 
 			local dark
 			local index = rowFrame.rowIndex + scrollFrame.scrollOffset
+			local dataIndex = scrollFrame.dataMap[index]
 
 			local mouseOver = highlightMouseOver
 
@@ -1011,7 +1074,7 @@ do
 			entry = entry or rowFrame.data
 
 
-			if scrollFrame.selection[index] then
+			if scrollFrame.selection[dataIndex] then
 				mouseOver = highlightSelectedMouseOver
 			end
 
@@ -1020,7 +1083,7 @@ do
 				rowFrame.highlight:SetVertexColor(unpack(highlightSelected))
 			elseif scrollFrame.mouseOverIndex == rowFrame.rowIndex then
 				rowFrame.highlight:SetVertexColor(unpack(mouseOver))
-			elseif scrollFrame.selection[index] then
+			elseif scrollFrame.selection[dataIndex] then
 				if math.floor(rowFrame.rowIndex/2)*2 == rowFrame.rowIndex then  -- alternating gradient lines
 					rowFrame.highlight:SetVertexColor(.4,.6,.4,.18)
 				else
@@ -1086,6 +1149,15 @@ do
 
 			rowFrame.data = rowData
 
+			if editBox:IsVisible() and editBox.cellFrame then
+				if editBox.cellFrame:GetParent().data ~= editBox.entry then
+					editBox:ClearFocus()
+					editBox:Hide()
+					editBox.cellFrame.text:Show()
+				end
+			end
+
+
 			for i=1,#rowFrame.cols do
 				local columnFrame = scrollFrame.columnFrames[i]
 
@@ -1116,6 +1188,11 @@ do
 							rowFrame.cols[i].bg:Hide()
 						end
 					else
+						if MouseIsOver(rowFrame.cols[i]) then
+							scrollFrame.OnLeave(rowFrame.cols[i])
+							scrollFrame.OnEnter(rowFrame.cols[i])
+						end
+
 						if headers[i].draw and rowData then
 							headers[i].draw(rowFrame,rowFrame.cols[i],rowData)
 						else

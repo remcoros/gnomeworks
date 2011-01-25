@@ -23,6 +23,7 @@ do
 	local ENCHANTING_REPLACEMENT_STRING = "Enchant "
 
 
+
 	glyphTypes = {}
 
 	local glyphTypeColor = {
@@ -667,6 +668,15 @@ do
 
 
 
+	local function RenameGroup(cellFrame, newName)
+		local entry  = cellFrame:GetParent().data
+
+		entry.name = GnomeWorks:RecipeGroupRenameEntry(entry, newName)
+
+		sf:Refresh()
+	end
+
+
 
 	columnHeaders = {
 		{
@@ -735,14 +745,26 @@ do
 				return (a.index or 0) - (b.index or 0)
 			end,
 			filterMenu = recipeFilterMenu,
+
 			OnClick = function(cellFrame, button, source)
 							if cellFrame:GetParent().rowIndex>0 then
 								local entry = cellFrame:GetParent().data
+								local thisClick = GetTime()
 
-								if entry.subGroup and source == "button" then
-									entry.subGroup.expanded = not entry.subGroup.expanded
-									sf:Refresh()
-								elseif not entry.subGroup then
+								if entry.subGroup then
+									if source == "button" then
+										entry.subGroup.expanded = not entry.subGroup.expanded
+										sf:Refresh()
+									else
+										local lastClick = source
+
+										if lastClick < .4 then
+											if not GnomeWorks:RecipeGroupIsLocked() then
+												cellFrame:Edit(entry.name, RenameGroup)
+											end
+										end
+									end
+								else
 									GnomeWorks:SelectEntry(entry)
 									sf:Draw()
 								end
@@ -1128,7 +1150,7 @@ do
 								local entry = cellFrame:GetParent().data
 
 								if entry and entry.recipeID then
-									if entry.totalInventory > 0 then
+									if (entry.totalInventory or 0) > 0 then
 										GameTooltip:SetOwner(cellFrame, "ANCHOR_TOPLEFT")
 										GameTooltip:ClearLines()
 										GameTooltip:AddLine("Recipe Craft Results",1,1,1,true)
@@ -1169,6 +1191,21 @@ do
 														end
 													end
 
+												end
+											end
+
+											local playerGuild = GnomeWorks.data.playerData[GnomeWorks.player] and GnomeWorks.data.playerData[GnomeWorks.player].guild
+
+											for guild,guildInventoryData in pairs(GnomeWorks.data.guildInventory) do
+												if guild ~= playerGuild then
+													for tab,tabData in ipairs(guildInventoryData) do
+														if tabData[itemID] then
+															if tabData[itemID] > 0 then
+																GameTooltip:AddDoubleLine("   "..inventoryColors.alt..guild.."/tab"..tab,inventoryColors.alt..tabData[itemID])
+																shown = shown + 1
+															end
+														end
+													end
 												end
 											end
 										end
@@ -1250,15 +1287,62 @@ do
 		sf.selectable = true
 
 
+
 		local function CreateEmptyGroup(scrollFrame)
+			if not GnomeWorks:RecipeGroupIsLocked() then
+				local player = GnomeWorks.player
+				local tradeID = GnomeWorks.tradeID
+				local label = GnomeWorks.groupLabel
+
+				local name, index = GnomeWorks:RecipeGroupNewName(player..":"..tradeID..":"..label, "New Group")
+
+				local newGroup = GnomeWorks:RecipeGroupNew(player, tradeID, label, name)
+
+				newGroup.manualEntry = true
+
+				local parentGroup = GnomeWorks:RecipeGroupFind(player, tradeID, label, GnomeWorks.group)
+
+				GnomeWorks:RecipeGroupAddSubGroup(parentGroup, newGroup, index)
+
+				GnomeWorks:SendMessageDispatch("SkillListChanged")
+			end
 		end
 
 		local function CreateGroup(scrollFrame)
+			if not GnomeWorks:RecipeGroupIsLocked() then
+				local player = GnomeWorks.player
+				local tradeID = GnomeWorks.tradeID
+				local label = GnomeWorks.groupLabel
+
+				local name, index = GnomeWorks:RecipeGroupNewName(player..":"..tradeID..":"..label, "New Group")
+
+				local newGroup = GnomeWorks:RecipeGroupNew(player, tradeID, label, name)
+
+				newGroup.manualEntry = true
+
+				local parentGroup --  = GnomeWorks:RecipeGroupFind(player, tradeID, label, GnomeWorks.group)
+
+				for entry in pairs(scrollFrame.selection) do
+--					if scrollFrame.selection[scrollFrame.dataMap[i]] then
+--						local entry = scrollFrame.dataMap[i]
+
+						if not parentGroup then
+							parentGroup = entry.parent
+						end
+
+						GnomeWorks:RecipeGroupMoveEntry(entry, newGroup)
+--					end
+				end
+
+				GnomeWorks:RecipeGroupAddSubGroup(parentGroup, newGroup, index)
+
+				GnomeWorks:SendMessageDispatch("SkillListChanged")
+			end
 		end
 
 		local function SelectAll(scrollFrame)
-			for i=1,scrollFrame.numRows do
-				scrollFrame.selection[i] = true
+			for i=1,scrollFrame.numData do
+				scrollFrame.selection[scrollFrame.dataMap[i]] = true
 			end
 
 			scrollFrame:Draw()
@@ -1277,6 +1361,9 @@ do
 		sf:RegisterKeyboardInput("G", CreateGroup)
 		sf:RegisterKeyboardInput("A", SelectAll)
 		sf:RegisterKeyboardInput("D", DeselectAll)
+--		sf:RegisterKeyboardInput("C", CopyEntries)
+--		sf:RegisterKeyboardInput("V", PasteEntries)
+--		sf:RegisterKeyboardInput("DELETE", DeleteEntries)
 
 
 		sf.IsEntryFiltered = function(self, entry)
@@ -1522,9 +1609,9 @@ do
 			end
 
 			if groupLabel then
-				UIDropDownMenu_SetText(GnomeWorksGrouping, "Group "..groupLabel)
+				UIDropDownMenu_SetText(GnomeWorksGrouping, "Group |cffc0ffc0"..groupLabel)
 			else
-				UIDropDownMenu_SetText(GnomeWorksGrouping, "--")
+				UIDropDownMenu_SetText(GnomeWorksGrouping, "|cffff0000--")
 			end
 
 			sf.data = group

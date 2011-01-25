@@ -28,6 +28,8 @@ do
 
 	local purchaseEntry
 
+	local purchaseIsPending
+
 
 
 	local function QuickMoneyFormat(copper)
@@ -126,6 +128,8 @@ do
 			return
 		end
 
+		purchaseIsPending = nil
+
 		table.remove(buyFrame.sf.data.entries, entry.dataIndex)
 
 		GnomeWorks.data.auctionInventory[reagentID] = GnomeWorks.data.auctionInventory[reagentID] - entry.count
@@ -141,6 +145,10 @@ do
 
 	local function ReportFailedPurchase()
 		GnomeWorks:warning("Could not complete purchase.")
+
+		purchaseIsPending = nil
+
+		buyFrame.sf:Draw()
 	end
 
 
@@ -158,7 +166,9 @@ do
 
 			PlaceAuctionBid("list", found, entry.buyOut)
 
-			GnomeWorks:ExecuteOnEvent("UPDATE_PENDING_MAIL", ProcessPurchase, entry, 0.25, ReportFailedPurchase)
+			PurchaseIsPending = true
+
+			GnomeWorks:ExecuteOnEvent("UPDATE_PENDING_MAIL", ProcessPurchase, entry, 2.0, ReportFailedPurchase)
 		else
 			page = 0
 
@@ -175,7 +185,11 @@ do
 		if rowFrame.rowIndex>0 then
 			local entry = rowFrame.data
 
-			BuyAuctionEntry(entry)
+			if not purchaseIsPending then
+				BuyAuctionEntry(entry)
+			else
+				GnomeWorks:warning("can't purchase yet.")
+			end
 		end
 
 		GameTooltip:Hide()
@@ -191,12 +205,17 @@ do
 			GameTooltip:SetOwner(cellFrame.scrollFrame,"ANCHOR_NONE")
 			GameTooltip:SetPoint("TOPRIGHT",cellFrame,"TOPLEFT")
 
-			if EntryIsCurrent(entry) then
-				GameTooltip:AddLine("Click To Buy")
+			if purchaseIsPending then
+				GameTooltip:AddLine("|cffff0000Waiting for purchase confirmation")
 				GameTooltip:Show()
 			else
-				GameTooltip:AddLine("Click to Search")
-				GameTooltip:Show()
+				if EntryIsCurrent(entry) then
+					GameTooltip:AddLine("Click To Buy")
+					GameTooltip:Show()
+				else
+					GameTooltip:AddLine("Click to Search")
+					GameTooltip:Show()
+				end
 			end
 		end
 	end

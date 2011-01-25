@@ -473,7 +473,7 @@ do
 			local tabAccess = guildInfo.tabs
 
 			if invData then
-				for tab,tabData in pairs(invData) do
+				for tab,tabData in ipairs(invData) do
 					if tabData[itemID] and tabAccess[tab] then
 						count = count + tabData[itemID]
 					end
@@ -566,6 +566,27 @@ do
 					if inventoryData[container] then
 						count = count + (inventoryData[container][itemID] or 0)
 					end
+				end
+
+--[[
+				if itemID == 2592 then
+					for k in pairs(inventoryData) do
+						print(inv, k, inventoryData[k][itemID] or 0)
+					end
+				end
+]]
+			end
+		end
+
+		local playerGuild = factionPlayer and self.data.playerData[factionPlayer] and self.data.playerData[factionPlayer].guild
+
+
+		for guild,inventoryData in pairs(self.data.guildInventory) do
+--print(guild)
+			if guild ~= playerGuild then
+
+				for tab,tabData in ipairs(inventoryData) do
+					count = count + (tabData[itemID] or 0)
 				end
 
 --[[

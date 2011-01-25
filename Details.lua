@@ -239,6 +239,22 @@ do
 																end
 															end
 														end
+
+
+														local playerGuild = GnomeWorks.data.playerData[GnomeWorks.player] and GnomeWorks.data.playerData[GnomeWorks.player].guild
+
+														for guild,guildInventoryData in pairs(GnomeWorks.data.guildInventory) do
+															if guild ~= playerGuild then
+																for tab,tabData in ipairs(guildInventoryData) do
+																	if tabData[itemID] then
+																		if tabData[itemID] > 0 then
+																			GameTooltip:AddDoubleLine("   "..inventoryColors.alt..guild.."/tab"..tab,inventoryColors.alt..tabData[itemID])
+																			shown = shown + 1
+																		end
+																	end
+																end
+															end
+														end
 													else
 														GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..count)
 														shown = shown + 1
@@ -396,6 +412,22 @@ do
 													end
 												end
 
+											end
+										end
+
+
+										local playerGuild = GnomeWorks.data.playerData[GnomeWorks.player] and GnomeWorks.data.playerData[GnomeWorks.player].guild
+
+										for guild,guildInventoryData in pairs(GnomeWorks.data.guildInventory) do
+											if guild ~= playerGuild then
+												for tab,tabData in ipairs(guildInventoryData) do
+													if tabData[itemID] then
+														if tabData[itemID] > 0 then
+															GameTooltip:AddDoubleLine("   "..inventoryColors.alt..guild.."/tab"..tab,inventoryColors.alt..tabData[itemID])
+															shown = shown + 1
+														end
+													end
+												end
 											end
 										end
 									end

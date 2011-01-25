@@ -448,9 +448,16 @@ do
 
 
 			if skillType ~= "header" then
-				LSW.UpdateSingleRecipePrice(entry.recipeID)
+--				LSW.UpdateSingleRecipePrice(entry.recipeID)
 
 				entry.value, entry.fate = LSW:GetSkillValue(entry.recipeID, globalFate)
+
+				if itemFate == "a" and itemCache[itemID] and itemCache[itemID].BOP then
+					entry.value = 0
+				elseif itemFate == "d" and itemCache[itemID] and not itemCache[itemID].disenchantValue then
+					entry.value = 0
+				end
+
 				entry.cost = LSW:GetSkillCost(entry.recipeID)
 			end
 		end

@@ -106,7 +106,7 @@ do
 			button:SetWidth(buttonSize)
 			button:SetHeight(buttonSize)
 
-			_G["GWTSButton"..i.."NormalTexture"]:SetAllPoints(button)			-- for some reason they added an offset in the template in 4.0.1
+			button:GetNormalTexture():SetAllPoints(button)			-- for some reason they added an offset in the template in 4.0.1
 
 			button:SetNormalTexture(spellIcon)
 			button:SetPushedTexture(spellIcon)
@@ -123,6 +123,10 @@ do
 
 			frame.buttons[i] = button
 
+
+--			if GnomeWorks:IsTradeSkillDataCurrent(player,tradeID) then
+				button:GetNormalTexture():SetGradient("vertical", .8,.8,.8)
+--			end
 		end
 
 		return frame
@@ -152,6 +156,12 @@ do
 					end
 --print(button.tradeID, links[button.tradeID], button.tradeLink)
 
+
+					if GnomeWorks:IsTradeSkillDataCurrent(player,button.tradeID) == false then
+						button:GetNormalTexture():SetGradient("vertical", 1,0,0,1,0,0)
+					else
+						button:GetNormalTexture():SetGradient("vertical", 1,1,1,1,1,1)
+					end
 
 					button:SetPoint("TOPLEFT", position, 0)
 					position = position + (buttonSize+spacing)

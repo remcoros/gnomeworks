@@ -346,6 +346,7 @@ do
 			playerData.guildInfo.tabs = {}
 		end
 
+print("scanning guild inventory",guild)
 
 
 		if not self.data.guildInventory[guild] then
@@ -368,12 +369,11 @@ do
 
 
 		for tab=1,numTabs do
-
-			local canView, canDeposit, canEdit, stacksPerDay = GetGuildBankTabPermissions(tab)
+			local name, icon, isViewable, canDeposit, numWithdrawals, remainingWithdrawals = GetGuildBankTabInfo(tab)
 
 			invData[tab] = {}
 
-			if IsGuildLeader() or stacksPerDay>0 then
+			if IsGuildLeader() or numWithdrawals>0 then
 				playerData.guildInfo.tabs[tab] = true
 			else
 				playerData.guildInfo.tabs[tab] = false
