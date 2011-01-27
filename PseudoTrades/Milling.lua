@@ -230,12 +230,6 @@ do
 			[61979] = 3, --Ashen Pigment
 			[61980] = .53, -- Burning Embers
 		},
-
-
-		[52989] = { -- Deathspore Pod
-			[61979] = 3, --Ashen Pigment
-			[61980] = .53, -- Burning Embers
-		},
 	}
 
 	local millBrackets =
@@ -300,8 +294,6 @@ do
 
 		[52987] = 475,
 		[52988] = 475,
-
-		[52989] = 500,
 	}
 
 
