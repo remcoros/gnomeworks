@@ -397,7 +397,6 @@ DebugSpam("done parsing skill list")
 					self:ShowReagents(index)
 					self:SkillListDraw(index)
 
-					self.selectedEntry = SelectEntryByIndex(GnomeWorks.skillFrame.scrollFrame.data, index)
 
 	--				self:ShowSkillList()
 
@@ -418,6 +417,7 @@ DebugSpam("done parsing skill list")
 
 	function GnomeWorks:SelectEntry(entry)
 		self.selectedEntry = entry
+		GnomeWorks.skillFrame.scrollFrame.selectedEntry = entry
 		self:SelectSkill(entry.index)
 	end
 
@@ -427,10 +427,7 @@ DebugSpam("done parsing skill list")
 	end
 
 
-
-	local function DoRecipeSelection(recipeID)
-		local skillIndex
-
+	function GnomeWorks:FindRecipeSkillIndex(recipeID)
 		if not recipeID then
 			return
 		end
@@ -440,18 +437,33 @@ DebugSpam("done parsing skill list")
 		local spellString = "spell:"..recipeID.."|h"
 
 		for i=1,GnomeWorks:GetNumTradeSkills() do
-
 			local link = GnomeWorks:GetTradeSkillRecipeLink(i)
 
 			if link and (string.find(link, enchantString) or string.find(link, spellString)) then
-
-				skillIndex = i
-				break
+				return i
 			end
 		end
+	end
+
+
+
+
+	local function DoRecipeSelection(recipeID)
+		if not recipeID then
+			return
+		end
+
+		local skillIndex = GnomeWorks:FindRecipeSkillIndex(recipeID)
 
 		if skillIndex then
 			GnomeWorks:SelectSkill(skillIndex)
+
+			GnomeWorks.selectedEntry = SelectEntryByIndex(GnomeWorks.skillFrame.scrollFrame.data, skillIndex)
+
+			GnomeWorks.skillFrame.scrollFrame.selectedEntry = GnomeWorks.selectedEntry
+
+
+			self:SendMessageDispatch("SelectionChanged")
 		end
 
 		return true

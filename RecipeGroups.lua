@@ -313,7 +313,6 @@ function GnomeWorks:RecipeGroupPasteEntry(entry, group)
 		local player = self.player
 		local tradeID = self.tradeID
 		local label = self.groupLabel
-DEFAULT_CHAT_FRAME:AddMessage("paste "..entry.name.." into "..group.name)
 
 --		local parentGroup = self:RecipeGroupFind(player, tradeID, label, self.currentGroup)
 		local parentGroup = group
@@ -330,20 +329,12 @@ DEFAULT_CHAT_FRAME:AddMessage("paste "..entry.name.." into "..group.name)
 			self:RecipeGroupAddSubGroup(parentGroup, newGroup, newIndex)
 
 			if entry.subGroup.entries then
-DEFAULT_CHAT_FRAME:AddMessage((entry.subGroup.name or "nil") .. " " .. #entry.subGroup.entries)
 				for i=1,#entry.subGroup.entries do
-DEFAULT_CHAT_FRAME:AddMessage((entry.subGroup.entries[i].name or "nil") .. " " .. newGroup.name)
-
 					self:RecipeGroupPasteEntry(entry.subGroup.entries[i], newGroup)
 				end
 			end
 		else
-			local newIndex = self.data.skillIndexLookup[player][entry.recipeID]
-
-			if not newIndex then
-				newIndex = #self.db.server.skillDB[player][tradeID]+1
-				self.db.server.skillDB[player][tradeID][newIndex] = "x"..entry.recipeID
-			end
+			local newIndex = GnomeWorks:FindRecipeSkillIndex(entry.recipeID) or -1
 
 			self:RecipeGroupAddRecipe(parentGroup, entry.recipeID, newIndex)
 		end

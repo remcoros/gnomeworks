@@ -1079,7 +1079,8 @@ do
 			end
 
 
-			if entry and entry.index == scrollFrame.selectedIndex then
+--			if entry and entry.index == scrollFrame.selectedIndex then
+			if entry and entry == scrollFrame.selectedEntry then
 				rowFrame.highlight:SetVertexColor(unpack(highlightSelected))
 			elseif scrollFrame.mouseOverIndex == rowFrame.rowIndex then
 				rowFrame.highlight:SetVertexColor(unpack(mouseOver))

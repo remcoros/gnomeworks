@@ -1353,6 +1353,58 @@ do
 			scrollFrame:Draw()
 		end
 
+		local function CopyEntries(scrollFrame)
+			if scrollFrame.copyBuffer then
+				table.wipe(scrollFrame.copyBuffer)
+			else
+				scrollFrame.copyBuffer = {}
+			end
+
+			for i=1,scrollFrame.numData do
+				if scrollFrame.selection[scrollFrame.dataMap[i]] == true then
+					scrollFrame.copyBuffer[#scrollFrame.copyBuffer+1] = scrollFrame.dataMap[i]
+				end
+			end
+		end
+
+
+		local function PasteEntries(scrollFrame)
+			if not GnomeWorks:RecipeGroupIsLocked() and scrollFrame.copyBuffer then
+				local entry
+
+				for i=1,scrollFrame.numData do
+					if scrollFrame.selection[scrollFrame.dataMap[i]] == true then
+						entry = scrollFrame.dataMap[i]
+						break
+					end
+				end
+
+				local parentGroup = entry.subGroup or entry.parent
+
+				for index,pasteEntry in ipairs(scrollFrame.copyBuffer) do
+					GnomeWorks:RecipeGroupPasteEntry(pasteEntry, parentGroup)
+				end
+
+				GnomeWorks:SendMessageDispatch("SkillListChanged")
+			end
+		end
+
+
+
+		local function DeleteEntries(scrollFrame)
+			if not GnomeWorks:RecipeGroupIsLocked() then
+				for entry,value in pairs(scrollFrame.selection) do
+					if value then
+						GnomeWorks:RecipeGroupDeleteEntry(entry)
+					end
+				end
+
+
+--				self:RecipeGroupAddSubGroup(parentGroup, newGroup, index)
+
+				GnomeWorks:SendMessageDispatch("SkillListChanged")
+			end
+		end
 
 		sf:EnableKeyboardInput()
 
@@ -1360,9 +1412,11 @@ do
 		sf:RegisterKeyboardInput("G", CreateGroup)
 		sf:RegisterKeyboardInput("A", SelectAll)
 		sf:RegisterKeyboardInput("D", DeselectAll)
---		sf:RegisterKeyboardInput("C", CopyEntries)
---		sf:RegisterKeyboardInput("V", PasteEntries)
---		sf:RegisterKeyboardInput("DELETE", DeleteEntries)
+		sf:RegisterKeyboardInput("C", CopyEntries)
+		sf:RegisterKeyboardInput("V", PasteEntries)
+		sf:RegisterKeyboardInput("X", function(f) CopyEntries(f) DeleteEntries(f) end )
+		sf:RegisterKeyboardInput("DELETE", DeleteEntries)
+		sf:RegisterKeyboardInput("BACKSPACE", DeleteEntries)
 
 
 		sf.IsEntryFiltered = function(self, entry)
