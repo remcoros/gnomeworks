@@ -156,9 +156,24 @@ do
 	end
 
 
+	local function buttonAddButton(button, text, func)
+		if not button.menuList then
+			button.menuList = {}
+			button.hasArrow = true
+		end
+
+		local new = { text = text, func = func }
+
+		table.insert(button.menuList, new)
+
+		return new
+	end
+
 
 	local function AddButton(plugin, text, func)
 		local new = { text = text, func = func }
+
+		new.AddButton = buttonAddButton
 
 		table.insert(plugin.menuList, new)
 
@@ -218,7 +233,7 @@ do
 
 	--[[
 
-		GnomeWorks:RegisterPlugin(name, shortName)
+		GnomeWorks:RegisterPlugin(name, initialize)
 
 		name - name of plugin (eg "LilSparky's Workshop")
 		initialize - function to call prior to initializing gnomeworks
@@ -342,6 +357,8 @@ local defaultConfig = {
 	containerIndex = { "bag", "bank", "mail", "sale" },
 
 	collectInventories = { "bank", "mail", "sale", "guildBank", "alt" },
+
+	altGuildAccess = {},
 }
 
 

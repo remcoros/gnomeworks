@@ -1202,7 +1202,6 @@ do
 														if tabData[itemID] then
 															if tabData[itemID] > 0 then
 																GameTooltip:AddDoubleLine("   "..inventoryColors.alt..guild.."/tab"..tab,inventoryColors.alt..tabData[itemID])
-																shown = shown + 1
 															end
 														end
 													end
@@ -2123,12 +2122,22 @@ do
 
 						UIDropDownMenu_AddButton(button)
 					end
-				end
+				elseif (level or 0) > 1 then
+					local menuList = UIDROPDOWNMENU_MENU_VALUE
 
-				if (level == 2) then  -- functions per plugin
-					for index, button in ipairs(UIDROPDOWNMENU_MENU_VALUE) do
-						UIDropDownMenu_AddButton(button, level)
+					for index = 1, #menuList do
+						local button = menuList[index]
+						if type(button) == "table" then
+							if (button.text) then
+								button.index = index
+								button.value = button.menuList
+								UIDropDownMenu_AddButton( button, level )
+							end
+						end
 					end
+--					for index, button in ipairs(UIDROPDOWNMENU_MENU_VALUE) do
+--						UIDropDownMenu_AddButton(button, level)
+--					end
 				end
 			end
 

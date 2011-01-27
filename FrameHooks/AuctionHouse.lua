@@ -679,7 +679,7 @@ do
 
 				local auctionQueue = self.data.shoppingQueueData[player].auction
 
-				frame.reagentButton.count:SetFormattedText("%d %s (%d pages)",self.data.auctionInventory[reagentID] or 0,(GetItemInfo(reagentID)),page)
+				frame.reagentButton.count:SetFormattedText("%d %s (%d pages)",self.data.auctionInventory[reagentID] or 0,(GetItemInfo(reagentID)),page or 0)
 --print(self.data.auctionQueue[self.player][reagentID], self.player, reagentID)
 
 				if auctionQueue and auctionQueue[reagentID] then

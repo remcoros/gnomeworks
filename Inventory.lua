@@ -21,6 +21,87 @@ local LARGE_NUMBER = 1000000
 
 
 
+-- guild toggle options
+do
+	local plugin
+
+	local function RegisterAccessToggle()
+
+		local function Init()
+			local function toggle(guild,tab)
+				if tab then
+					return function()
+						GnomeWorksDB.config.altGuildAccess[guild][tab] = not GnomeWorksDB.config.altGuildAccess[guild][tab]
+
+						GnomeWorks:InventoryScan()
+					end
+				else
+					return function()
+						local on
+
+						for i=1,6 do
+							if GnomeWorksDB.config.altGuildAccess[guild][i] then
+								on = true
+								break
+							end
+						end
+
+						for i=1,6 do
+							GnomeWorksDB.config.altGuildAccess[guild][i] = not on
+						end
+
+						GnomeWorks:InventoryScan()
+					end
+				end
+			end
+
+
+			for guildName,inv in pairs(GnomeWorks.data.guildInventory) do
+				local button = plugin:AddButton(guildName, toggle(guildName))
+				button.checked = 	function()
+										if not GnomeWorksDB.config.altGuildAccess[guildName] then
+											return false
+										end
+
+										for t in ipairs(GnomeWorks.data.guildInventory[guildName]) do
+											if GnomeWorksDB.config.altGuildAccess[guildName][t] then
+												return true
+											end
+										end
+
+										return false
+									end
+
+
+				button.keepShownOnClick = 1
+
+
+				if not GnomeWorksDB.config.altGuildAccess[guildName] then
+					GnomeWorksDB.config.altGuildAccess[guildName] = {false, false, false, false, false, false }
+				end
+
+				for tab in pairs(inv) do
+					local tabButton = button:AddButton("tab "..tab, toggle(guildName,tab))
+					tabButton.checked = function() return GnomeWorksDB.config.altGuildAccess[guildName] and GnomeWorksDB.config.altGuildAccess[guildName][tab] end
+
+					tabButton.keepShownOnClick = 1
+				end
+			end
+		end
+
+		Init()
+
+		return true
+	end
+
+
+
+	plugin = GnomeWorks:RegisterPlugin("Alt GuildBank Access", RegisterAccessToggle)
+end
+
+
+
+-- inventory toggle options
 do
 	function GnomeWorks:BuildInventoryHeirarchy()
 		local config = GnomeWorksDB.config
@@ -78,7 +159,7 @@ do
 	end
 
 
-
+--[[
 	function GnomeWorks:DisableInventoryContainer(container)
 		local config = GnomeWorksDB.config
 
@@ -95,7 +176,7 @@ do
 
 		GnomeWorks:BuildInventoryHeirarchy()
 	end
-
+]]
 	local plugin
 
 	local function RegisterInventoryToggle()
@@ -111,8 +192,10 @@ do
 
 
 			for k,inv in ipairs(GnomeWorks.system.inventoryIndex) do
-				local button = plugin:AddButton(inv, toggle(inv))
+				local button = plugin:AddButton(GnomeWorks.system.inventoryColors[inv]..inv, toggle(inv))
 				button.checked = function() return GnomeWorksDB.config.inventoryTracked[inv] end
+
+				button.keepShownOnClick = 1
 			end
 		end
 
@@ -368,7 +451,8 @@ do
 					if player ~= "faction" and containerList ~= "alt" then
 						reagentAvailability = self:GetCraftableInventoryCount(reagentID, player, containerList)
 					else
-						reagentAvailability = self:GetFactionInventoryCount(reagentID, GnomeWorks.player)
+						reagentAvailability = self:GetCraftableInventoryCount(reagentID, player, GnomeWorksDB.config.inventoryIndex[#GnomeWorksDB.config.inventoryIndex-1])
+											 + self:GetFactionInventoryCount(reagentID, GnomeWorks.player)
 					end
 				end
 
@@ -567,35 +651,21 @@ do
 						count = count + (inventoryData[container][itemID] or 0)
 					end
 				end
-
---[[
-				if itemID == 2592 then
-					for k in pairs(inventoryData) do
-						print(inv, k, inventoryData[k][itemID] or 0)
-					end
-				end
-]]
 			end
 		end
 
 		local playerGuild = factionPlayer and self.data.playerData[factionPlayer] and self.data.playerData[factionPlayer].guild
 
+		local altGuildAccess = GnomeWorksDB.config.altGuildAccess
 
 		for guild,inventoryData in pairs(self.data.guildInventory) do
---print(guild)
 			if guild ~= playerGuild then
 
 				for tab,tabData in ipairs(inventoryData) do
-					count = count + (tabData[itemID] or 0)
-				end
-
---[[
-				if itemID == 2592 then
-					for k in pairs(inventoryData) do
-						print(inv, k, inventoryData[k][itemID] or 0)
+					if altGuildAccess[guild] and altGuildAccess[guild][tab] then
+						count = count + (tabData[itemID] or 0)
 					end
 				end
-]]
 			end
 		end
 
@@ -722,3 +792,6 @@ do
 		end
 	end
 end
+
+
+

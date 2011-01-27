@@ -253,10 +253,6 @@ do
 
 		local guild = playerData[player].guild or GetGuildInfo("player")
 
-		local key = "GUILD:"..guild
-
-		local invData = self.data.inventoryData[key].bank
-
 		-- temporarily disable bag update scanning while we're grabbing items from the bank.  we'll do a manual adjustment after each retrieval
 		self:UnregisterEvent("GUILDBANKBAGSLOTS_CHANGED")
 		self:UnregisterEvent("BAG_UPDATE")
@@ -265,51 +261,53 @@ do
 		local numTabs = GetNumGuildBankTabs()
 
 		for tab=1,numTabs do
-			local name, icon, isViewable, canDeposit, numWithdrawals, remainingWithdrawals = GetGuildBankTabInfo(tab)
+			if playerData[player].guildInfo.tabs[tab] then
+				local name, icon, isViewable, canDeposit, numWithdrawals, remainingWithdrawals = GetGuildBankTabInfo(tab)
 
-			if numWithdrawals > 0 and remainingWithdrawals > 0 then
-				for slot=1,98 do
+				if numWithdrawals > 0 and remainingWithdrawals > 0 then
+					for slot=1,98 do
 
-					local link = GetGuildBankItemLink(tab,slot)
+						local link = GetGuildBankItemLink(tab,slot)
 
-					if link then
-						local _,numAvailable = GetGuildBankItemInfo(tab, slot)
-						local itemID = tonumber(string.match(link, "item:(%d+)"))
+						if link then
+							local _,numAvailable = GetGuildBankItemInfo(tab, slot)
+							local itemID = tonumber(string.match(link, "item:(%d+)"))
 
-						if (singleItemID and itemID == singleItemID) or (not singleItemID and itemID) then
-							local count = singleItemCount or self.data.shoppingQueueData[player].guildBank[itemID]
+							if (singleItemID and itemID == singleItemID) or (not singleItemID and itemID) then
+								local count = singleItemCount or self.data.shoppingQueueData[player].guildBank[itemID]
 
-							if count and count > 0 then
-								ClearCursor()
+								if count and count > 0 then
+									ClearCursor()
 
-								local itemName, _, _, _, _, _, _, stackSize = GetItemInfo(link)
+									local itemName, _, _, _, _, _, _, stackSize = GetItemInfo(link)
 
-								local numMoved
+									local numMoved
 
-								if numAvailable < count then
-									numMoved = numAvailable
-								else
-									numMoved = count
-								end
-
-								local toBag, toSlot = FindBagSlot(itemID, numMoved)
-
-								if toBag then
-									SplitGuildBankItem(tab, slot, numMoved)
-
-									PickupContainerItem(toBag, toSlot)
-
-									if singleItemCount then
-										singleItemCount = singleItemCount - numMoved
+									if numAvailable < count then
+										numMoved = numAvailable
 									else
-										self.data.shoppingQueueData[player].guildBank[itemID] = self.data.shoppingQueueData[player].guildBank[itemID] - numMoved
+										numMoved = count
 									end
 
-									self:print(string.format("collecting %s x %s from guild bank",itemName,numMoved))
-									itemMoved = true
-								elseif not bagErr then
-									self:warning("cannot collect some items due to lack of bag space")
-									bagErr = true
+									local toBag, toSlot = FindBagSlot(itemID, numMoved)
+
+									if toBag then
+										SplitGuildBankItem(tab, slot, numMoved)
+
+										PickupContainerItem(toBag, toSlot)
+
+										if singleItemCount then
+											singleItemCount = singleItemCount - numMoved
+										else
+											self.data.shoppingQueueData[player].guildBank[itemID] = self.data.shoppingQueueData[player].guildBank[itemID] - numMoved
+										end
+
+										self:print(string.format("collecting %s x %s from guild bank",itemName,numMoved))
+										itemMoved = true
+									elseif not bagErr then
+										self:warning("cannot collect some items due to lack of bag space")
+										bagErr = true
+									end
 								end
 							end
 						end
@@ -322,6 +320,7 @@ do
 
 		self:RegisterEvent("GUILDBANKBAGSLOTS_CHANGED")
 		self:RegisterEvent("BAG_UPDATE")
+
 
 		self:InventoryScan()
 	end
@@ -346,9 +345,6 @@ do
 			playerData.guildInfo.tabs = {}
 		end
 
-print("scanning guild inventory",guild)
-
-
 		if not self.data.guildInventory[guild] then
 			self.data.guildInventory[guild] = {}
 		end
@@ -358,12 +354,6 @@ print("scanning guild inventory",guild)
 
 		table.wipe(invData)
 --		table.wipe(playerData.guildInfo.tabs)
-
-
-		-- temporarily disable bag update scanning while we're grabbing items from the bank.  we'll do a manual adjustment after each retrieval
-		self:UnregisterEvent("GUILDBANKBAGSLOTS_CHANGED")
-		self:UnregisterEvent("BAG_UPDATE")
-
 
 		local numTabs = GetNumGuildBankTabs()
 
@@ -399,9 +389,6 @@ print("scanning guild inventory",guild)
 
 		bankLocked = nil
 
-		self:RegisterEvent("GUILDBANKBAGSLOTS_CHANGED")
-		self:RegisterEvent("BAG_UPDATE")
-
 		local dependency
 
 		for k,inv in ipairs(GnomeWorksDB.config.inventoryIndex) do
@@ -436,7 +423,7 @@ print("scanning guild inventory",guild)
 			self:CancelTimer(updateTimer, true)
 		end
 
-		updateTimer = self:ScheduleTimer("GuildBankScan",.25)
+		updateTimer = self:ScheduleTimer("GuildBankScan",.5)
 	end
 end
 

@@ -203,6 +203,9 @@ DebugSpam("parsing skill list")
 
 		local guild = GetGuildInfo("player")
 
+		if not GnomeWorksDB.config.altGuildAccess[guild] then
+			GnomeWorksDB.config.altGuildAccess[guild] = { false, false, false, false, false, false }
+		end
 
 		if not self.data.playerData[playerName] then
 			self.data.playerData[playerName] = { links = {}, guildInfo = {}, specializations = {} }
@@ -427,6 +430,11 @@ DebugSpam("done parsing skill list")
 
 	local function DoRecipeSelection(recipeID)
 		local skillIndex
+
+		if not recipeID then
+			return
+		end
+
 
 		local enchantString = "enchant:"..recipeID.."|h"
 		local spellString = "spell:"..recipeID.."|h"
