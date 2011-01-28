@@ -203,9 +203,6 @@ DebugSpam("parsing skill list")
 
 		local guild = GetGuildInfo("player")
 
-		if not GnomeWorksDB.config.altGuildAccess[guild] then
-			GnomeWorksDB.config.altGuildAccess[guild] = { false, false, false, false, false, false }
-		end
 
 		if not self.data.playerData[playerName] then
 			self.data.playerData[playerName] = { links = {}, guildInfo = {}, specializations = {} }
@@ -232,6 +229,10 @@ DebugSpam("parsing skill list")
 		playerData.guild = guild
 
 		if guild then
+			if not GnomeWorksDB.config.altGuildAccess[guild] then
+				GnomeWorksDB.config.altGuildAccess[guild] = { false, false, false, false, false, false }
+			end
+
 			if playerData.guildInfo.name ~= guild then
 				playerData.guildInfo.name = guild
 				playerData.guildInfo.tabs = { true,true,true,true,true,true } -- default to full access until scan says otherwise
