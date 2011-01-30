@@ -385,9 +385,9 @@ DebugSpam("done parsing skill list")
 			self:ShowDetails(index)
 			self:ShowReagents(index)
 
-			self:SkillListDraw(index)
-
 			self:ScrollToIndex(index)
+
+--			self:SkillListDraw(index)
 		else
 			if index then
 				local skillName, skillType = GetTradeSkillInfo(index)
@@ -396,12 +396,15 @@ DebugSpam("done parsing skill list")
 					SelectTradeSkill(index)
 					self:ShowDetails(index)
 					self:ShowReagents(index)
-					self:SkillListDraw(index)
+
+					self:ScrollToIndex(index)
+
+--					self:SkillListDraw(index)
 
 
 	--				self:ShowSkillList()
 
-					self:ScrollToIndex(index)
+
 				else
 		--			self:HideDetails()
 		--			self:HideReagents()
@@ -417,9 +420,11 @@ DebugSpam("done parsing skill list")
 
 
 	function GnomeWorks:SelectEntry(entry)
-		self.selectedEntry = entry
-		GnomeWorks.skillFrame.scrollFrame.selectedEntry = entry
 		self:SelectSkill(entry.index)
+
+		self.selectedEntry = entry
+		self.skillFrame.scrollFrame.selectedEntry = GnomeWorks.selectedEntry
+		GnomeWorks:SendMessageDispatch("SelectionChanged")
 	end
 
 
@@ -438,9 +443,9 @@ DebugSpam("done parsing skill list")
 		local spellString = "spell:"..recipeID.."|h"
 
 		for i=1,GnomeWorks:GetNumTradeSkills() do
-			local link = GnomeWorks:GetTradeSkillRecipeLink(i)
+			local link, spellRecipeID = GnomeWorks:GetTradeSkillRecipeLink(i)
 
-			if link and (string.find(link, enchantString) or string.find(link, spellString)) then
+			if spellRecipeID == recipeID or (link and (string.find(link, enchantString) or string.find(link, spellString))) then
 				return i
 			end
 		end
@@ -464,7 +469,7 @@ DebugSpam("done parsing skill list")
 			GnomeWorks.skillFrame.scrollFrame.selectedEntry = GnomeWorks.selectedEntry
 
 
-			self:SendMessageDispatch("SelectionChanged")
+			GnomeWorks:SendMessageDispatch("SelectionChanged")
 		end
 
 		return true
@@ -482,6 +487,8 @@ DebugSpam("done parsing skill list")
 		local _,_,tradeID = GnomeWorks:GetRecipeData(recipeID)
 
 		if tradeID ~= self.tradeID then
+			GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() DoRecipeSelection(recipeID) return true end, "SelectRecipe")			-- return true = fire once
+
 			if player == (UnitName("player")) and not pseudoTrades[tradeID] then
 				if tradeID then
 					CastSpellByName((GetSpellInfo(tradeID)))
@@ -489,8 +496,6 @@ DebugSpam("done parsing skill list")
 			else
 				self:OpenTradeLink(self:GetTradeLink(tradeID, player), player)
 			end
-
-			GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() DoRecipeSelection(recipeID) return true end, "SelectRecipe")			-- return true = fire once
 		else
 			DoRecipeSelection(recipeID)
 		end
@@ -499,7 +504,7 @@ DebugSpam("done parsing skill list")
 
 
 	function GnomeWorks:PushSelection()
-		local newEntry = { player = self.player, tradeID = self.tradeID, entry = self.selectedEntry }
+		local newEntry = { player = self.player, tradeID = self.tradeID, recipeID = self.selectedEntry.recipeID }
 
 		table.insert(self.data.selectionStack, newEntry)
 	end
@@ -510,19 +515,20 @@ DebugSpam("done parsing skill list")
 		local lastEntry = #stack
 
 		if lastEntry>0 then
-			local player,tradeID,entry = stack[lastEntry].player, stack[lastEntry].tradeID, stack[lastEntry].entry
+			local player,tradeID,recipeID = stack[lastEntry].player, stack[lastEntry].tradeID, stack[lastEntry].recipeID
 --print(player,tradeID,skill)
 			if tradeID ~= self.tradeID then
-				if player == (UnitName("player")) then
-					CastSpellByName((GetSpellInfo(tradeID)))
+				GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() DoRecipeSelection(recipeID) return true end, "SelectRecipe")			-- return true = fire once
+
+				if player == (UnitName("player")) and not pseudoTrades[tradeID] then
+					if tradeID then
+						CastSpellByName((GetSpellInfo(tradeID)))
+					end
 				else
 					self:OpenTradeLink(self:GetTradeLink(tradeID, player), player)
 				end
-
-
-				GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() GnomeWorks:SelectEntry(entry) return true end, "SelectRecipe")
 			else
-				self:SelectEntry(entry)
+				DoRecipeSelection(recipeID)
 			end
 
 			stack[lastEntry] = nil
@@ -939,7 +945,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		end
 
 
---		self:InventoryScan()
+		self:InventoryScan()
 
 
 

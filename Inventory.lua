@@ -56,7 +56,11 @@ do
 			end
 
 
+			local guilds = 0
+
 			for guildName,inv in pairs(GnomeWorks.data.guildInventory) do
+				guilds = guilds + 1
+
 				local button = plugin:AddButton(guildName, toggle(guildName))
 				button.checked = 	function()
 										if not GnomeWorksDB.config.altGuildAccess[guildName] then
@@ -86,6 +90,10 @@ do
 
 					tabButton.keepShownOnClick = 1
 				end
+			end
+
+			if guilds == 0 then
+				plugin:AddButton("No Guild Inventories Found")
 			end
 		end
 
@@ -328,6 +336,7 @@ do
 					for invLabel,isTracked in pairs(inventoryTracked) do
 						if isTracked then
 							if craftData[invLabel] then
+
 								craftData[invLabel][itemID] = nil
 								if reagentUsage then
 									itemUncached = self:UncacheReagentCounts(player, craftData[invLabel], reagentUsage)
@@ -481,34 +490,23 @@ do
 	end
 
 
-	function GnomeWorks:UncacheReagentCounts(player, inventory, reagentUsage)
+	function GnomeWorks:UncacheReagentCounts(player, invData, reagentUsage)
 		local uncached
-
-		local inventoryTracked = GnomeWorksDB.config.inventoryTracked
 
 		for recipeID in pairs(reagentUsage) do
 			if self.data.knownSpells[player][recipeID] then
 
-				for inv,isTracked in ipairs(inventoryTracked) do
+				local results, reagents = self:GetRecipeData(recipeID)
 
-					if isTracked then
-						local invData = inventory[inv]
+				for itemID in pairs(results) do
+					if invData[itemID] then
+						uncached = true
+						invData[itemID] = nil
 
-						if invData then
-							local results, reagents = self:GetRecipeData(recipeID)
+						local subUsage = self.data.reagentUsage[itemID]
 
-							for itemID in pairs(results) do
-								if invData[itemID] then
-									uncached = true
-									invData[itemID] = nil
-
-									local subUsage = self.data.reagentUsage[itemID]
-
-									if subUsage then
-										self:UncacheReagentCounts(player, inventory, subUsage)
-									end
-								end
-							end
+						if subUsage then
+							self:UncacheReagentCounts(player, invData, subUsage)
 						end
 					end
 				end

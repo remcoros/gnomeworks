@@ -285,7 +285,7 @@ do
 			return
 		end
 
-		return "|cff80a0ff|Henchant:"..recipeID.."|h["..prospectingNames[recipeID].."]|h|r"
+		return "|cff80a0ff|Henchant:"..recipeID.."|h["..prospectingNames[recipeID].."]|h|r", recipeID
 	end
 
 

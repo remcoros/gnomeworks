@@ -160,7 +160,7 @@ do
 	api.GetTradeSkillRecipeLink = function(index)
 		local recipeID = skillList[index]
 
-		return "|cff80a0ff|Henchant:"..recipeID.."|h["..GnomeWorksDB.vendorConversionRecipes[recipeID].name.."]|h|r"
+		return "|cff80a0ff|Henchant:"..recipeID.."|h["..GnomeWorksDB.vendorConversionRecipes[recipeID].name.."]|h|r", recipeID
 
 --		return "enchant:"..recipeID
 	end

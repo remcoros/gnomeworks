@@ -5,7 +5,7 @@ local modName, modTable = ...
 local VERSION = ("@project-revision@")
 
 if not tonumber(VERSION) then
-	VERSION = "113"
+	VERSION = "123"
 end
 
 

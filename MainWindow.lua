@@ -129,48 +129,12 @@ do
 	local tooltipRecipeCacheRight = {{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}}		-- 20 lines
 
 
-	local containerIndex = { "bag", "bank" }
-
---[[
-	local inventoryIndex = { "bag", "vendor", "bank", "mail", "guildBank", "alt" }
-
-	local inventoryColorBlindTag = {
-		bag = "",
-		vendor = "v",
-		bank = "b",
-		mail = "m",
-		guildBank = "g",
-		alt = "a",
-	}
-
-	local inventoryColors = {
-		bag = "|cffffff80",
-		vendor = "|cff80ff80",
-		bank =  "|cffffa050",
-		guildBank = "|cff5080ff",
-		mail = "|cff60fff0",
-		alt = "|cffff80ff",
-	}
 
 
-	local inventoryFormat = {}
-	local inventoryTags = {}
-
-	for k,v in pairs(inventoryColors) do
-		inventoryTags[k] = v..k
-	end
-]]
-
-	local inventoryIndex = GnomeWorks.system.inventoryIndex
-	local inventoryColors = GnomeWorks.system.inventoryColors
-	local inventoryFormat = GnomeWorks.system.inventoryFormat
-	local inventoryTags = GnomeWorks.system.inventoryTags
-
-
-
-	local selectedRows = {}
-
-	local detailsOpen
+--	local inventoryIndex = GnomeWorks.system.inventoryIndex
+--	local inventoryColors = GnomeWorks.system.inventoryColors
+--	local inventoryFormat = GnomeWorks.system.inventoryFormat
+--	local inventoryTags = GnomeWorks.system.inventoryTags
 
 
 
@@ -413,10 +377,10 @@ do
 
 	craftFilterMenu = {
 		{
-			text = "Filter by Craftability: "..inventoryColors.alt.."alts",
+			text = "Filter by Craftability: "..GnomeWorks.system.inventoryColors.alt.."alts",
 			menuList = craftSourceMenu,
 			hasArrow = true,
-			filterIndex = #inventoryIndex,
+			filterIndex = #GnomeWorks.system.inventoryIndex,
 			func = function()
 				local parameters = craftSourceMenu.parameters
 				local index = craftFilterMenu[1].filterIndex
@@ -440,10 +404,10 @@ do
 
 	local craftFilterParameters = {}
 
-	for i,key in pairs(inventoryIndex) do
+	for i,key in pairs(GnomeWorks.system.inventoryIndex) do
 		craftFilterParameters[i] = {
 			name = "Craftability"..key,
-			text = inventoryTags[key],
+			text = GnomeWorks.system.inventoryTags[key],
 			enabled = false,
 			func = function(entry)
 				if entry and entry[key] and entry[key] > 0 then
@@ -468,10 +432,10 @@ do
 
 	inventoryFilterMenu = {
 		{
-			text = "Filter by Inventory: "..inventoryColors.alt.."alts",
+			text = "Filter by Inventory: "..GnomeWorks.system.inventoryColors.alt.."alts",
 			menuList = inventorySourceMenu,
 			hasArrow = true,
-			filterIndex = #inventoryIndex,
+			filterIndex = #GnomeWorks.system.inventoryIndex,
 			func = function()
 				local parameters = inventorySourceMenu.parameters
 				local index = inventoryFilterMenu[1].filterIndex
@@ -495,10 +459,10 @@ do
 
 	local inventoryFilterParameters = {}
 
-	for i,key in pairs(inventoryIndex) do
+	for i,key in pairs(GnomeWorks.system.inventoryIndex) do
 		inventoryFilterParameters[i] = {
 			name = "Inventory"..key,
-			text = inventoryTags[key],
+			text = GnomeWorks.system.inventoryTags[key],
 			enabled = false,
 			func = function(entry)
 				if entry and entry[key] and entry[key] > 0 then
@@ -793,6 +757,14 @@ do
 			draw =	function (rowFrame,cellFrame,entry)
 						cellFrame.text:SetPoint("LEFT", cellFrame, "LEFT", entry.depth*8+4+12, 0)
 
+						cellFrame:ClearIcons()
+
+						if entry.iconList then
+							for k,icon in pairs(entry.iconList) do
+								cellFrame:AddIcon(icon)
+							end
+						end
+
 						if entry.subGroup then
 							if entry.subGroup.expanded then
 								cellFrame.button:SetNormalTexture("Interface\\AddOns\\GnomeWorks\\Art\\expand_arrow_open.tga")
@@ -912,6 +884,11 @@ do
 									else
 										GameTooltip:SetHyperlink("item:"..(-entry.recipeID))
 									end
+
+									if entry.cooldown then
+										GameTooltip:AddLine(" ")
+										GameTooltip:AddDoubleLine("|cffff0000"..COOLDOWN_REMAINING,"|cffff0000"..SecondsToTime(entry.cooldown))
+									end
 								end
 
 
@@ -950,7 +927,7 @@ do
 
 							if GnomeWorksDB.vendorOnly[entry.recipeID] then
 								if entry.bag and entry.bag ~= 0 then
-									cellFrame.text:SetFormattedText("%s|r+%s\226\136\158",string.format(inventoryFormat.bag,entry.bag),GnomeWorks.system.inventoryColors.vendor)
+									cellFrame.text:SetFormattedText("%s|r+%s\226\136\158",string.format(GnomeWorks.system.inventoryFormat.bag,entry.bag),GnomeWorks.system.inventoryColors.vendor)
 								else
 									cellFrame.text:SetText(GnomeWorks.system.inventoryColors.vendor.."\226\136\158")
 								end
@@ -986,12 +963,12 @@ do
 									end
 
 									if hi and entry[hiKey] > entry[lowKey] then
-										local lowString = string.format(inventoryFormat[lowKey],entry[lowKey])
-										local hiString = string.format(inventoryFormat[hiKey],entry[hiKey]-entry[lowKey])
+										local lowString = string.format(GnomeWorks.system.inventoryFormat[lowKey],entry[lowKey])
+										local hiString = string.format(GnomeWorks.system.inventoryFormat[hiKey],entry[hiKey]-entry[lowKey])
 
 										display = lowString.."+"..hiString
 									else
-										display = string.format(inventoryFormat[lowKey],entry[lowKey])
+										display = string.format(GnomeWorks.system.inventoryFormat[lowKey],entry[lowKey])
 									end
 								end
 
@@ -1042,7 +1019,7 @@ do
 												local count = entry[key] or 0
 
 												if count > prevCount then
-													GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..(count-prevCount))
+													GameTooltip:AddDoubleLine(GnomeWorks.system.inventoryTags[key],GnomeWorks.system.inventoryColors[key]..(count-prevCount))
 													prevCount = count
 												end
 
@@ -1123,12 +1100,12 @@ do
 									end
 
 									if hi then
-										local lowString = string.format(inventoryFormat[lowKey],lowValue)
-										local hiString = string.format(inventoryFormat[hiKey],hiValue)
+										local lowString = string.format(GnomeWorks.system.inventoryFormat[lowKey],lowValue)
+										local hiString = string.format(GnomeWorks.system.inventoryFormat[hiKey],hiValue)
 
 										display = lowString.."+"..hiString
 									else
-										display = string.format(inventoryFormat[lowKey],lowValue)
+										display = string.format(GnomeWorks.system.inventoryFormat[lowKey],lowValue)
 									end
 								end
 							end
@@ -1168,7 +1145,7 @@ do
 												local count = entry.inventory[key] or 0
 
 												if count ~= 0 then
-													GameTooltip:AddDoubleLine(inventoryTags[key],inventoryColors[key]..count)
+													GameTooltip:AddDoubleLine(GnomeWorks.system.inventoryTags[key],GnomeWorks.system.inventoryColors[key]..count)
 												end
 
 												prev = count
@@ -1186,7 +1163,7 @@ do
 															local count = containers[key][itemID]
 
 															if count and count > 0 then
-																GameTooltip:AddDoubleLine("   "..inventoryColors.alt..player.."/"..key,inventoryColors.alt..count)
+																GameTooltip:AddDoubleLine("   "..GnomeWorks.system.inventoryColors.alt..player.."/"..key,GnomeWorks.system.inventoryColors.alt..count)
 															end
 														end
 													end
@@ -1201,7 +1178,7 @@ do
 													for tab,tabData in ipairs(guildInventoryData) do
 														if tabData[itemID] then
 															if tabData[itemID] > 0 then
-																GameTooltip:AddDoubleLine("   "..inventoryColors.alt..guild.."/tab"..tab,inventoryColors.alt..tabData[itemID])
+																GameTooltip:AddDoubleLine("   "..GnomeWorks.system.inventoryColors.alt..guild.."/tab"..tab,GnomeWorks.system.inventoryColors.alt..tabData[itemID])
 															end
 														end
 													end
@@ -1436,6 +1413,10 @@ do
 		local function UpdateRowData(scrollFrame,entry,firstCall)
 			local player = GnomeWorks.player
 
+			if not entry.iconList then
+				entry.iconList = {}
+			end
+
 			local inventoryIndex = GnomeWorksDB.config.inventoryIndex
 
 			if not entry.subGroup then
@@ -1477,6 +1458,22 @@ do
 						entry.craftable = 1
 					end
 				end
+
+
+				if entry.index > 0 and entry.recipeID then
+					if GetTradeSkillLine() == GetSpellInfo(GnomeWorks:GetRecipeTradeID(entry.recipeID)) then
+						entry.index = GnomeWorks:FindRecipeSkillIndex(entry.recipeID) or -entry.recipeID
+					end
+				end
+
+				entry.cooldown = GnomeWorks:GetTradeSkillCooldown(entry.index)
+
+				if entry.cooldown then
+					entry.iconList.cooldown = "Interface\\Icons\\INV_Misc_PocketWatch_01"
+				else
+					entry.iconList.cooldown = nil
+				end
+
 
 				local itemLink = (entry.index and GnomeWorks:GetTradeSkillItemLink(entry.index))
 
@@ -1677,12 +1674,6 @@ do
 		end
 	end
 
-
-	function GnomeWorks:SkillListDraw(selected)
-		sf.selectedIndex = selected or self.selectedSkill
---		self.selectedSkill = selected
-		sf:Draw()
-	end
 
 	function GnomeWorks:ShowStatus()
 		local rank, maxRank, estimatedSkillUp = self:GetTradeSkillRank()
@@ -2224,7 +2215,7 @@ do
 
 
 		local buttonConfig = {
---			{ text = "Back", operation = PopRecipe, width = 50 },
+			{ text = "Back", operation = PopRecipe, width = 50 },
 			{ text = "Adjust Layout", operation = ToggleLayoutMode, width = 100 },
 			{ text = "Plugins", operation = ShowPlugins, width = 50 },
 		}
@@ -2605,6 +2596,10 @@ do
 			self:SendMessageDispatch("SelectionChanged")
 		end, "ShowSkillList")
 
+
+		self:RegisterMessageDispatch("SelectionChanged", function()
+			sf:Draw()
+		end, "SkillListDraw")
 
 		self:RegisterMessageDispatch("SkillRanksChanged", function()
 			self:ShowStatus()

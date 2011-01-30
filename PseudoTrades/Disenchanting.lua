@@ -379,7 +379,7 @@ do
 		local recipeID = skillList[index]
 
 		if recipeID then
-			return "|cff80a0ff|Henchant:"..recipeID.."|h["..deNames[recipeID].."]|h|r"
+			return "|cff80a0ff|Henchant:"..recipeID.."|h["..deNames[recipeID].."]|h|r", recipeID
 		end
 	end
 

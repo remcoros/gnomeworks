@@ -833,7 +833,9 @@ do
 		if queue then
 			for k,v in ipairs(queue) do
 				if v.command == "collect" then
-					reagents[v.itemID] = true
+					if GetItemInfo(v.itemID) then
+						reagents[v.itemID] = true
+					end
 				elseif v.command == "create" then
 					AddReagentsToReagentList(v.subGroup.entries, reagents)
 				end
@@ -886,7 +888,7 @@ do
 
 
 	function GnomeWorks:BeginSingleReagentScan(itemID)
-		if itemID then
+		if itemID and GetItemInfo(itemID) then
 			auctionData = self.data.auctionData
 
 			self:ShowAuctionWindow()

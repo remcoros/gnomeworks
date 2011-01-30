@@ -796,6 +796,45 @@ do
 	end
 
 
+	local function CellFrameClearIcons(cellFrame)
+		if cellFrame.iconList then
+			for k,icon in ipairs(cellFrame.iconList) do
+				icon:Hide()
+			end
+			cellFrame.iconCount = 0
+		end
+	end
+
+
+	local function CellFrameAddIcon(cellFrame, iconTexture)
+		if not cellFrame.iconList then
+			cellFrame.iconList = {}
+			cellFrame.iconCount = 0
+		end
+
+		cellFrame.iconCount = cellFrame.iconCount + 1
+
+		local count = cellFrame.iconCount
+		local list = cellFrame.iconList
+
+		if not list[count] then
+			local t = cellFrame:CreateTexture()
+			local w = cellFrame:GetHeight()-2
+
+			t:SetWidth(w)
+			t:SetPoint("TOP", cellFrame, "TOP", 0,-1)
+			t:SetPoint("BOTTOM", cellFrame, "BOTTOM", 0,1)
+			t:SetPoint("RIGHT", cellFrame,"RIGHT", -w*(count-.5), 0)
+
+			list[count] = t
+		end
+
+		list[count]:SetTexture(iconTexture)
+		list[count]:Show()
+	end
+
+
+
 	function GnomeWorks:CreateScrollingTable(parentFrame, backDrop, columnHeaders, onResize)
 --		local rows = floor((parentFrame:GetHeight() - 15) / 15)
 --		local LibScrollingTable = LibStub("ScrollingTable")
@@ -956,6 +995,7 @@ do
 		editBox:Hide()
 
 
+
 		sf.InitColumns = function(scrollFrame, rowFrame)
 			local width = rowFrame:GetWidth()
 			local cols = rowFrame.cols
@@ -1024,6 +1064,10 @@ do
 						c.Edit = CellFrameEdit
 
 
+						c.ClearIcons = CellFrameClearIcons
+						c.AddIcon = CellFrameAddIcon
+
+
 						rowFrame.cols[i] = c
 
 						c.header = headers[i]
@@ -1079,7 +1123,7 @@ do
 			end
 
 
---			if entry and entry.index == scrollFrame.selectedIndex then
+
 			if entry and entry == scrollFrame.selectedEntry then
 				rowFrame.highlight:SetVertexColor(unpack(highlightSelected))
 			elseif scrollFrame.mouseOverIndex == rowFrame.rowIndex then

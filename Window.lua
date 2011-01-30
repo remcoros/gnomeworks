@@ -538,7 +538,7 @@ info.cancelFunc
 		windowMenuFrame = CreateFrame("Frame", "GWWindowMenuFrame", getglobal("UIParent"), "UIDropDownMenuTemplate")
 
 
-		local mover = CreateFrame("Frame",nil,frame)
+		local mover = CreateFrame("Frame",frameName.."Mover",frame)
 		mover:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",0,0)
 		mover:SetPoint("TOPLEFT",frame,"TOPLEFT",0,0)
 

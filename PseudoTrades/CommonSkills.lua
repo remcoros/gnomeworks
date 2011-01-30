@@ -396,9 +396,9 @@ do
 		local recipeID = skillList[index]
 
 		if recipeID < 0 then
-			return "enchant:"..recipeID
+			return "enchant:"..recipeID, recipeID
 		else
-			return GetSpellLink(recipeID)
+			return GetSpellLink(recipeID), recipeID
 		end
 	end
 

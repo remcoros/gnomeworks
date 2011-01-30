@@ -230,6 +230,13 @@ do
 			[61979] = 3, --Ashen Pigment
 			[61980] = .53, -- Burning Embers
 		},
+
+
+-- not yet in-game
+--		[52989] = { -- Deathspore Pod
+--			[61979] = 0, -- 3, --Ashen Pigment
+--			[61980] = 0, -- .53, -- Burning Embers
+--		},
 	}
 
 	local millBrackets =
@@ -294,10 +301,12 @@ do
 
 		[52987] = 475,
 		[52988] = 475,
+
+--		[52989] = 700, -- 500,
 	}
 
 
-	local millingLevels = { 1,25,75,125,175,225,275,325,425,450,475,500 }
+	local millingLevels = { 1,25,75,125,175,225,275,325,425,450,475, }  -- 500 }
 
 	local pigmentSources = {}
 
@@ -406,7 +415,7 @@ do
 			return
 		end
 
-		return "|cff80a0ff|Henchant:"..recipeID.."|h["..millingNames[recipeID].."]|h|r"
+		return "|cff80a0ff|Henchant:"..recipeID.."|h["..millingNames[recipeID].."]|h|r", recipeID
 	end
 
 
@@ -422,13 +431,15 @@ do
 			return recipeID, "header"
 		end
 
-		if millingNames[-recipeID] then
-			if string.find(millingNames[-recipeID],"item:") and GetItemInfo(recipeID) then
-				millingNames[-recipeID] = string.format("Mill %s",GetItemInfo(recipeID))
+		if recipeID then
+			if millingNames[-recipeID] then
+				if string.find(millingNames[-recipeID],"item:") and GetItemInfo(recipeID) then
+					millingNames[-recipeID] = string.format("Mill %s",GetItemInfo(recipeID))
+				end
 			end
-		end
 
-		return millingNames[-recipeID], "optimal"
+			return millingNames[-recipeID], "optimal"
+		end
 	end
 
 
@@ -546,7 +557,7 @@ do
 
 		collectgarbage("collect")
 
-		GnomeWorks:ScheduleTimer("UpdateMainWindow",.1)
+--		GnomeWorks:ScheduleTimer("UpdateMainWindow",.1)
 		GnomeWorks:SendMessageDispatch("TradeScanComplete")
 		return
 	end

@@ -80,6 +80,7 @@ plugins\lsw.lua
 plugins\arl.lua
 plugins\skillUpChance.lua
 plugins\QueueProfitable.lua
+plugins\overAchiever.lua
 
 
 #### hooking into different frames/events
