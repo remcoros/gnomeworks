@@ -21,9 +21,9 @@ do
 		-- if item can go into a special bag, prefer to place it in one of those first
 		if itemType then
 			for bag = 1, 4 do
-				local bagType = GetItemFamily(GetInventoryItemID(ContainerIDToInventoryID(bag)))
+				local bagType = GetItemFamily(GetInventoryItemID("player",ContainerIDToInventoryID(bag)))
 
-				if bagTYpe and bagType ~= 0 and bit.band(bagType, itemType) == bagType then
+				if bagType and bagType ~= 0 and bit.band(bagType, itemType) == bagType then
 
 					for i = 1, GetContainerNumSlots(bag) do
 						if not bagCache[bag+1][i] then

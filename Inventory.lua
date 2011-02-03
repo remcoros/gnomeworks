@@ -498,15 +498,17 @@ do
 
 				local results, reagents = self:GetRecipeData(recipeID)
 
-				for itemID in pairs(results) do
-					if invData[itemID] then
-						uncached = true
-						invData[itemID] = nil
+				if results then
+					for itemID in pairs(results) do
+						if invData[itemID] then
+							uncached = true
+							invData[itemID] = nil
 
-						local subUsage = self.data.reagentUsage[itemID]
+							local subUsage = self.data.reagentUsage[itemID]
 
-						if subUsage then
-							self:UncacheReagentCounts(player, invData, subUsage)
+							if subUsage then
+								self:UncacheReagentCounts(player, invData, subUsage)
+							end
 						end
 					end
 				end

@@ -299,23 +299,32 @@ do
 		end
 
 		if not config.window[frameName] then
-			config.window[frameName] = { x = 0, y = 0, width = width, height = height, r=1,g=1,b=1,opacity=1}
+			config.window[frameName] = { x = 0, y = 0, width = width, height = height, r=1,g=1,b=1,opacity=1, scale = 1}
 		end
 
 		frame.config = config.window[frameName]
+--[[
+frame.config.scale = 1.5
+frame.config.width = width
+frame.config.height = height
+frame.config.x = 0
+frame.config.y = 0
+]]
 
 		local x, y = frame.config.x, frame.config.y
 		local width, height = frame.config.width, frame.config.height
 
 		local r,g,b = frame.config.r or 255, frame.config.g or 255, frame.config.b or 255
 		local opacity = frame.config.opacity or 1
-
+		local scale = frame.config.scale or 1
 
 		frame:SetPoint("CENTER",x,y)
 		frame:SetWidth(width)
 		frame:SetHeight(height)
 
 		frame:SetAlpha(math.max(.1,opacity))
+
+		frame:SetScale(scale)
 
 		frame.dockChildren = {}
 
@@ -334,16 +343,51 @@ do
 												insets = { left = 4, right = 4, top = 4, bottom = 4 }})
 ]]
 
-		frame:SetScript("OnSizeChanged", 	function(frame, w,h)
-												if frame.dockChildren then
-													for child,params in pairs(frame.dockChildren) do
-														child:SetHeight(h)
-													end
-												end
-												if resizeFunction then
-													resizeFunction()
-												end
-											end)
+		local OnSizeChange
+
+		function OnSizeChange(frame, w,h)
+			if frame.sizingMode == "SCALE" then
+				local oldScale = frame:GetScale()
+
+--				local oldW, oldH = frame.config.width / (frame.config.scale or 1), frame.config.height / (frame.config.scale or 1)
+				local oldW, oldH = frame.config.width, frame.config.height
+
+print(frame:GetName() or frame, oldScale * w / oldW)
+				local newScale = oldScale * w / oldW
+				if (newScale > .25 and newScale < 5) then
+					frame:SetScript("OnSizeChanged", nil)
+
+					frame:SetScale(newScale)
+--					frame:SetWidth(w/newScale)
+--					frame:SetHeight(h/newScale)
+					frame:SetSize(w/newScale, h/newScale)
+
+					frame:SetScript("OnSizeChanged", OnSizeChange)
+
+					if frame.dockChildren then
+						for child,params in pairs(frame.dockChildren) do
+							child:SetScale(newScale)
+						end
+					end
+
+					h = h / newScale
+				end
+			end
+
+			if frame.dockChildren then
+				for child,params in pairs(frame.dockChildren) do
+					child:SetHeight(h)
+				end
+			end
+
+
+			if resizeFunction then
+				resizeFunction()
+			end
+		end
+
+
+--		frame:SetScript("OnSizeChanged", OnSizeChange)
 
 		frame.SavePosition = function(f)
 			local config = f.config
@@ -351,11 +395,16 @@ do
 			config.width = f:GetWidth()
 			config.height = f:GetHeight()
 
+			config.scale = f:GetScale()
+
+			local s = f:GetEffectiveScale()
+
 			local cx, cy = f:GetCenter()
 			local ux, uy = UIParent:GetCenter()
 
-			config.x = cx - ux
-			config.y = cy - uy
+
+			config.x = (cx*config.scale - ux)/config.scale
+			config.y = (cy*config.scale - uy)/config.scale
 		end
 
 		frame.SaveSize = function(f)
@@ -363,6 +412,8 @@ do
 
 			config.width = f:GetWidth()
 			config.height = f:GetHeight()
+
+			config.scale = f:GetScale()
 		end
 
 --[[
@@ -390,15 +441,166 @@ do
 		frame:SetScript("OnLeave", function() print("OnLeave") mouseHintTexture:Hide() end)
 ]]
 
+		frame:SetScript("OnUpdate", function(frame)
+			if frame.sizingMode then
+				local p = frame.sizingPoint
+				local scale = frame:GetEffectiveScale()
+
+				local x,y = GetCursorPosition()
+
+				x = x / scale
+				y = y / scale
+
+				local l,r,b,t = frame:GetLeft(), frame:GetRight(), frame:GetBottom(), frame:GetTop()
+
+				local minW, minH = frame:GetMinResize()
+
+				local s = frame:GetScale()
+
+				if frame.sizingMode == "SCALE" then
+					local sx,sy = 1,1
+
+					local oldScale = s
+
+					local maxWidth = (r-l)*2/s
+					local minWidth = (r-l)*.5/s
+
+					if p == "LEFT" or p == "TOPLEFT" or p == "BOTTOMLEFT" then
+						local newL = x
+						local minL = r - maxWidth
+						local maxL = r - minWidth
+
+						if newL < minL then
+							newL = minL
+						end
+
+						if newL > maxL then
+							newL = maxL
+						end
+
+						sx = (r - newL) / (r-l)
+						l = newL
+					elseif p == "RIGHT" or p == "TOPRIGHT" or p == "BOTTOMRIGHT" then
+						local newR = x
+						local minR = l + minWidth
+						local maxR = l + maxWidth
+
+						if newR < minR then
+							newR = minR
+						end
+
+						if newR > maxR then
+							newR = maxR
+						end
+						sx = (newR - l) / (r-l)
+					end
+--[[
+					if p == "TOP" or p == "TOPLEFT" or p == "TOPRIGHT" then
+						sy = (y - b) / (t-b)
+					elseif p == "BOTTOM" or p == "BOTTOMLEFT" or p == "BOTTOMRIGHT" then
+						sy = (t - y) / (t-b)
+						b = y
+					end
+]]
+					local newS
+
+					if math.abs(1-sx) > math.abs(1-sy) then
+						newS = sx
+					else
+						newS = sy
+					end
+
+					s = s * newS
+
+					if s < .5 then s = .5 end
+					if s > 2 then s = 2 end
+
+					newS = s/oldScale
+
+					local w = r-l
+					local h = t-b
+
+
+					frame:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", l/newS,b/newS)
+--					frame:SetSize(w,h)
+
+					frame:SetScale(s)
+
+					if frame.dockChildren then
+						for child,params in pairs(frame.dockChildren) do
+							child:SetScale(s)
+						end
+					end
+				else
+					if p == "LEFT" or p == "TOPLEFT" or p == "BOTTOMLEFT" then
+						l = x
+						if r-l < minW then
+							l = r-minW
+						end
+					elseif p == "RIGHT" or p == "TOPRIGHT" or p == "BOTTOMRIGHT" then
+						r = x
+
+						if r-l < minW then
+							r = l+minW
+						end
+					end
+
+					if p == "TOP" or p == "TOPLEFT" or p == "TOPRIGHT" then
+						t = y
+						if t-b < minH then
+							t = b+minH
+						end
+					elseif p == "BOTTOM" or p == "BOTTOMLEFT" or p == "BOTTOMRIGHT" then
+						b = y
+						if t-b < minH then
+							b = t-minH
+						end
+					end
+
+					local w = r-l
+					local h = t-b
+
+					frame:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", l,b)
+					frame:SetSize(w,h)
+
+					if frame.dockChildren then
+						for child,params in pairs(frame.dockChildren) do
+							child:SetHeight(h)
+						end
+					end
+				end
+
+
+				if resizeFunction then
+					resizeFunction()
+				end
+			end
+		end)
+
 		frame:SetScript("OnMouseDown", function()
 			local sizePoint = GetSizingPoint(frame)
 
 			if sizePoint ~= "UNKNOWN" then
 				if not frame.dockParent or not frame.dockParent:IsShown() then
-					frame:StartSizing(sizePoint)
+					if IsShiftKeyDown() then
+						frame.sizingMode = "SCALE"
+					else
+						frame.sizingMode = "RESHAPE"
+					end
+					frame.sizingPoint = sizePoint
+
+--					frame:StartSizing(sizePoint)
 				else
 					if sizePoint == opposingPoint[frame.dockPoint] then
-						frame:StartSizing(sizePoint)
+						if IsShiftKeyDown() then
+							frame.sizingMode = "SCALE"
+						else
+							frame.sizingMode = "RESHAPE"
+							frame.sizingPoint = sizePoint
+						end
+
+
+--						frame:StartSizing(sizePoint)
 					end
 				end
 			end
@@ -406,9 +608,11 @@ do
 
 		frame:SetScript("OnMouseUp", function()
 			if not frame.dockParent or not frame.dockParent:IsShown() then
+				frame.sizingMode = nil
 				frame:StopMovingOrSizing()
 				frame:SavePosition()
 			else
+				frame.sizingMode = nil
 				frame:StopMovingOrSizing()
 				frame:SaveSize()
 
@@ -419,6 +623,7 @@ do
 
 		frame:SetScript("OnHide", function()
 			if not frame.dockParent or not frame.dockParent:IsShown() then
+				frame.sizingMode = nil
 				frame:StopMovingOrSizing()
 				frame:SavePosition()
 			end
@@ -428,6 +633,7 @@ do
 
 				local x, y = config.x, config.y
 				local width, height = config.width, config.height
+				local scale = config.scale
 
 
 				child:ClearAllPoints()
@@ -435,17 +641,20 @@ do
 				child:SetPoint("CENTER",x,y)
 				child:SetWidth(width)
 				child:SetHeight(height)
+				child:SetScale(scale)
 			end
 		end)
 
 
 		frame:SetScript("OnShow", function()
 			local width, height = frame:GetWidth(), frame:GetHeight()
+			local scale = frame.config.scale
 
 			for child,params in pairs(frame.dockChildren) do
 				child:ClearAllPoints()
 --				child:SetWidth(width)
 				child:SetHeight(height)
+				child:SetScale(scale)
 
 				child:SetPoint(unpack(params))
 			end

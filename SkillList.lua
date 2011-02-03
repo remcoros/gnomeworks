@@ -504,9 +504,11 @@ DebugSpam("done parsing skill list")
 
 
 	function GnomeWorks:PushSelection()
-		local newEntry = { player = self.player, tradeID = self.tradeID, recipeID = self.selectedEntry.recipeID }
+		if self.selectedEntry then
+			local newEntry = { player = self.player, tradeID = self.tradeID, recipeID = self.selectedEntry.recipeID }
 
-		table.insert(self.data.selectionStack, newEntry)
+			table.insert(self.data.selectionStack, newEntry)
+		end
 	end
 
 
