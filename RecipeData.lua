@@ -321,8 +321,8 @@ print("getTradeInfo", recipeID)
 	local skillLevelNames = { "unknown", "optimal", "medium", "easy", "trivial" }
 
 	function GnomeWorks:GetRecipeDifficulty(recipeID)
-		local rank,maxRank,estimatedRank = GnomeWorks:GetTradeSkillRank()
-		rank = estimatedRank or rank
+		local rank,maxRank,estimatedRank,bonus = GnomeWorks:GetTradeSkillRank()
+		rank = (estimatedRank or rank) - (bonus or 0)
 
 		for i=1,#skillLevelNames-1 do
 			if rank<(RecipeSkillLevels[i][recipeID] or 0) then

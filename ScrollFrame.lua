@@ -1002,6 +1002,8 @@ do
 			local x = 0
 			local headers = scrollFrame.columnHeaders
 
+			local nameBase = scrollFrame:GetName().."-"..rowFrame.rowIndex.."x"
+
 			if true or not cols or #cols ~= #headers then
 				local rowHeight = scrollFrame.rowHeight
 
@@ -1011,7 +1013,7 @@ do
 
 				for i=1,#headers do
 					if not rowFrame.cols[i] then
-						local c = CreateFrame("Button", nil, rowFrame)
+						local c = CreateFrame("Button", nameBase..i,rowFrame) -- nil, rowFrame)
 
 						c.index = i
 						c.scrollFrame = scrollFrame

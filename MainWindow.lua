@@ -32,7 +32,7 @@ do
 		[GLYPH_TOKEN_PRIME] = "|cff80a0ff",
 	}
 
-	local tooltipScanner = _G["GWParsingTooltip"] or CreateFrame("GameTooltip", "GWParsingTooltip", getglobal("ANCHOR_NONE"), "GameTooltipTemplate")
+	local tooltipScanner = _G["GWParsingTooltip"] or CreateFrame("GameTooltip", "GWParsingTooltip", ANCHOR_NONE, "GameTooltipTemplate")
 
 
 	local function GlyphType(itemID)
@@ -119,7 +119,7 @@ do
 	local colorFilteringEnabled = { 1,1,.0, .25 }
 
 
-	local tooltipScanner = _G["GWParsingTooltip"] or CreateFrame("GameTooltip", "GWParsingTooltip", getglobal("ANCHOR_NONE"), "GameTooltipTemplate")
+	local tooltipScanner = _G["GWParsingTooltip"] or CreateFrame("GameTooltip", "GWParsingTooltip", ANCHOR_NONE, "GameTooltipTemplate")
 
 	tooltipScanner:SetOwner(WorldFrame, "ANCHOR_NONE")
 
@@ -2332,7 +2332,6 @@ do
 		tradeButtonFrame:SetHeight(18)
 
 
-
 		self:CreateTradeButtons(tradeIDList, tradeButtonFrame)
 --[[
 		local t = tradeButtonFrame:CreateTexture(nil,"OVERLAY")
@@ -2513,7 +2512,6 @@ do
 
 			levelText:SetFormattedText("  %d/%d  ",value,maxValue)
 		end)
-
 
 
 		self.levelStatusBar = level

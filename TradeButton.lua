@@ -28,7 +28,21 @@ do
 
 		GameTooltip:ClearLines()
 		GameTooltip:AddLine(frame.tradeName,1,1,1)
---		GameTooltip:AddLine("click to shop",.7,.7,.7)
+
+		local rank, maxRank, estimatedRank, bonus = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, frame.tradeID)
+
+		GameTooltip:AddDoubleLine("|cffffffffRank",rank.."/"..maxRank)
+
+		if estimatedRank and estimatedRank ~= rank then
+			GameTooltip:AddDoubleLine("|cffffffff+Queue", estimatedRank-rank)
+		end
+
+		if bonus and bonus ~= 0 then
+			GameTooltip:AddDoubleLine("|cffffffffModifier",bonus)
+		end
+
+		GameTooltip:AddLine(" ")
+		GameTooltip:AddLine("Shift-Click to Link",.7,.7,.7)
 
 		GameTooltip:Show()
 	end

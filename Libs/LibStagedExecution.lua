@@ -33,9 +33,15 @@ do
 						entry.retry = entry.retry + 1
 					end
 				else
-					entry.func()
-					print("ERROR: fatal error initializing",entry.name or tostring(entry))
-					table.remove(list.segments,1)
+					frame:Hide()
+--					entry.func()
+					print("|cffff0000ERROR: fatal error initializing segment: ",entry.name or tostring(entry))
+--					table.remove(list.segments,1)
+					local handler = geterrorhandler()
+
+					if handler then
+						handler(value)
+					end
 				end
 			else
 				frame:Hide()

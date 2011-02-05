@@ -167,8 +167,8 @@ do
 			end,
 
 			enabled = function()
-				local realRank,maxRank,estimatedRank = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, GnomeWorks.tradeID)
-				rank = estimatedRank or realRank
+				local realRank,maxRank,estimatedRank,bonus = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, GnomeWorks.tradeID)
+				rank = (estimatedRank or realRank) - (bonus or 0)
 
 				if not plugin.enabled then
 					return

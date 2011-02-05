@@ -104,6 +104,12 @@ do
 	}
 
 
+	local racialBonuses = {
+		[7411] = { racial = 28877, bonus = 10},			-- arcane affinity, +10 enchanting
+		[2259] = { racial = 69045, bonus = 15},			-- better living thru chemistry, +15 alchemy
+		[4036] = { racial = 20593, bonus = 15},			-- engineering specialization, +15 engineering
+		[25229] = { racial = 28875, bonus = 15},			-- gem cutting, +15 jewelcrafting
+	}
 
 
 	local recipeIsCached = {}
@@ -197,6 +203,8 @@ do
 	end
 
 
+	local playerDataFields = { "links", "guildInfo", "specializations", "rank", "maxRank", "bonus" }
+
 	function GnomeWorks:ParseSkillList()
 DebugSpam("parsing skill list")
 		local playerName = UnitName("player")
@@ -205,24 +213,21 @@ DebugSpam("parsing skill list")
 
 
 		if not self.data.playerData[playerName] then
-			self.data.playerData[playerName] = { links = {}, guildInfo = {}, specializations = {} }
+			self.data.playerData[playerName] = { links = {}, guildInfo = {}, specializations = {}, rank = {}, maxRank = {}, bonus = {} }
 		end
 
 		local playerData = self.data.playerData[playerName]
 
-		if not playerData.link then
-			playerData.links = {}
-		end
-
-		if not playerData.guildInfo then
-			playerData.guildInfo = {}
-		end
-
-		if not playerData.specializations then
-			playerData.specializations = {}
+		for k,field in pairs(playerDataFields) do
+			if not playerData[field] then
+				playerData[field] = {}
+			end
 		end
 
 		table.wipe(playerData.links)
+		table.wipe(playerData.rank)
+		table.wipe(playerData.maxRank)
+		table.wipe(playerData.bonus)
 
 		playerData.build = clientBuild
 
@@ -243,6 +248,38 @@ DebugSpam("parsing skill list")
 
 --		{ links = {}, build = clientBuild, guild = GetGuildInfo("player"), guildInfo = { name = GetGuildInfo("player"), tabs = {} }, specializations = {} }
 
+		local function AddProfession(index)
+			if index then
+				local name, icon, skillLevel, maxSkillLevel, numAbilities, spelloffset, skillLine, skillModifier = GetProfessionInfo(index)
+
+				if name then
+					local link, tradeLink = GetSpellLink(name)
+
+					local tradeID = self:GetTradeIDByName(name)
+
+					if tradeID then
+						if racialBonuses[tradeID] then
+							if GetSpellLink((GetSpellInfo(racialBonuses[tradeID].racial))) then
+								skillModifier = skillModifier + racialBonuses[tradeID].bonus
+							end
+						end
+
+						playerData.links[tradeID] = tradeLink
+
+						playerData.rank[tradeID] = skillLevel
+						playerData.maxRank[tradeID] = maxSkillLevel
+						playerData.bonus[tradeID] = skillModifier
+					end
+				end
+			end
+		end
+
+		local prof1, prof2, archaeology, fishing, cooking, firstAid = GetProfessions()
+
+		AddProfession(prof1)
+		AddProfession(prof2)
+		AddProfession(cooking)
+		AddProfession(firstAid)
 
 		for k,id in pairs(tradeIDList) do
 			if not fakeTrades[id] then
@@ -253,28 +290,38 @@ DebugSpam("parsing skill list")
 DebugSpam("found ", link, tradeLink)
 
 					if unlinkableTrades[id] then
-						local level = "1:1"
-
+						local rank = 1
+						local maxRank = 1
+						local bonus = 0
 
 						if levelBasis[id] then
-							local _,link = GetSpellLink(levelBasis[id])
-
-							level = string.match(link,"Htrade:%d+:(%d+:%d+)")
+							rank = playerData.rank[levelBasis[id]]
+							maxRank = playerData.maxRank[levelBasis[id]]
+							bonus = playerData.bonus[levelBasis[id]]
 						end
 
-						tradeLink = "|cffffd000|Htrade:"..id..":"..level..":0:/|h["..GnomeWorks:GetTradeName(id).."]|h|r"			-- fake link for data collection purposes
+						tradeLink = "|cffffd000|Htrade:"..id..":"..rank..":"..maxRank..":0:/|h["..GnomeWorks:GetTradeName(id).."]|h|r"			-- fake link for data collection purposes
 
 						self:RecordKnownSpells(playerName, id)
+
+						playerData.links[id] = tradeLink
+
+						playerData.rank[id] = rank
+						playerData.maxRank[id] = maxRank
+						playerData.bonus[id] = bonus
 					elseif not tradeLink then
 						return false
 					end
-
-					playerData.links[id] = tradeLink
 				end
 			else
 				playerData.links[id] = "|cffffd000|Htrade:"..id..":1:1:0:/|h["..fakeTrades[id].."]|h|r"
+
+				playerData.rank[id] = 1
+				playerData.maxRank[id] = 1
+				playerData.bonus[id] = 0
 			end
 		end
+
 
 		for spellID,tradeID in pairs(tradeSpecializations) do
 			local spellName = GetSpellInfo(spellID)
@@ -285,7 +332,7 @@ DebugSpam("found ", link, tradeLink)
 		end
 
 		playerName = "All Recipes"
-		self.data.playerData[playerName] = { links = {}, build = clientBuild, specializations = {} }
+		self.data.playerData[playerName] = { links = {}, build = clientBuild, specializations = {}, rank = {}, maxRank = {}, bonus = {} }
 
 		local playerData = self.data.playerData[playerName]
 
@@ -307,6 +354,10 @@ DebugSpam("found ", link, tradeLink)
 			else
 				playerData.links[id] = "|cffffd000|Htrade:"..id..":1:1:0:/|h["..fakeTrades[id].."]|h|r"
 			end
+
+			playerData.rank[id] = 525
+			playerData.maxRank[id] = 525
+			playerData.bonus[id] = 0
 		end
 DebugSpam("done parsing skill list")
 
@@ -1178,8 +1229,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 	end
 
 
-
-	function GnomeWorks:GetTradeSkillRank(player, tradeID)
+	function GnomeWorks:GetTradeSkillRankTBR(player, tradeID)
 		if not tradeID and not IsTradeSkillLinked() then
 			local skill, rank, maxRank = self:GetTradeSkillLine()
 
@@ -1225,6 +1275,35 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		end
 
 		return 0, 0
+	end
+
+
+	function GnomeWorks:GetTradeSkillRank(player, tradeID)
+		tradeID = tradeID or self.tradeID
+		player = player or self.player
+
+		local data = self.data.playerData[player]
+
+		if data then
+			if not data.rank then
+				return 0,0,0,0
+			end
+
+			local rank = data.rank[tradeID] or 1
+			local maxRank = data.maxRank[tradeID] or 75
+			local bonus = data.bonus[tradeID] or 0
+
+			local skillUps = self.data.skillUpRanks[tradeID]
+
+			if skillUps then
+				if skillUps > maxRank then
+					maxRank = math.ceil(skillUps/75)*75
+				end
+			end
+			return rank, maxRank, skillUps, bonus
+		end
+
+		return 0, 0, 0, 0
 	end
 
 

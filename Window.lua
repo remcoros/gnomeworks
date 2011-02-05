@@ -1024,5 +1024,4 @@ info.cancelFunc
 
 		return newButton
 	end
-
 end

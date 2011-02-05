@@ -139,9 +139,11 @@ do
 		if index and index<0 then
 			local results = GnomeWorks:GetRecipeData(-index)
 
-			local _,itemLink = GetItemInfo(next(results))
+			if results then
+				local _,itemLink = GetItemInfo(next(results))
 
-			return itemLink
+				return itemLink
+			end
 		else
 			return GetTradeSkillItemLink(index)
 		end

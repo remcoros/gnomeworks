@@ -810,7 +810,7 @@ print(arg1)
 				local command, args = string.lower(message):match("^(%S*)%s*(.-)$")
 
 				if GnomeWorks.commands[command] then
-					GnomeWorks.commands[command](args)
+					GnomeWorks.commands[command].func(args)
 				else
 					GnomeWorks:warning("unrecognized command:",command,args)
 				end
@@ -932,6 +932,28 @@ print(arg1)
 --	GnomeWorks:ScheduleTimer(registerLoad, 0.0)
 
 --	print("gw parsed")
+
+
+	local function setFrameLevels(level, f, ...)
+		if f then
+			if f.SetFrameLevel then
+
+				f:SetFrameLevel(level)
+				if f:GetChildren() then
+					setFrameLevels(level+1, f:GetChildren())
+				end
+			end
+
+			setFrameLevels(level, ...)
+		end
+	end
+
+
+	function GnomeWorks:FixFrames(f)
+		local level = f:GetFrameLevel()
+
+		setFrameLevels(level, f:GetChildren())
+	end
 end
 
 
