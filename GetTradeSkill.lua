@@ -39,6 +39,7 @@
 ]]--
 
 do
+--[[
 	local unlinkableTrades = {
 		[2656] = true,			-- smelting (from mining)
 		[53428] = true,			-- runeforging
@@ -48,6 +49,7 @@ do
 
 		[100000] = true,		-- common skills
 		[100001] = true,		-- vendor conversion
+		[100003] = true,		-- scroll making
 	}
 
 	local fakeTrades = {
@@ -57,15 +59,24 @@ do
 
 		[100000] = true,		-- common skills
 		[100001] = true,		-- vendor conversions
+		[100003] = true,		-- scroll making
 	}
 
 	local tradeIcon = {
 		[100000] = "Interface\\Icons\\Ability_Creature_Cursed_01",
 		[100001] = "Interface\\Icons\\INV_Misc_Bag_10",
+		[100003] = "Interface\\Icons\\INV_Scroll_07",
+
 	}
+]]
 
 
 	local OverRide = {}
+
+	local tradeIDList = GnomeWorks.system.tradeIDList
+	local unlinkableTrades = GnomeWorks.system.unlinkableTrades
+	local pseudoTrades = GnomeWorks.system.pseudoTrades
+	local fakeTrades = GnomeWorks.system.fakeTrades
 
 
 	function GnomeWorks:AddPseudoTrade(tradeID, api)
@@ -89,6 +100,14 @@ do
 				data[tradeID][xface] = func
 			end
 		end
+
+		table.insert(tradeIDList, tradeID)
+
+		pseudoTrades[tradeID] = (api.GetTradeName and api.GetTradeName()) or GetSpellInfo(tradeID)
+		unlinkableTrades[tradeID] = true
+		fakeTrades[tradeID] = not GetSpellInfo(tradeID)
+
+		GnomeWorks:SetTradeIDByName(pseudoTrades[tradeID],tradeID)
 
 		return data[tradeID], self.data.pseudoTradeRecipes
 	end
@@ -114,8 +133,10 @@ do
 
 
 	function GnomeWorks:GetTradeIcon(tradeID)
-		if tradeIcon[tradeID] then
-			return tradeIcon[tradeID]
+		local pseudoTrade = self.data.pseudoTradeData[tradeID]
+
+		if pseudoTrade and pseudoTrade.GetTradeIcon then
+			return pseudoTrade.GetTradeIcon()
 		end
 
 		local _,_,icon = GetSpellInfo(tradeID)

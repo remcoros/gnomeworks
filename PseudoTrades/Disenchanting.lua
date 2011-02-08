@@ -622,6 +622,8 @@ do
 
 			trade.skillList = skillList
 
+			GnomeWorks.system.levelBasis[13262] = 7411
+
 			GnomeWorks:CancelTimer(SetUpRecipeTimer)
 		end
 	end

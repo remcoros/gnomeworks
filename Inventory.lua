@@ -226,6 +226,25 @@ do
 	local GnomeworksDB = GnomeWorksDB
 
 
+	function GnomeWorks:CraftabilityPurge(player, itemID)
+		player = player or self.player or UnitName("player")
+
+		if not itemID then
+			for container,data in pairs(self.data.craftabilityData[player]) do
+				table.wipe(data)
+			end
+		else
+			local reagentUsage = self.data.reagentUsage[itemID]
+			for container,data in pairs(self.data.craftabilityData[player]) do
+				data[itemID] = nil
+				if reagentUsage then
+					itemUncached = self:UncacheReagentCounts(player, data, reagentUsage)
+				end
+			end
+		end
+	end
+
+
 	function GnomeWorks:Restack(itemID,minSize)
 		local _, itemLink, _, _, _, _, _, stackSize = GetItemInfo(itemID)
 

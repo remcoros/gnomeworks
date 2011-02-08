@@ -293,6 +293,8 @@ do
 		frame:SetMovable(true)
 --		frame:SetUserPlaced(true)
 		frame:EnableMouse(true)
+		frame:SetDontSavePosition(true)
+
 
 		if not config.window then
 			config.window = {}
@@ -327,6 +329,9 @@ frame.config.y = 0
 		frame:SetScale(scale)
 
 		frame.dockChildren = {}
+
+
+		frame.resizeFunction = resizeFunction
 
 
 		SetBetterBackdrop(frame,{bgFile = "Interface\\AddOns\\GnomeWorks\\Art\\newFrameBackground.tga",
@@ -381,8 +386,8 @@ print(frame:GetName() or frame, oldScale * w / oldW)
 			end
 
 
-			if resizeFunction then
-				resizeFunction()
+			if frame.resizeFunction then
+				frame.resizeFunction()
 			end
 		end
 
@@ -405,6 +410,10 @@ print(frame:GetName() or frame, oldScale * w / oldW)
 
 			config.x = (cx*config.scale - ux)/config.scale
 			config.y = (cy*config.scale - uy)/config.scale
+
+			if f.resizeFunction then
+				f.resizeFunction()
+			end
 		end
 
 		frame.SaveSize = function(f)
@@ -571,11 +580,12 @@ print(frame:GetName() or frame, oldScale * w / oldW)
 				end
 
 
-				if resizeFunction then
-					resizeFunction()
+				if frame.resizeFunction then
+					frame.resizeFunction()
 				end
 			end
 		end)
+
 
 		frame:SetScript("OnMouseDown", function()
 			local sizePoint = GetSizingPoint(frame)
@@ -642,6 +652,10 @@ print(frame:GetName() or frame, oldScale * w / oldW)
 				child:SetWidth(width)
 				child:SetHeight(height)
 				child:SetScale(scale)
+
+				if child.resizeFunction then
+					child.resizeFunction()
+				end
 			end
 		end)
 
@@ -879,18 +893,34 @@ info.cancelFunc
 
 
 
+
 			local text = title:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 			text:SetJustifyH("CENTER")
 			text:SetPoint("CENTER",0,0)
 			text:SetTextColor(1,1,.4)
 			text:SetText(windowTitle)
 
+			title.text = text
 			title:SetWidth(text:GetStringWidth()+titleSize*4)
 
 
 			local w = title.textureCenter:GetWidth()
 			local h = title.textureCenter:GetHeight()
 			title.textureCenter:SetTexCoord(0.0, (w/h), 0.0, 1.0)
+
+
+
+
+			local updateTimer = 0
+
+			title:SetScript("OnUpdate", function(f,elapsed)
+				updateTimer = updateTimer + elapsed
+
+				if updateTimer > 1 then
+					f.text:SetText(windowTitle.." "..frame:GetFrameLevel())
+					updateTimer = 0
+				end
+			end)
 
 
 			title:SetToplevel(true)

@@ -67,7 +67,7 @@ PseudoTrades\Disenchanting.lua
 PseudoTrades\Milling.lua
 PseudoTrades\Prospecting.lua
 PseudoTrades\VendorConversion.lua
-#PseudoTrades\ScrollMaking.lua
+PseudoTrades\ScrollMaking.lua
 
 
 #### API

@@ -284,6 +284,21 @@ do
 
 
 
+	api.GetTradeName = function()
+		return "Vendor"
+	end
+
+
+	api.GetTradeLink = function()
+		return "[Vendor]"
+	end
+
+
+	api.GetTradeIcon = function()
+		return "Interface\\Icons\\INV_Misc_Bag_10"
+	end
+
+
 
 	GnomeWorks:RegisterMessageDispatch("AddSpoofedRecipes", function ()
 		trade,recipeList  = GnomeWorks:AddPseudoTrade(vendorConversionTradeID,api)

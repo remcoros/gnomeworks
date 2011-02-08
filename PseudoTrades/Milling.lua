@@ -353,6 +353,8 @@ do
 
 		trade.skillList = skillList
 
+		GnomeWorks.system.levelBasis[51005] = 45357
+
 		api.RecordKnownSpells((UnitName("player")))
 
 		return true

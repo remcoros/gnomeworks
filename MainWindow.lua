@@ -81,11 +81,12 @@ do
 			end
 		end
 
+--[[
 		if recipeID and string.match(text, ENCHANTING_REPLACEMENT_STRING) then
 			local newText = string.gsub(text, ENCHANTING_REPLACEMENT_STRING, "")
 			return newText
 		end
-
+]]
 		return text
 	end
 end
@@ -154,32 +155,7 @@ do
 	end
 
 
-	local tradeIDList = {
-		2259,           -- alchemy
-		2018,           -- blacksmithing
-		7411,           -- enchanting
-		4036,           -- engineering
-		45357,			-- inscription
-		25229,          -- jewelcrafting
-		2108,           -- leatherworking
---		2575,			-- mining (or smelting?)
-		2656,           -- smelting (from mining)
-		3908,           -- tailoring
-		2550,           -- cooking
-		3273,           -- first aid
-
-		53428,			-- runeforging
-
-
-		51005,			-- milling
-		13262,			-- disenchant
-		31252,			-- prospecting
-
-
-
-		100000,			-- "Common Skills",
-		100001,			-- "Vendor Conversion",
-	}
+	local tradeIDList = GnomeWorks.system.tradeIDList
 
 
 

@@ -104,23 +104,26 @@ do
 	end
 
 
-
+--[[
 -- pseudo trade info
 	local tradeName = {
 		[100000] = "Common",
 		[100001] = "Vendor",
+		[100003] = "Scroll Making",
 	}
 
 	local tradeLink = {
 		[100000] = "[Common]",
 		[100001] = "[Vendor]",
+		[100003] = "[Scroll Making]",
 	}
 
 	local tradeIcon = {
 		[100000] = "Interface\\Icons\\Ability_Creature_Cursed_01",
 		[100001] = "Interface\\Icons\\INV_Misc_Bag_10",
+		[100003] = "Interface\\Icons\\INV_Scroll_07",
 	}
-
+]]
 
 
 --[[
@@ -254,7 +257,14 @@ do
 
 	function GnomeWorks:GetTradeName(tradeID)
 		if not tradeID then return "unknown" end
-		return tradeName[tradeID] or (GetSpellInfo(tradeID))
+
+		local pseudoTrade = self.data.pseudoTradeData[tradeID]
+
+		if pseudoTrade and pseudoTrade.GetTradeName then
+			return pseudoTrade.GetTradeName()
+		end
+
+		return GetSpellInfo(tradeID)
 	end
 
 	--[[
@@ -281,8 +291,10 @@ print("getTradeInfo", recipeID)
 	end
 ]]
 	function GnomeWorks:GetTradeInfo(tradeID)
-		if tradeName[tradeID] then
-			return tradeName[tradeID], tradeLink[tradeID], tradeIcon[tradeID]
+		local pseudoTrade = self.data.pseudoTradeData[tradeID]
+
+		if pseudoTrade and pseudoTrade.GetTradeName then
+			return pseudoTrade.GetTradeName(), pseudoTrade.GetTradeLink(), pseudoTrade.GetTradeIcon()
 		else
 			return GetSpellInfo(tradeID)
 		end

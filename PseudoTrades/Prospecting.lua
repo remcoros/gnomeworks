@@ -222,6 +222,7 @@ do
 
 		trade.skillList = skillList
 
+		GnomeWorks.system.levelBasis[31252] = 25229
 
 		api.RecordKnownSpells((UnitName("player")))
 

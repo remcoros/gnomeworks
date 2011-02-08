@@ -307,6 +307,42 @@ do
 		containerIndex = { "bag", "bank", "mail", "sale" },
 
 		collectInventories = { "bank", "mail", "sale", "guildBank", "alt" },
+
+
+		tradeIDList = {
+			2259,           -- alchemy
+			2018,           -- blacksmithing
+			7411,           -- enchanting
+			4036,           -- engineering
+			45357,			-- inscription
+			25229,          -- jewelcrafting
+			2108,           -- leatherworking
+	--		2575,			-- mining (or smelting?)
+			2656,           -- smelting (from mining)
+			3908,           -- tailoring
+			2550,           -- cooking
+			3273,           -- first aid
+
+			53428,			-- runeforging
+		},
+
+		unlinkableTrades = {
+			[2656] = true,         -- smelting (from mining)
+			[53428] = true,			-- runeforging
+		},
+
+
+		pseudoTrades = {
+		},
+
+
+		fakeTrades = {
+		},
+
+
+		levelBasis = {
+		},
+
 	}
 
 
@@ -422,6 +458,7 @@ do
 		if self.data.playerData[UnitName("player")] then
 			self.data.playerData[UnitName("player")].guild = GetGuildInfo("player")
 
+			self:CraftabilityPurge()
 			self:InventoryScan()
 		end
 	end
@@ -672,6 +709,8 @@ do
 
 
 		GnomeWorks.groupLabel = "By Category"
+
+		GnomeWorks:CraftabilityPurge()
 
 		GnomeWorks:InventoryScan()
 
@@ -934,17 +973,19 @@ print(arg1)
 --	print("gw parsed")
 
 
-	local function setFrameLevels(level, f, ...)
+	local function setFrameLevels(parent, f, ...)
 		if f then
-			if f.SetFrameLevel then
+			local level = parent:GetFrameLevel()
 
-				f:SetFrameLevel(level)
+			f:SetFrameLevel(level+1)
+
+			if f.SetFrameLevel then
 				if f:GetChildren() then
-					setFrameLevels(level+1, f:GetChildren())
+					setFrameLevels(f, f:GetChildren())
 				end
 			end
 
-			setFrameLevels(level, ...)
+			setFrameLevels(parent, ...)
 		end
 	end
 
@@ -952,7 +993,7 @@ print(arg1)
 	function GnomeWorks:FixFrames(f)
 		local level = f:GetFrameLevel()
 
-		setFrameLevels(level, f:GetChildren())
+		setFrameLevels(f, f:GetChildren())
 	end
 end
 

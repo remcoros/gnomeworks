@@ -5,17 +5,7 @@ do
 	local playerGUID
 
 
-	local pseudoTrades = {
---		[2656] = true,         -- smelting (from mining)
---		[53428] = true,			-- runeforging
-		[51005] = true,			-- milling
-		[13262] = true,			-- disenchant
-		[31252] = true,			-- prospecting
-
-		[100000] = true,
-		[100001] = true,
-	}
-
+	local pseudoTrades = GnomeWorks.system.pseudoTrades
 
 
 	function OnLeave(frame)

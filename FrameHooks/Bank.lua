@@ -11,6 +11,24 @@ do
 	local updateTimer
 
 
+	function GnomeWorks:PickUpItem(itemID)
+		for bag = 0, 4 do
+			for i = 1, GetContainerNumSlots(bag) do
+				local link = GetContainerItemLink(bag, i)
+
+				if link then
+					local slotItemID = tonumber(string.match(link, "item:(%d+)"))
+
+					if itemID == slotItemID then
+						PickupContainerItem(bag, i)
+					end
+				end
+			end
+		end
+	end
+
+
+
 	local function FindBagSlot(itemID, count)
 		if not itemID then return nil end
 

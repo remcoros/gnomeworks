@@ -362,8 +362,21 @@ do
 
 	local api = {}
 
+
+--[[
+	api.SpellCastCheck = function(recipeID, spellID)
+		local enchantID = ScrollMakingEnchantID(recipeID)
+		if enchantID == spellID then
+			return true
+		end
+	end
+]]
+
 	api.DoTradeSkill = function(recipeID)
-		CastSpellByName("/use "..GetSpellInfo(-recipeID))
+		local reagents = commonRecipes[recipeID].reagents
+		local itemID, stackSize = next(reagents)
+
+		UseItemByName(itemID)
 	end
 
 	api.GetRecipeName = function(recipeID)
@@ -426,12 +439,13 @@ do
 
 
 
-
 	api.ConfigureMacroText = function(recipeID)
-		return "/use "..GetItemInfo(next(commonRecipes[recipeID].reagents))
+		local reagents = commonRecipes[recipeID].reagents
+		local itemID, stackSize = next(reagents)
 
+--		GnomeWorks:Restack(itemID, stackSize)
+		return "/use "..GetItemInfo(itemID)
 	end
-
 
 
 	api.RecordKnownSpells = function(player)
@@ -531,6 +545,19 @@ do
 
 
 
+	api.GetTradeName = function()
+		return "Common"
+	end
+
+
+	api.GetTradeLink = function()
+		return "[Common]"
+	end
+
+
+	api.GetTradeIcon = function()
+		return "Interface\\Icons\\Ability_Creature_Cursed_01"
+	end
 
 	GnomeWorks:RegisterMessageDispatch("AddSpoofedRecipes", function ()
 		local trade,recipeList  = GnomeWorks:AddPseudoTrade(100000,api)
@@ -544,7 +571,7 @@ do
 			recipeList[recipeID] = trade
 
 
-			for itemID, numNeeded in pairs(data.results) do
+			for itemID, numMade in pairs(data.results) do
 				GnomeWorks:AddToItemCache(itemID, recipeID, numMade)
 			end
 

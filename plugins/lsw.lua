@@ -117,6 +117,20 @@ do
 			end,
 			draw = function (rowFrame, cellFrame, entry)
 				if not entry.subGroup then
+
+				LSW.UpdateSingleRecipePrice(entry.recipeID)
+
+					entry.value, entry.fate = LSW:GetSkillValue(entry.recipeID, globalFate)
+
+					if itemFate == "a" and itemCache[itemID] and itemCache[itemID].BOP then
+						entry.value = 0
+					elseif itemFate == "d" and itemCache[itemID] and not itemCache[itemID].disenchantValue then
+						entry.value = 0
+					end
+
+					entry.cost = LSW:GetSkillCost(entry.recipeID)
+
+
 					local itemFate = entry.fate or "?"
 					local costAmount = entry.cost or 0
 					local valueAmount = entry.value or 0
@@ -565,7 +579,7 @@ do
 				local itemID = LSW:FindID(itemLink)
 				local recipeID = LSW:FindID(recipeLink)
 
-				if itemID and recipeID and recipeID == tradeID then
+				if itemID and recipeID and recipeID == itemID then
 					local scroll = LSW.scrollData[recipeID]
 
 					if scroll then
@@ -575,6 +589,7 @@ do
 						itemID = -recipeID
 					end
 				end
+
 
 				return skillName, skillType, itemLink, recipeLink, itemID, recipeID
 			end
@@ -591,17 +606,18 @@ do
 
 
 
-			local f = CreateFrame("Frame")
+
 
 			local function AddPseudoTradeRecipes()
 				local recipeList = GnomeWorks.data.pseudoTradeRecipes
 				local recipeCache = LSW.recipeCache
 
-				for recipeID, tradeID in pairs(recipeList) do
-					local results,reagents = GnomeWorks:GetRecipeData(recipeID)
+				for recipeID, tradeTable in pairs(recipeList) do
+					local results,reagents,tradeID = GnomeWorks:GetRecipeData(recipeID)
 
 					recipeCache.reagents[recipeID] = reagents
 					recipeCache.results[recipeID] = results
+					recipeCache.names[recipeID] = GnomeWorks:GetRecipeName(recipeID)
 
 					for itemID in pairs(reagents) do
 						LSW.AddToItemCache(itemID)
@@ -611,14 +627,12 @@ do
 						LSW.AddToItemCache(itemID, recipeID, numMade)
 					end
 				end
-
-				f:Hide()
 			end
 
 
-			f:RegisterEvent("TRADE_SKILL_SHOW")
+			AddPseudoTradeRecipes()
 
-			f:SetScript("OnEvent", AddPseudoTradeRecipes)
+
 --[[
 			LSW.recipeCache.results = GnomeWorksDB.results
 			LSW.recipeCache.reagents = GnomeWorksDB.reagents

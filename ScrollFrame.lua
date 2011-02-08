@@ -195,7 +195,7 @@ do
 		if not scrollFrame.rowFrame[rowIndex] then
 			local parent = (rowIndex == 0 and scrollFrame) or scrollFrame.scrollChild
 
-			scrollFrame.rowFrame[rowIndex] = CreateFrame("Frame",nil,parent)
+			scrollFrame.rowFrame[rowIndex] = CreateFrame("Frame",scrollFrame:GetName().."RowFrame"..rowIndex,parent)
 
 			rowFrame = scrollFrame.rowFrame[rowIndex]
 

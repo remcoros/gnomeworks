@@ -32,7 +32,7 @@ do
 		["header"]          = { r = 1.00, g = 0.82, b = 0,   },
 	}
 
-
+--[[
 	local tradeIDList = {
 		2259,           -- alchemy
 		2018,           -- blacksmithing
@@ -58,6 +58,7 @@ do
 
 		100000,			-- "Common Skills",
 		100001,			-- "Vendor Conversion",
+		100003,			-- "Scroll Making"
 	}
 
 --	local tradeIDList = { 2259, 2018, 7411, 4036, 45357, 25229, 2108, 3908,  2550, 3273 }
@@ -71,6 +72,7 @@ do
 
 		[100000] = true,		-- "Common Skills",
 		[100001] = true,		-- "Vendor Conversion",
+		[100003] = true, 		-- "Scroll Making",
 	}
 
 
@@ -81,13 +83,24 @@ do
 
 		[100000] = "Common",
 		[100001] = "Vendor",
+		[100003] = "Scroll Making",
 	}
 
 
 	local fakeTrades = {
 		[100000] = "Common",
 		[100001] = "Vendor",
+		[100003] = "Scroll Making",
 	}
+]]
+
+
+	local tradeIDList = GnomeWorks.system.tradeIDList
+	local unlinkableTrades = GnomeWorks.system.unlinkableTrades
+	local pseudoTrades = GnomeWorks.system.pseudoTrades
+	local fakeTrades = GnomeWorks.system.fakeTrades
+	local levelBasis = GnomeWorks.system.levelBasis
+
 
 	-- only tailoring for now
 	local tradeSpecializations = {
@@ -95,14 +108,6 @@ do
 		[26801] = 3908,		-- shadowweave tailoring
 		[26797] = 3908,		-- spellfire tailoring
 	}
-
-
-	local levelBasis = {
-		[51005] = 45357,		-- milling/inscription
-		[13262] = 7411,			-- disenchant/enchanting
-		[31252] = 25229,		-- prospecting/jewelcrafting
-	}
-
 
 	local racialBonuses = {
 		[7411] = { racial = 28877, bonus = 10},			-- arcane affinity, +10 enchanting
@@ -121,7 +126,8 @@ do
 	local tradeIDByName = {}
 
 	for index, id in pairs(tradeIDList) do
-		local tradeName = string.lower(GnomeWorks:GetTradeName(id))
+--		local tradeName = string.lower(GnomeWorks:GetTradeName(id))
+		local tradeName = string.lower(GetSpellInfo(id))
 		tradeIDByName[tradeName] = id
 	end
 
@@ -162,6 +168,7 @@ do
 
 	function GnomeWorks:AddToItemCache(itemID, recipeID, numMade)
 		GnomeWorks.data.trackedItems[itemID] = true
+		GnomeWorks:CraftabilityPurge(self.player, itemID)
 		return AddToDataTable(GnomeWorks.data.itemSource, itemID, recipeID, numMade)
 	end
 
@@ -171,6 +178,10 @@ do
 		return AddToDataTable(GnomeWorks.data.reagentUsage, reagentID, recipeID, numNeeded)
 	end
 
+
+	function GnomeWorks:SetTradeIDByName(name, id)
+		tradeIDByName[string.lower(name)] = id
+	end
 
 	function GnomeWorks:GetTradeIDByName(name)
 		return tradeIDByName[string.lower(name)]
@@ -314,11 +325,25 @@ DebugSpam("found ", link, tradeLink)
 					end
 				end
 			else
-				playerData.links[id] = "|cffffd000|Htrade:"..id..":1:1:0:/|h["..fakeTrades[id].."]|h|r"
+				local baseTradeID = levelBasis[id]
 
-				playerData.rank[id] = 1
-				playerData.maxRank[id] = 1
-				playerData.bonus[id] = 0
+				if not baseTradeID or GetSpellLink((GetSpellInfo(baseTradeID))) then
+					local rank = 1
+					local maxRank = 1
+					local bonus = 0
+
+					if baseTradeID then
+						rank = playerData.rank[baseTradeID] or 1
+						maxRank = playerData.maxRank[baseTradeID] or rank
+						bonus = playerData.bonus[baseTradeID] or 0
+					end
+
+					playerData.links[id] = "|cffffd000|Htrade:"..id..":"..rank..":"..maxRank..":0:/|h["..pseudoTrades[id].."]|h|r"
+
+					playerData.rank[id] = rank
+					playerData.maxRank[id] = maxRank
+					playerData.bonus[id] = bonus
+				end
 			end
 		end
 
@@ -352,7 +377,7 @@ DebugSpam("found ", link, tradeLink)
 					playerData.links[id] = "|cffffd000|Htrade:"..id..":1:1:0:/|h["..GnomeWorks:GetTradeName(id).."]|h|r"			-- fake link for data collection purposes
 				end
 			else
-				playerData.links[id] = "|cffffd000|Htrade:"..id..":1:1:0:/|h["..fakeTrades[id].."]|h|r"
+				playerData.links[id] = "|cffffd000|Htrade:"..id..":1:1:0:/|h["..pseudoTrades[id].."]|h|r"
 			end
 
 			playerData.rank[id] = 525
@@ -663,6 +688,7 @@ DebugSpam("SCAN BUSY!")
 
 
 		if not self.tradeID then
+		assert(false)
 			return
 		end
 
@@ -975,7 +1001,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 
 
---	DebugSpam("Scan Complete")
+	DebugSpam("Scan Complete")
 
 
 		if mainGroup then

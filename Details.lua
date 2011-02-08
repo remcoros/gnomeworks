@@ -756,10 +756,11 @@ do
 		detailFrame.levelsBar.current:SetHeight(4)
 --detailFrame.levelsBar.current:Hide()
 
-		detailFrame.levelsBar.red = CreateStatusBar(5, 1.00, 0.00, 0.00)
-		detailFrame.levelsBar.orange = CreateStatusBar(4, 1.00, 0.5, 0.25)
-		detailFrame.levelsBar.yellow = CreateStatusBar(3, 1.00, 1.00, 0.00)
+
 		detailFrame.levelsBar.green = CreateStatusBar(2, 0.25, 0.75, 0.25)
+		detailFrame.levelsBar.yellow = CreateStatusBar(3, 1.00, 1.00, 0.00)
+		detailFrame.levelsBar.orange = CreateStatusBar(4, 1.00, 0.5, 0.25)
+		detailFrame.levelsBar.red = CreateStatusBar(5, 1.00, 0.00, 0.00)
 
 --detailFrame.levelsBar.red:Hide()
 --detailFrame.levelsBar.yellow:Hide()

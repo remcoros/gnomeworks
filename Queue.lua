@@ -422,20 +422,7 @@ do
 
 
 	local function GetSkillLevels(id)
-		local levels = GnomeWorks.libPT:ItemInSet(id,"TradeskillLevels")			-- annoyingly, the libPT tradeskill database is based on itemID/-spellID
-
-		if not levels then
-			return 0,0,0,0
-		else
-			local a,b,c,d = string.split("/",levels)
-
-			a = tonumber(a) or 0
-			b = tonumber(b) or 0
-			c = tonumber(c) or 0
-			d = tonumber(d) or 0
-
-			return a, b, c, d
-		end
+		return RecipeSkillLevels[1][id] or 0, RecipeSkillLevels[2][id] or 0, RecipeSkillLevels[3][id] or 0, RecipeSkillLevels[4][id] or 0
 	end
 
 
@@ -454,33 +441,38 @@ do
 
 			local results,reagents,tradeID = GnomeWorks:GetRecipeData(entry.recipeID,player)
 
-			local orange, yellow, green, gray = GetSkillLevels(entry.itemID)						-- entry.recipeID)
+			local orange, yellow, green, gray = GetSkillLevels(entry.recipeID)
+
+			local rank, maxRank, estimatedRank, bonus = GnomeWorks:GetTradeSkillRank(player, tradeID)
+
+			local effectiveRank = rank - bonus
 
 			if not tradeTable[tradeID] then
-				tradeTable[tradeID] = GnomeWorks:GetTradeSkillRank(player, tradeID)
+				tradeTable[tradeID] = rank
 			end
 
-			if tradeTable[tradeID] + count*factor < yellow then
+
+			if effectiveRank + count*factor < yellow then
 				tradeTable[tradeID] = tradeTable[tradeID] + count*factor
-			elseif tradeTable[tradeID] >= gray then
+			elseif effectiveRank >= gray then
 				-- nothing
 			else
 				while count>0 do
-					local rank = tradeTable[tradeID]
+					local rank = tradeTable[tradeID] - bonus
 
-					if rank >= gray then
+					if effectiveRank >= gray then
 						count = 0
-					elseif rank < yellow then
+					elseif effectiveRank < yellow then
 						rank = rank + factor
 						count = count - 1
-					elseif rank >= yellow and rank < green then
-						local chance =  1-(rank-yellow+1)/(green-yellow+1)*.5
+					elseif effectiveRank >= yellow and effectiveRank < green then
+						local chance =  1-(effectiveRank-yellow+1)/(effectiveRank-yellow+1)*.5
 						count = count - (1/chance)
 						if count >= 0 then
 							rank = rank + 1
 						end
 					else
-						local chance = (1-(rank-green+1)/(gray-green+1))*.5
+						local chance = (1-(effectiveRank-green+1)/(effectiveRank-green+1))*.5
 						count = count - (1/chance)
 						if count >= 0 then
 							rank = rank + 1
@@ -1173,7 +1165,15 @@ do
 		if unit == "player"	and doTradeEntry then
 			local _,_,recipeTradeID = GnomeWorks:GetRecipeData(doTradeEntry.recipeID)
 
-			if spellID == doTradeEntry.recipeID then
+			local recipeID = doTradeEntry.recipeID
+
+			local pseudoTrade = GnomeWorks.data.pseudoTradeData[recipeTradeID]
+
+			if pseudoTrade and pseudoTrade.SpellCastCheck and pseudoTrade.SpellCastCheck(recipeID, spellID) then
+				recipeID = spellID
+			end
+
+			if spellID == recipeID then
 				if doTradeEntry.manualEntry then
 					local entry = doTradeEntry
 
@@ -1298,7 +1298,11 @@ do
 					local pseudoTrade = GnomeWorks.data.pseudoTradeData[tradeID]
 
 					if pseudoTrade and pseudoTrade.DoTradeSkill then
-						if pseudoTrade.DoTradeSkill(entry.recipeID, entry.count) then
+						doTradeEntry = entry
+
+						local result = pseudoTrade.DoTradeSkill(entry.recipeID, entry.count)
+
+						if result then
 							if entry.manualEntry then
 								DeleteQueueEntry(GnomeWorks.data.queueData[queuePlayer], entry)
 							end
@@ -1417,16 +1421,18 @@ do
 
 					if not InCombatLockdown() then
 						button.secure:Show()
-						local bottom = button:GetBottom()
-						local top = button:GetTop()
-						local left = button:GetLeft()
-						local right = button:GetRight()
+						local scale = button:GetEffectiveScale()/button.secure:GetEffectiveScale()
+						local bottom = button:GetBottom()*scale
+						local top = button:GetTop()*scale
+						local left = button:GetLeft()*scale
+						local right = button:GetRight()*scale
 
 						button.secure:SetPoint("TOPLEFT","UIParent","BOTTOMLEFT",left,top)
-						button.secure:SetPoint("BOTTOMRIGHT","UIParent",right,bottom)
+						button.secure:SetPoint("BOTTOMRIGHT","UIParent","BOTTOMLEFT",right,bottom)
 
 						button.secure:SetAttribute("type", "macro")
 						button.secure:SetAttribute("macrotext", macroText)
+
 					end
 
 					EditMacro("GWProcess", "GWProcess", 977, macroText, false, false)				-- 97, 7
@@ -1484,7 +1490,7 @@ do
 		local buttonConfig = {
 --			{ text = "Process", operation = ProcessQueue, width = 250, validate = SetProcessLabel, lineBreak = true, template = "SecureActionButtonTemplate" },
 			{ text = "Nothing To Process", name = "GWProcess", width = 250, validate = ConfigureButton, lineBreak = true, addSecure=true, template = "SecureActionButtonTemplate",
-						updateEvent = "QueueCountsChanged QueueChanged TradeProcessing InventoryScanComplete HeartBeat" },
+						updateEvent = "QueueCountsChanged QueueChanged TradeProcessing InventoryScanComplete HeartBeat FrameMoved" },
 			{ text = "Stop", operation = StopProcessing, width = 125 },
 			{ text = "Clear", operation = ClearQueue, width = 125, lineBreak = true },
 			{ text = "Scan Auctions", width = 250, validate = ConfigureAuctionButton, updateEvent = "HeartBeat AuctionScanComplete" }
@@ -1512,9 +1518,12 @@ do
 
 				if config.addSecure then
 					newButton.secure = CreateFrame("Button",(config.name or config.text).."Secure", UIParent, config.template)
---newButton:SetScript("OnSizeChanged", function() print("please, please, please") end)
 
-					newButton.secure:SetFrameStrata("TOOLTIP")
+					newButton.secure:SetFrameStrata("HIGH")
+					newButton.secure:SetFrameLevel(newButton.secure:GetFrameLevel()+128)
+
+--newButton.secure:SetNormalTexture("Interface\\Buttons\\UI-Listbox-Highlight")
+
 --					newButton.secure:SetAllPoints(newButton)
 
 					newButton.secure:HookScript("OnEnter", function(b) newButton.state.Highlight:Show() end)
