@@ -235,10 +235,12 @@ do
 			end
 		else
 			local reagentUsage = self.data.reagentUsage[itemID]
-			for container,data in pairs(self.data.craftabilityData[player]) do
-				data[itemID] = nil
-				if reagentUsage then
-					itemUncached = self:UncacheReagentCounts(player, data, reagentUsage)
+			if self.data.craftabilityData[player] then
+				for container,data in pairs(self.data.craftabilityData[player]) do
+					data[itemID] = nil
+					if reagentUsage then
+						itemUncached = self:UncacheReagentCounts(player, data, reagentUsage)
+					end
 				end
 			end
 		end

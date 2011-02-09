@@ -917,7 +917,11 @@ info.cancelFunc
 				updateTimer = updateTimer + elapsed
 
 				if updateTimer > 1 then
-					f.text:SetText(windowTitle.." "..frame:GetFrameLevel())
+					if frame:GetFrameLevel() > (frame.highLevel or 0) then
+						frame.highLevel = frame:GetFrameLevel()
+					end
+
+					f.text:SetText(windowTitle.." "..frame:GetFrameLevel().."/"..frame.highLevel)
 					updateTimer = 0
 				end
 			end)
