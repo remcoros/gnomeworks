@@ -10,6 +10,10 @@ do
 	local rank, maxRank, estimatedRank
 
 
+	local RecipeSkillLevels = GnomeWorks.data.recipeSkillLevels
+
+
+
 	local skillColors = {
 		["unknown"]			= { r = 1.00, g = 0.00, b = 0.00, level = 5, alttext="???", cstring = "|cffff0000"},
 		["optimal"]	        = { r = 1.00, g = 0.50, b = 0.25, level = 4, alttext="+++", cstring = "|cffff8040"},

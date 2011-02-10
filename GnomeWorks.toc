@@ -60,6 +60,7 @@ LinkDecode.lua
 ShoppingList.lua
 Guild.lua
 Commands.lua
+SkillLevels.lua
 
 
 PseudoTrades\CommonSkills.lua

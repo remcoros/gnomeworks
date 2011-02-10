@@ -2,16 +2,8 @@
 
 
 do
-
---	local ArmorID = "Armor"
---	local WeaponID = "Weapon"
 	local WeaponID
 	local ArmorID
-
-	GameTooltip:Hide()
-	GameTooltip:SetHyperlink("item:1512")
-	GameTooltip:SetHyperlink("item:1376")
-
 
 
 	local reagentID = {
@@ -449,7 +441,6 @@ do
 				local recipeID = skillList[i]
 
 				if knownItems and knownItems[-recipeID] then
-
 					local itemID = -recipeID
 					local itemName, itemLink, itemRarity, itemLevel  = GetItemInfo(itemID)
 					local reqLevel = 1
@@ -584,13 +575,8 @@ do
 		end
 	end
 
-
-	local SetUpRecipeTimer
-
 	local function SetUpRecipes()
-		_, _, _, _, _, WeaponID = GetItemInfo(1512)				-- crude battle axe
-		_, _, _, _, _, ArmorID = GetItemInfo(1376)				-- frayed cloak
-
+		WeaponID, ArmorID = GetAuctionItemClasses()
 
 		if WeaponID and ArmorID then
 			local trade,recipeList  = GnomeWorks:AddPseudoTrade(13262,api)
@@ -624,14 +610,14 @@ do
 
 			GnomeWorks.system.levelBasis[13262] = 7411
 
-			GnomeWorks:CancelTimer(SetUpRecipeTimer)
+
+			api.RecordKnownSpells((UnitName("player")))
 		end
 	end
 
 
 	GnomeWorks:RegisterMessageDispatch("AddSpoofedRecipes", function ()
-		SetUpRecipeTimer = GnomeWorks:ScheduleRepeatingTimer(SetUpRecipes, 1)
---		SetUpRecipes()
+		SetUpRecipes()
 		return true
 	end)
 end

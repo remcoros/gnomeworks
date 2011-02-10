@@ -535,7 +535,7 @@ do
 			end
 		end
 
-		InitDBTables("serverData", "vendorItems", "results", "names", "reagents", "tradeIDs", "skillUps", "vendorOnly")
+		InitDBTables("serverData", "vendorItems", "results", "names", "reagents", "tradeIDs", "skillUps", "vendorOnly", "recipeBlackList", "preferredSource")
 
 
 
@@ -721,6 +721,12 @@ do
 		for toon in pairs(GnomeWorks.data.playerData) do
 			if toon ~= player and toon ~= "All Recipes" then
 				table.insert(list,toon)
+
+				for tradeID, pseudoTrade in pairs(GnomeWorks.data.pseudoTradeData) do
+					if pseudoTrade.RecordKnownSpells then
+						pseudoTrade.RecordKnownSpells(toon)
+					end
+				end
 			end
 		end
 

@@ -2,6 +2,8 @@
 
 
 
+local GnomeWorks = GnomeWorks
+
 
 
 
@@ -40,6 +42,122 @@ do
 	local tooltipScanner =  _G["GWParsingTooltip"] or CreateFrame("GameTooltip", "GWParsingTooltip", getglobal("ANCHOR_NONE"), "GameTooltipTemplate")
 
 	tooltipScanner:SetOwner(WorldFrame, "ANCHOR_NONE")
+
+
+	local tableMenuList = {}
+
+
+	local function ReagentSourceColor(recipeID, reagentID)
+		if GnomeWorksDB.preferredSource[reagentID] == recipeID then
+			return "|cff00ff00"
+		end
+
+		if GnomeWorksDB.recipeBlackList[recipeID] then
+			return "|cffff0000"
+		end
+
+		return "|cffffffff"
+	end
+
+
+
+	local function AdjustReagentSource(frame, recipeID, reagentID,...)
+		reagentID = frame.arg2
+
+		if not IsShiftKeyDown() then
+
+			if GnomeWorksDB.preferredSource[reagentID] == recipeID then
+				GnomeWorksDB.preferredSource[reagentID] = nil
+			elseif GnomeWorksDB.preferredSource[reagentID] then
+				for i=2, UIDROPDOWNMENU_MAXBUTTONS do
+					local button = _G["DropDownList1Button"..i]
+
+					if button.arg1 == GnomeWorksDB.preferredSource[reagentID] then
+						GnomeWorksDB.preferredSource[reagentID] = recipeID
+						local colorCode = ReagentSourceColor(button.arg1, reagentID)
+
+						button:SetText(colorCode..GnomeWorks:GetRecipeName(button.arg1))
+						break
+					end
+				end
+
+				GnomeWorksDB.preferredSource[reagentID] = recipeID
+			else
+				GnomeWorksDB.preferredSource[reagentID] = recipeID
+			end
+
+			local colorCode = ReagentSourceColor(recipeID, reagentID)
+
+			UIDropDownMenu_SetButtonText(1, frame.value, GnomeWorks:GetRecipeName(recipeID), colorCode)
+
+		else
+			GnomeWorksDB.recipeBlackList[recipeID] = not GnomeWorksDB.recipeBlackList[recipeID] or nil
+
+			local colorCode = ReagentSourceColor(recipeID, reagentID)
+
+			UIDropDownMenu_SetButtonText(1, frame.value, GnomeWorks:GetRecipeName(recipeID), colorCode)
+		end
+	end
+
+
+	local function GoToRecipe(frame, recipeID)
+		CloseDropDownMenus()
+		GnomeWorks:PushSelection()
+		GnomeWorks:SelectRecipe(recipeID)
+	end
+
+
+	local function GenerateTableMenu(title, reagentID, data, clickFunc, colorFunc, shortCut, tipTitle, tipText)
+		local button = tableMenuList[1] or {}
+
+		button.text = title
+--		button.isTitle = true
+		button.notCheckable = true
+		button.fontObject = "GameFontNormal"
+
+		tableMenuList[1] = button
+
+		local b = 2
+
+		for recipeID,numMade in pairs(data) do
+			if GnomeWorks:IsSpellKnown(recipeID) then
+				local button = tableMenuList[b] or {}
+
+				button.text = GnomeWorks:GetRecipeName(recipeID)
+				button.func = clickFunc
+				button.arg1 = recipeID
+				button.arg2 = reagentID
+				button.value = b
+				button.notCheckable = true
+				button.keepShownOnClick = true
+
+
+				button.tooltipTitle = tipTitle
+				button.tooltipText = tipText
+				button.tooltipOnButton = true
+
+				button.colorCode = colorFunc and colorFunc(recipeID,reagentID)
+
+				tableMenuList[b] = button
+				b = b + 1
+			end
+		end
+
+		for i=b,#tableMenuList do
+			tableMenuList[i] = nil
+		end
+
+		if shortCut and #tableMenuList <= 2 then
+			clickFunc(GnomeWorksMenuFrame, tableMenuList[2].arg1, tableMenuList[2].arg2)
+		else
+			local x, y = GetCursorPosition()
+			local uiScale = UIParent:GetEffectiveScale()
+
+			EasyMenu(tableMenuList, GnomeWorksMenuFrame, UIParent, x/uiScale,y/uiScale, "MENU", 5)
+		end
+
+--		tableMenuList[1].fontObject = nil
+	end
 
 
 	local function columnControl(cellFrame,button,source)
@@ -125,8 +243,11 @@ do
 					local itemSource = GnomeWorks.data.itemSource[entry.id]
 
 					if itemSource then
-						GnomeWorks:PushSelection()
-						GnomeWorks:SelectRecipe(itemSource)
+						if button == "LeftButton" then
+							GenerateTableMenu("Jump to Reagent Source",entry.id, itemSource, GoToRecipe, ReagentSourceColor, true)
+						elseif button == "RightButton" then
+							GenerateTableMenu("Adjust Reagent Source",entry.id, itemSource, AdjustReagentSource, ReagentSourceColor, false, "Adjust Recipe Parameters","click to select |cff00ff00preferred source|r\nshift-click to toggle |cffff0000blacklisted recipe|r")
+						end
 					end
 				end
 			end,
@@ -404,7 +525,7 @@ do
 											if player ~= GnomeWorks.player then
 												for i,key in ipairs(inventoryIndex) do
 													if key ~= "vendor" and key ~= "guildBank" and key ~= "alt" then
-														local count = containers[key][itemID]
+														local count = containers[key] and containers[key][itemID]
 
 														if count and count > 0 then
 															GameTooltip:AddDoubleLine("   "..inventoryColors.alt..player.."/"..key,inventoryColors.alt..count)
@@ -722,10 +843,10 @@ do
 
 			recipeID = detailFrame.levelsBar.recipeID
 
-			local gray = RecipeSkillLevels[4][recipeID] or 1
-			local green = RecipeSkillLevels[3][recipeID] or 1
-			local yellow = RecipeSkillLevels[2][recipeID] or 1
-			local orange = RecipeSkillLevels[1][recipeID] or 1
+			local gray = GnomeWorks.data.recipeSkillLevels[4][recipeID] or 1
+			local green = GnomeWorks.data.recipeSkillLevels[3][recipeID] or 1
+			local yellow = GnomeWorks.data.recipeSkillLevels[2][recipeID] or 1
+			local orange = GnomeWorks.data.recipeSkillLevels[1][recipeID] or 1
 
 			GameTooltip:AddLine(COLORORANGE..orange.."|r/"..COLORYELLOW..yellow.."|r/"..COLORGREEN..green.."|r/"..COLORGRAY..gray)
 
@@ -1014,7 +1135,7 @@ do
 
 
 		local function GetSkillLevels(id)
-			return RecipeSkillLevels[1][id] or 0, RecipeSkillLevels[2][id] or 0, RecipeSkillLevels[3][id] or 0, RecipeSkillLevels[4][id] or 0
+			return GnomeWorks.data.recipeSkillLevels[1][id] or 0, GnomeWorks.data.recipeSkillLevels[2][id] or 0, GnomeWorks.data.recipeSkillLevels[3][id] or 0, GnomeWorks.data.recipeSkillLevels[4][id] or 0
 		end
 
 		function GnomeWorks:HideDetails()

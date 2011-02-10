@@ -296,7 +296,6 @@ DebugSpam("parsing skill list")
 			if not fakeTrades[id] then
 				local link, tradeLink = GetSpellLink((GetSpellInfo(id)))
 
-
 				if link then
 DebugSpam("found ", link, tradeLink)
 
@@ -1305,6 +1304,10 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 
 	function GnomeWorks:GetTradeSkillRank(player, tradeID)
+		if player == "Guild Recipes" then
+			return 525, 525, 525, 0
+		end
+
 		tradeID = tradeID or self.tradeID
 		player = player or self.player
 

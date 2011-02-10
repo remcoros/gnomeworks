@@ -1,13 +1,10 @@
 
 
-
-
+local GnomeWorks = GnomeWorks
 local LARGE_NUMBER = 1000000
 
 
 do
-	local GnomeWorks = GnomeWorks
-
 	local frame
 	local sf
 
@@ -422,7 +419,7 @@ do
 
 
 	local function GetSkillLevels(id)
-		return RecipeSkillLevels[1][id] or 0, RecipeSkillLevels[2][id] or 0, RecipeSkillLevels[3][id] or 0, RecipeSkillLevels[4][id] or 0
+		return GnomeWorks.data.recipeSkillLevels[1][id] or 0, GnomeWorks.data.recipeSkillLevels[2][id] or 0, GnomeWorks.data.recipeSkillLevels[3][id] or 0, GnomeWorks.data.recipeSkillLevels[4][id] or 0
 	end
 
 
@@ -753,7 +750,7 @@ do
 				if numMade > .1 then
 					local cooldownGroup = GnomeWorks:GetSpellCooldownGroup(recipeID)
 
-					if not cooldownGroup and GnomeWorks:IsSpellKnown(recipeID, player) then -- and not cooldownUsed[cooldownGroup] then
+					if not cooldownGroup and GnomeWorks:IsSpellKnown(recipeID, player) and not GnomeWorksDB.recipeBlackList[recipeID] then -- and not cooldownUsed[cooldownGroup] then
 						local recursive
 
 						local results, reagents = GnomeWorks:GetRecipeData(recipeID)
@@ -789,7 +786,7 @@ do
 
 			for recipeID,numMade in pairs(source[reagentID]) do
 				if numMade > .1 then
-					if GnomeWorks:IsSpellKnown(recipeID, player) then
+					if GnomeWorks:IsSpellKnown(recipeID, player) and not GnomeWorksDB.recipeBlackList[recipeID] then
 						local cooldownGroup = GnomeWorks:GetSpellCooldownGroup(recipeID)
 
 						if cooldownGroup then

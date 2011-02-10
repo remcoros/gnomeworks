@@ -7,6 +7,7 @@ do
 	local skillList = {}
 	local recipeList, trade
 
+
 	local scrollIDs = {
 		[27951] = 37603, -- Enchant Boots - Dexterity
 		[7418] = 38679, -- Enchant Bracer - Minor Health
@@ -543,7 +544,7 @@ do
 			local recipeID = ScrollMakingSpellID(enchantID)
 
 			for i=1,4 do
-				RecipeSkillLevels[i][recipeID] = RecipeSkillLevels[i][enchantID]
+				GnomeWorks.data.recipeSkillLevels[i][recipeID] = GnomeWorks.data.recipeSkillLevels[i][enchantID]
 			end
 
 			local enchantReagents = GnomeWorksDB.reagents[enchantID]
