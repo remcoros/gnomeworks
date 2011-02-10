@@ -29,7 +29,7 @@ do
 				if GetSpellInfo(tradeID) == skill and not self.data.trainableSpells[recipeID] then
 					self.data.trainableSpells[recipeID] = level
 
-					RecipeSkillLevels[1][recipeID] = level
+					GnomeWorks.data.recipeSkillLevels[1][recipeID] = level
 
 					addedRecipes = true
 				end
