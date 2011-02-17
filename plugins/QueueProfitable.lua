@@ -109,7 +109,7 @@ do
 		end
 
 
-		function RecipeGroupSelect(menuButton, group)
+		local function RecipeGroupSelect(menuButton, group)
 			CloseDropDownMenus()
 
 			if not group then

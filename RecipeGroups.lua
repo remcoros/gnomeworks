@@ -837,7 +837,7 @@ do
 
 
 	-- Called when the user selects an item in the group drop down
-	function RecipeGroupSelect(menuButton, group)
+	local function RecipeGroupSelect(menuButton, group)
 --	DebugSpam("select grouping",label,dropDown)
 --		self:SetTradeSkillOption("grouping", label)
 		CloseDropDownMenus()
@@ -925,7 +925,6 @@ do
 				entry.checked = false
 
 				entry.colorCode = nil
-
 
 				if level == 1 and GnomeWorks.groupLabel == group.label then
 					if not GnomeWorks.group then
