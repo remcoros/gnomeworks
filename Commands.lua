@@ -26,11 +26,14 @@ do
 			local arg = ...
 
 			if not arg then
+				GnomeWorks:print("show time report")
 				GnomeWorks:MessageDispatchTimeReportToggle()
 			else
 				if arg == "fixframes" then
 					GnomeWorks:print("fixing frames")
 					GnomeWorks:FixFrames(GnomeWorks.MainWindow)
+				else
+					GnomeWorks:warning("bad argument(s) for debug command:",arg)
 				end
 			end
 		end,

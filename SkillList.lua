@@ -297,59 +297,60 @@ DebugSpam("parsing skill list")
 		AddProfession(firstAid)
 
 		for k,id in pairs(tradeIDList) do
-			if not fakeTrades[id] then
-				local link, tradeLink = GetSpellLink((GetSpellInfo(id)))
+			if not playerData.links[id] then
+				if not fakeTrades[id] then
+					local link, tradeLink = GetSpellLink((GetSpellInfo(id)))
 
-				if link then
-DebugSpam("found ", link, tradeLink)
+					if link then
+	DebugSpam("found ", link, tradeLink)
 
-					if unlinkableTrades[id] and not playerData.links[id] then
+						if unlinkableTrades[id]  then
+							local rank = 1
+							local maxRank = 1
+							local bonus = 0
+
+							if levelBasis[id] then
+								rank = playerData.rank[levelBasis[id]]
+								maxRank = playerData.maxRank[levelBasis[id]]
+								bonus = playerData.bonus[levelBasis[id]]
+							end
+
+							tradeLink = "|cffffd000|Htrade:"..id..":"..rank..":"..maxRank..":0:/|h["..GnomeWorks:GetTradeName(id).."]|h|r"			-- fake link for data collection purposes
+
+							self:RecordKnownSpells(playerName, id)
+
+							playerData.links[id] = tradeLink
+
+							playerData.rank[id] = rank
+							playerData.maxRank[id] = maxRank
+							playerData.bonus[id] = bonus
+						elseif not tradeLink then
+							return false
+						end
+					end
+				else
+					local baseTradeID = levelBasis[id]
+
+					if not baseTradeID or GetSpellLink((GetSpellInfo(baseTradeID))) then
 						local rank = 1
 						local maxRank = 1
 						local bonus = 0
 
-						if levelBasis[id] then
-							rank = playerData.rank[levelBasis[id]]
-							maxRank = playerData.maxRank[levelBasis[id]]
-							bonus = playerData.bonus[levelBasis[id]]
+						if baseTradeID then
+							rank = playerData.rank[baseTradeID] or 1
+							maxRank = playerData.maxRank[baseTradeID] or rank
+							bonus = playerData.bonus[baseTradeID] or 0
 						end
 
-						tradeLink = "|cffffd000|Htrade:"..id..":"..rank..":"..maxRank..":0:/|h["..GnomeWorks:GetTradeName(id).."]|h|r"			-- fake link for data collection purposes
-
-						self:RecordKnownSpells(playerName, id)
-
-						playerData.links[id] = tradeLink
+						playerData.links[id] = "|cffffd000|Htrade:"..id..":"..rank..":"..maxRank..":0:/|h["..pseudoTrades[id].."]|h|r"
 
 						playerData.rank[id] = rank
 						playerData.maxRank[id] = maxRank
 						playerData.bonus[id] = bonus
-					elseif not tradeLink then
-						return false
 					end
-				end
-			else
-				local baseTradeID = levelBasis[id]
-
-				if not baseTradeID or GetSpellLink((GetSpellInfo(baseTradeID))) then
-					local rank = 1
-					local maxRank = 1
-					local bonus = 0
-
-					if baseTradeID then
-						rank = playerData.rank[baseTradeID] or 1
-						maxRank = playerData.maxRank[baseTradeID] or rank
-						bonus = playerData.bonus[baseTradeID] or 0
-					end
-
-					playerData.links[id] = "|cffffd000|Htrade:"..id..":"..rank..":"..maxRank..":0:/|h["..pseudoTrades[id].."]|h|r"
-
-					playerData.rank[id] = rank
-					playerData.maxRank[id] = maxRank
-					playerData.bonus[id] = bonus
 				end
 			end
 		end
-
 
 		for spellID,tradeID in pairs(tradeSpecializations) do
 			local spellName = GetSpellInfo(spellID)
