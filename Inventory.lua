@@ -434,7 +434,7 @@ do
 
 		if recipeSource then
 			for childRecipeID, count in pairs(recipeSource) do
-				if self:IsSpellKnown(childRecipeID, player) then
+				if self:IsSpellKnown(childRecipeID, player) and not GnomeWorksDB.recipeBlackList[recipeID] then
 					if count >= 1 then
 --print("Child Recipe", reagentID, childRecipeID)
 						local childResults, childReagents = self:GetRecipeData(childRecipeID)

@@ -7,6 +7,7 @@ end
 local groupLabelAdded = {}
 local groupLabels = {}
 
+GnomeWorks.groupLabels = groupLabels
 
 
 local OVERALL_PARENT_GROUP_NAME = "*ALL*"

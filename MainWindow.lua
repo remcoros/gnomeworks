@@ -1567,7 +1567,11 @@ do
 
 	function GnomeWorks:CHAT_MSG_SKILL()
 		self:ParseSkillList()
-		self:DoTradeSkillUpdate()
+		if self.updateTimer then
+			self:CancelTimer(self.updateTimer, true)
+		end
+
+		self.updateTimer = self:ScheduleTimer("DoTradeSkillUpdate",.1)
 	end
 
 
@@ -1585,6 +1589,14 @@ do
 
 			TradeSkillFrame_Update()						-- seems to fix the early bailout of trade skill iterations
 
+			if GnomeWorks.selectedEntry then
+				local recipeID = GnomeWorks.selectedEntry.recipeID
+
+				if recipeID then
+					GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() GnomeWorks:DoRecipeSelection(recipeID) return true end, "SelectRecipe")			-- return true = fire once
+				end
+			end
+
 			self:ResetSkillSelect()
 
 			if self.updateTimer then
@@ -1592,6 +1604,7 @@ do
 			end
 
 			self.updateTimer = self:ScheduleTimer("DoTradeSkillUpdate",.1)
+
 
 			if self.hideMainWindow then
 				self.hideMainWindow = nil
@@ -1601,6 +1614,8 @@ do
 				frame.title:Show()
 				sf:Show()
 			end
+
+
 		end
 	end
 
@@ -1816,7 +1831,8 @@ do
 					local numTradeSkill = GetNumGuildTradeSkill()
 
 					for i = 1, numTradeSkill do
-						local skillID, isCollapsed, iconTexture, headerName, numOnline, numPlayers, playerName, class, online, zone, skill, classFileName = GetGuildTradeSkillInfo(i)
+						local skillID, isCollapsed, iconTexture, headerName, numOnline, numVisible, numPlayers, playerName, class, online, zone, skill, classFileName = GetGuildTradeSkillInfo(i)
+
 
 						if not playerName and CanViewGuildRecipes(skillID) then
 							skillButton.text = headerName -- .."["..skill.."]"
@@ -2110,7 +2126,7 @@ do
 
 
 		local ShowPlugins do
-			local function InitMenu(menuFrame, level)
+			local function InitMenu(menuFrame, level, menuList)
 				if (level == 1) then  -- plugins
 					local title = {}
 					local button = {}
@@ -2127,7 +2143,7 @@ do
 						if data.loaded then
 							button.text = name
 							button.hasArrow = #data.menuList>0
-							button.value = data.menuList
+							button.menuList = data.menuList
 							button.disabled = false
 							button.notCheckable = true
 
@@ -2144,18 +2160,23 @@ do
 						UIDropDownMenu_AddButton(button)
 					end
 				elseif (level or 0) > 1 then
-					local menuList = UIDROPDOWNMENU_MENU_VALUE
+--					local menuList = UIDROPDOWNMENU_MENU_VALUE
 
-					for index = 1, #menuList do
-						local button = menuList[index]
-						if type(button) == "table" then
-							if (button.text) then
-								button.index = index
-								button.value = button.menuList
-								UIDropDownMenu_AddButton( button, level )
+					if type(menuList) == "table" then
+						for index = 1, #menuList do
+							local button = menuList[index]
+							if type(button) == "table" then
+								if (button.text) then
+									button.index = index
+									button.value = button.menuList
+									UIDropDownMenu_AddButton( button, level )
+								end
 							end
 						end
+					elseif type(menuList) == "function" then		-- if menuList is a function, then call it to add buttons
+						menuList(menuFrame, level)
 					end
+
 --					for index, button in ipairs(UIDROPDOWNMENU_MENU_VALUE) do
 --						UIDropDownMenu_AddButton(button, level)
 --					end

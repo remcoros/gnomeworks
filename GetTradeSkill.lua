@@ -189,7 +189,7 @@ do
 			local spellName = GetSpellInfo(-index)
 
 			for i=1,#skillLevelNames-1 do
-				if rank<(RecipeSkillLevels[i][-index] or 0) then
+				if rank<(GnomeWorks.data.recipeSkillLevels[i][-index] or 0) then
 					return spellName, skillLevelNames[i]
 				end
 			end

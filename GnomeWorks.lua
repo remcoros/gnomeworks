@@ -181,6 +181,8 @@ do
 	end
 
 
+
+
 	function pluginInputBox:SetVariable(value)
 		local varTable = pluginInputBox.varTable
 		varTable.value = value
@@ -231,6 +233,29 @@ do
 	end
 
 
+	local function AddMenu(plugin, var, menu)
+		if plugin.variables[var] then
+			local new = {
+				arg1 = plugin,
+				arg2 = var,
+				notCheckable = true,
+				hasArrow = true,
+				menuList = menu,
+			}
+
+			new.text = string.format(plugin.variables[var].format, plugin.variables[var].value)
+
+			plugin.variables[var].menuButton = new
+
+			table.insert(plugin.menuList, new)
+
+			return new
+		else
+			GnomeWorks:warning(plugin.name,"tried to add an input entry a non-existant variable ("..(var or "nil")..")")
+		end
+	end
+
+
 	--[[
 
 		GnomeWorks:RegisterPlugin(name, initialize)
@@ -246,6 +271,7 @@ do
 			name = name,
 			AddButton = AddButton,
 			AddInput = AddInput,
+			AddMenu = AddMenu,
 			enabled = true,
 			initialize = initialize,
 			menuList = {

@@ -264,15 +264,19 @@ DebugSpam("parsing skill list")
 				local name, icon, skillLevel, maxSkillLevel, numAbilities, spelloffset, skillLine, skillModifier = GetProfessionInfo(index)
 
 				if name then
-					local link, tradeLink = GetSpellLink(name)
-
 					local tradeID = self:GetTradeIDByName(name)
 
 					if tradeID then
+						local link, tradeLink = GetSpellLink(tradeID)
+
 						if racialBonuses[tradeID] then
 							if GetSpellLink((GetSpellInfo(racialBonuses[tradeID].racial))) then
 								skillModifier = skillModifier + racialBonuses[tradeID].bonus
 							end
+						end
+
+						if not tradeLink then
+							tradeLink = "|cffffd000|Htrade:"..tradeID..":"..skillLevel..":"..maxSkillLevel..":0:/|h["..GnomeWorks:GetTradeName(tradeID).."]|h|r"
 						end
 
 						playerData.links[tradeID] = tradeLink
@@ -299,7 +303,7 @@ DebugSpam("parsing skill list")
 				if link then
 DebugSpam("found ", link, tradeLink)
 
-					if unlinkableTrades[id] then
+					if unlinkableTrades[id] and not playerData.links[id] then
 						local rank = 1
 						local maxRank = 1
 						local bonus = 0
@@ -529,7 +533,7 @@ DebugSpam("done parsing skill list")
 
 
 
-	local function DoRecipeSelection(recipeID)
+	function GnomeWorks:DoRecipeSelection(recipeID)
 		if not recipeID then
 			return
 		end
@@ -562,7 +566,7 @@ DebugSpam("done parsing skill list")
 		local _,_,tradeID = GnomeWorks:GetRecipeData(recipeID)
 
 		if tradeID ~= self.tradeID then
-			GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() DoRecipeSelection(recipeID) return true end, "SelectRecipe")			-- return true = fire once
+			GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() GnomeWorks:DoRecipeSelection(recipeID) return true end, "SelectRecipe")			-- return true = fire once
 
 			if player == (UnitName("player")) and not pseudoTrades[tradeID] then
 				if tradeID then
@@ -572,7 +576,7 @@ DebugSpam("done parsing skill list")
 				self:OpenTradeLink(self:GetTradeLink(tradeID, player), player)
 			end
 		else
-			DoRecipeSelection(recipeID)
+			GnomeWorks:DoRecipeSelection(recipeID)
 		end
 	end
 
@@ -595,7 +599,7 @@ DebugSpam("done parsing skill list")
 			local player,tradeID,recipeID = stack[lastEntry].player, stack[lastEntry].tradeID, stack[lastEntry].recipeID
 --print(player,tradeID,skill)
 			if tradeID ~= self.tradeID then
-				GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() DoRecipeSelection(recipeID) return true end, "SelectRecipe")			-- return true = fire once
+				GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() GnomeWorks:DoRecipeSelection(recipeID) return true end, "SelectRecipe")			-- return true = fire once
 
 				if player == (UnitName("player")) and not pseudoTrades[tradeID] then
 					if tradeID then
@@ -605,7 +609,7 @@ DebugSpam("done parsing skill list")
 					self:OpenTradeLink(self:GetTradeLink(tradeID, player), player)
 				end
 			else
-				DoRecipeSelection(recipeID)
+				GnomeWorks:DoRecipeSelection(recipeID)
 			end
 
 			stack[lastEntry] = nil

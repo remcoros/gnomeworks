@@ -93,6 +93,12 @@ do
 		else
 			GnomeWorksDB.recipeBlackList[recipeID] = not GnomeWorksDB.recipeBlackList[recipeID] or nil
 
+			local results = GnomeWorks:GetRecipeData(recipeID)
+
+			for itemID in pairs(results) do
+				GnomeWorks:CraftabilityPurge(GnomeWorks.player, itemID)
+			end
+
 			local colorCode = ReagentSourceColor(recipeID, reagentID)
 
 			UIDropDownMenu_SetButtonText(1, frame.value, GnomeWorks:GetRecipeName(recipeID), colorCode)
@@ -147,13 +153,15 @@ do
 			tableMenuList[i] = nil
 		end
 
-		if shortCut and #tableMenuList <= 2 then
-			clickFunc(GnomeWorksMenuFrame, tableMenuList[2].arg1, tableMenuList[2].arg2)
-		else
-			local x, y = GetCursorPosition()
-			local uiScale = UIParent:GetEffectiveScale()
+		if #tableMenuList > 1 then
+			if shortCut then
+				clickFunc(GnomeWorksMenuFrame, tableMenuList[2].arg1, tableMenuList[2].arg2)
+			else
+				local x, y = GetCursorPosition()
+				local uiScale = UIParent:GetEffectiveScale()
 
-			EasyMenu(tableMenuList, GnomeWorksMenuFrame, UIParent, x/uiScale,y/uiScale, "MENU", 5)
+				EasyMenu(tableMenuList, GnomeWorksMenuFrame, UIParent, x/uiScale,y/uiScale, "MENU", 5)
+			end
 		end
 
 --		tableMenuList[1].fontObject = nil
