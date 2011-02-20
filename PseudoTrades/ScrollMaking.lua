@@ -478,6 +478,56 @@ do
 
 
 
+
+	local function AddRecipe(trade,recipeID)
+		local recipeList = self.data.pseudoTradeRecipes
+
+		local enchantResults, enchantReagents = GnomeWorks:GetRecipeData(recipeID)
+
+		if enchantResults then
+			local itemID,numMade = next(enchantResults)
+
+			if itemID < 0 then
+				local scrollName, scrollLink = GetItemInfo(itemID)
+
+				if scrollLink then
+					local scrollID = string.match(scrollLink, "item:(%d+)")
+
+					if scrollID then
+						local scrollRecipeID = ScrollMakingSpellID(enchantID)
+
+						for i=1,4 do
+							GnomeWorks.data.recipeSkillLevels[i][scrollRecipeID] = GnomeWorks.data.recipeSkillLevels[i][enchantID]
+						end
+
+						local enchantReagents = GnomeWorksDB.reagents[enchantID]
+
+						if enchantReagents then
+							skillList[#skillList +1] = scrollRecipeID
+
+							recipeList[scrollRecipeID] = trade
+
+							reagents[scrollRecipeID] = {}
+
+							for itemID, numNeeded in pairs(enchantReagents) do
+								reagents[scrollRecipeID][itemID] = numNeeded
+								GnomeWorks:AddToReagentCache(itemID, scrollRecipeID, 1)
+							end
+
+							reagents[scrollRecipeID][38682] = 1
+							results[scrollRecipeID] = { [scrollID] = 1 }
+
+							GnomeWorks:AddToReagentCache(38682, scrollRecipeID, 1)
+							GnomeWorks:AddToItemCache(scrollID, scrollRecipeID, 1)
+						end
+					end
+				end
+			end
+		end
+	end
+
+
+
 	api.Scan = function()
 		if not GnomeWorks.tradeID then
 			return
@@ -569,7 +619,6 @@ do
 			end
 		end
 	end
-
 
 	api.GetTradeName = function()
 		return "Scroll Making"

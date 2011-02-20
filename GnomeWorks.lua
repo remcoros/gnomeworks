@@ -858,6 +858,8 @@ print(arg1)
 		GnomeWorks:RegisterEvent("MAIL_CLOSED")
 
 
+		GnomeWorks:RegisterEvent("MODIFIER_STATE_CHANGED", function() GnomeWorks:SendMessageDispatch("ModifierStateChange") end)
+
 		GnomeWorks:ScheduleRepeatingTimer(function() GnomeWorks:SendMessageDispatch("HeartBeat") end, 5)
 
 

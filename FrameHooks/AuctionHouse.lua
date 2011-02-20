@@ -615,7 +615,7 @@ do
 
 
 		local function BeginAuctionScan()
-			GnomeWorks:BeginReagentScan(GnomeWorks.player)
+			GnomeWorks:BeginReagentScan()
 		end
 
 		local function CancelAuctionScan()
@@ -844,7 +844,8 @@ do
 	end
 
 
-	function GnomeWorks:BeginReagentScan(player)
+	function GnomeWorks:BeginReagentScan(queueData)
+		player = UnitName("player")
 
 		SortAuctionItems("list", "buyout")
 
@@ -854,7 +855,9 @@ do
 
 		reagentScanAbort = nil
 
-		GnomeWorks:PrepAuctionScan(player)
+		GnomeWorks:ShowQueueList(player)
+
+		GnomeWorks:PrepAuctionScan(GnomeWorks.data.queueData[player])
 
 
 		auctionData = self.data.auctionData
@@ -925,17 +928,24 @@ do
 	end
 
 
-	function GnomeWorks:PrepAuctionScan(player)
+	function GnomeWorks:PrepAuctionScan(queueData)
+--[[
 		local queueData = GnomeWorks.data.queueData[player]
 
 		local reagents = table.wipe(reagentList or {})
 
 		AddReagentsToReagentList(queueData, reagents)
+]]
 
 --		self:ShowAuctionWindow()
 
 
-		reagentList = reagents
+		if not queueData or not queueData.reagentTree then
+			return
+		end
+
+
+		reagentList = queueData.reagentTree
 
 		if reagentFrame then
 			local data = reagentFrame.sf.data.entries

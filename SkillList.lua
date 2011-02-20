@@ -563,7 +563,7 @@ DebugSpam("done parsing skill list")
 			recipeID = next(recipeID) or recipeID[1]				-- TODO: dropdown for selection?
 		end
 
-		local player = self.player
+		local player = self.player or UnitName("player")
 		local _,_,tradeID = GnomeWorks:GetRecipeData(recipeID)
 
 		if tradeID ~= self.tradeID then

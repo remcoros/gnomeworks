@@ -2005,7 +2005,6 @@ do
 
 
 		local function MarerialsSomewhere(button)
-
 			local entry = GnomeWorks.selectedEntry
 
 			if entry then
@@ -2017,6 +2016,16 @@ do
 
 			button:Disable()
 		end
+
+
+		local function CheckModifierKey(button)
+			if IsShiftKeyDown() then
+				button:SetText("Queue+")
+			else
+				button:SetText("Queue")
+			end
+		end
+
 
 		local function Create(button)
 			local numItems = dataTable[button.setting]
@@ -2034,19 +2043,28 @@ do
 		end
 
 
+		local function AddEntryToQueue(entry, count)
+			if entry then
+				if entry.subGroup then
+					for i=1,entry.subGroup.numData or #entry.subGroup.entries do
+						AddEntryToQueue(entry.subGroup.entries[i],count)
+					end
+				else
+					GnomeWorks:AddToQueue(GnomeWorks.player, GnomeWorks.tradeID, entry.recipeID, count)
+				end
+			end
+		end
+
+
 		local function AddToQueue(button)
 			local numItems = dataTable[button.setting]
 			local entry = GnomeWorks.selectedEntry
 
 			EditBox_ClearFocus(buttons.queueCountButton)
 
---			local recipeLink = self:GetTradeSkillRecipeLink(GnomeWorks.selectedSkill)
-
---			local recipeID = tonumber(string.match(recipeLink, "enchant:(%d+)"))
+			GnomeWorks:ShowQueueList()
 
 			if not numItems then
-
-
 				local _, _, _, _, _, _, _, itemStackCount = GetItemInfo(next(GnomeWorksDB.results[entry.recipeID]))
 
 				if entry.totalCraftable < 1 then
@@ -2064,11 +2082,19 @@ do
 				if numItems == LARGE_NUMBER then
 					numItems = itemStackCount
 				end
-			end
 
-			GnomeWorks:ShowQueueList()
-			if entry then
-				GnomeWorks:AddToQueue(GnomeWorks.player, GnomeWorks.tradeID, entry.recipeID, numItems)
+
+				if entry then
+					GnomeWorks:AddToQueue(GnomeWorks.player, GnomeWorks.tradeID, entry.recipeID, numItems)
+				end
+			elseif not IsShiftKeyDown() then
+				if entry then
+					GnomeWorks:AddToQueue(GnomeWorks.player, GnomeWorks.tradeID, entry.recipeID, numItems)
+				end
+			else
+				for entry in pairs(scrollFrame.selection) do
+					AddEntryToQueue(entry,numItems)
+				end
 			end
 		end
 
@@ -2077,7 +2103,7 @@ do
 
 		local buttonConfig = {
 			{ text = "Create", operation = Create, width = 50, setting = "queueCount", validate = MaterialsOnHand },
-			{ text = "Queue", operation = AddToQueue, setting = "queueCount", width = 50 },
+			{ text = "Queue", operation = AddToQueue, setting = "queueCount", width = 50, validate = CheckModifierKey },
 			{ style = "EditBox", setting = "queueCount", width = 50, default = 1, name = "queueCountButton"},
 			{ text = "Create All", operation = Create, width = 70, validate = MaterialsOnHand },
 			{ text = "Queue All", operation = AddToQueue, width = 70, validate = MaterialsSomewhere },
@@ -2103,7 +2129,7 @@ do
 		end)
 
 
-		GnomeWorks:RegisterMessageDispatch("SelectionChanged HeartBeat", function()
+		GnomeWorks:RegisterMessageDispatch("SelectionChanged HeartBeat ModifierStateChange", function()
 			for i, b in pairs(buttons) do
 				if b.validate then
 					b:validate()
