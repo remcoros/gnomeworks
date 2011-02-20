@@ -182,7 +182,7 @@ function GnomeWorks:RecipeGroupNew(player, tradeID, label, name)
 
 
 
-		return newGroup
+		return newGroup, true
 	end
 end
 

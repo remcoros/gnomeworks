@@ -836,7 +836,8 @@ do
 										elseif tradeID == 53428 then
 											GameTooltip:SetSpellByID(entry.recipeID)
 										else
-											GameTooltip:AddLine(GnomeWorks:GetRecipeName(entry.recipeID))
+											GameTooltip:SetHyperlink("item:"..next(results))
+--											GameTooltip:AddLine(GnomeWorks:GetRecipeName(entry.recipeID))
 
 											GameTooltip:AddLine("Reagents:",1,1,1)
 
