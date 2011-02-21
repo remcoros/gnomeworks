@@ -584,13 +584,13 @@ print("loc = ",loc)
 
 
 	local function StartClick(frame, mouseButton)
-		scrollFrame.clickTime = GetTime()
 		local scrollFrame = frame.scrollFrame
 		local rowFrame = frame:GetParent()
 		local firstSelection = scrollFrame.firstSelection
 
 		local selected = scrollFrame.selection[scrollFrame.dataMap[rowFrame.rowIndex]]
 
+		scrollFrame.clickTime = GetTime()
 
 		if selected then
 			scrollFrame.dragMode = true
