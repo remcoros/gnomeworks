@@ -441,7 +441,7 @@ do
 			text = GnomeWorks.system.inventoryTags[key],
 			enabled = false,
 			func = function(entry)
-				if entry and entry[key] and entry[key] > 0 then
+				if entry and entry.inventory[key] and entry.inventory[key] > 0 then
 					return false
 				end
 

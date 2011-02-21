@@ -56,11 +56,11 @@ do
 				end
 			end
 
-
+--[[
 			if (L.TRADE_COOKING_OBJRENAME) then
 				renameObjective( TradeSkillLookup.Cooking, strsplit("\n", L.TRADE_COOKING_OBJRENAME) )
 			end
-
+]]
 			renameObjective = nil
 		end
 

@@ -2223,6 +2223,84 @@ do
 
 		sf = GnomeWorks:CreateScrollingTable(queueFrame, ScrollPaneBackdrop, columnHeaders, ResizeQueueFrame)
 
+		sf.selectable = true
+
+		sf.DropSelection = function(scrollFrame, index)
+--			scrollFrame.SortCompare = nil
+			local dataMap = scrollFrame.dataMap
+			local selection = scrollFrame.selection
+			local numData = scrollFrame.numData
+
+			local entry = dataMap[index]
+
+			local parentGroup = scrollFrame.data
+
+			local postInsert
+
+			if not entry.manualEntry and not entry.control then
+				return
+			end
+
+
+			for entry,value in pairs(selection) do
+				local parent = scrollFrame.data
+
+				if value and not selection[parent] then
+					local loc
+
+					for i=1,#parent.entries do
+						if parent.entries[i] == entry then
+							loc = i
+							break
+						end
+					end
+
+					if loc then
+						if loc < index then
+							postInsert = true
+						end
+
+						table.remove(parent.entries, loc)
+					end
+				end
+			end
+
+			local targetIndex = 1
+
+			for i=1,parentGroup.numEntries or #parentGroup.entries do
+				if parentGroup.entries[i] == entry then
+					targetIndex = i
+
+					if postInsert then
+						targetIndex = targetIndex + 1
+					end
+
+					break
+				end
+			end
+
+			if targetIndex then
+
+				for i=1,numData do
+					local entry = dataMap[i]
+
+					if selection[entry] and (entry.manualEntry or entry.control) then
+						table.insert(parentGroup.entries, targetIndex, entry)
+
+						targetIndex = targetIndex + 1
+
+						entry.parent = parentGroup
+
+						if parentGroup.numEntries then
+							parentGroup.numEntries = parentGroup.numEntries + 1
+						end
+					end
+				end
+			end
+
+			scrollFrame:Refresh()
+		end
+
 
 --		sf.childrenFirst = true
 

@@ -107,7 +107,7 @@ do
 		scrollFrame.mouseOverIndex = rowFrame.rowIndex
 
 		if rowFrame.rowIndex > 0 and scrollFrame.selectable then
-			if IsShiftKeyDown() and scrollFrame.firstSelection and IsMouseButtonDown() then
+			if (IsShiftKeyDown() or scrollFrame.selectMode) and scrollFrame.firstSelection and IsMouseButtonDown() then
 				local index = rowFrame.rowIndex + (scrollFrame.scrollOffset or 0)
 
 				table.wipe(scrollFrame.selection)
@@ -202,8 +202,6 @@ do
 			rowFrame:SetPoint("TOPLEFT",scrollFrame,"TOPLEFT",0,-(rowIndex-1)*scrollFrame.rowHeight)
 			rowFrame:SetPoint("BOTTOMRIGHT",scrollFrame,"TOPRIGHT",0,-(rowIndex)*scrollFrame.rowHeight)
 
---			rowFrame:SetFrameLevel(rowFrame:GetFrameLevel()+10)
-
 			rowFrame.rowIndex = rowIndex
 
 			rowFrame.highlight = rowFrame:CreateTexture(nil, "OVERLAY")
@@ -228,6 +226,7 @@ do
 
 		return scrollFrame.rowFrame[rowIndex]
 	end
+
 
 	local function DrawRow(scrollFrame, rowIndex)
 		if scrollFrame.InitRow then
@@ -475,6 +474,159 @@ do
 		scrollFrame:Draw()
 	end
 
+	local tempDataMap = {}
+	local tempSelectionMap = {}
+
+	local function DropSelectionTBR(scrollFrame, index)
+		scrollFrame.SortCompare = nil
+		local dataMap = scrollFrame.dataMap
+		local selection = scrollFrame.selection
+		local numData = scrollFrame.numData
+
+		local numUnselected = 0
+		local numSelected = 0
+		local newTarget
+
+		for i=1,numData do
+			if selection[dataMap[i]] then
+				numSelected = numSelected + 1
+				tempSelectionMap[numSelected] = dataMap[i]
+			else
+				numUnselected = numUnselected + 1
+				if index == i then
+					newTarget = numUnselected
+
+					if numSelected > 0 then
+						newTarget = newTarget + 1
+					end
+				end
+				tempDataMap[numUnselected] = dataMap[i]
+			end
+		end
+
+		if newTarget then
+			for i=1,newTarget-1 do
+				dataMap[i] = tempDataMap[i]
+			end
+
+			for i=1, numSelected do
+				dataMap[i+newTarget-1] = tempSelectionMap[i]
+			end
+
+			for i=newTarget, numUnselected do
+				dataMap[i+numSelected] = tempDataMap[i]
+			end
+
+			scrollFrame:Draw()
+		else
+			print("bad target", index)
+		end
+	end
+
+
+	local function DropSelection(scrollFrame, index)
+--		scrollFrame.SortCompare = nil
+		local dataMap = scrollFrame.dataMap
+		local selection = scrollFrame.selection
+		local numData = scrollFrame.numData
+
+		local entry = dataMap[index]
+
+		local parentGroup = entry.subGroup or entry.parent or scrollFrame.data
+
+		for entry,value in pairs(selection) do
+			local parent = entry.parent or scrollFrame.data
+
+			if value and not selection[parent] then
+				local loc
+
+				for i=1,#parent.entries do
+					if parent.entries[i] == entry then
+						loc = i
+						break
+					end
+				end
+print("loc = ",loc)
+				table.remove(entry.parent.entries, loc)
+			end
+		end
+
+		local targetIndex = 1
+
+		for i=1,parentGroup.numEntries or #parentGroup.entries do
+			if parentGroup.entries[i] == entry then
+				targetIndex = i
+				break
+			end
+		end
+
+		if targetIndex then
+			for i=1,numData do
+				local entry = dataMap[i]
+
+				if selection[entry] then
+					table.insert(parentGroup.entries, targetIndex, entry)
+
+					targetIndex = targetIndex + 1
+
+					entry.parent = parentGroup
+
+					if parentGroup.numEntries then
+						parentGroup.numEntries = parentGroup.numEntries + 1
+					end
+				end
+			end
+		end
+
+		scrollFrame:Refresh()
+	end
+
+
+
+	local function StartClick(frame, mouseButton)
+		scrollFrame.clickTime = GetTime()
+		local scrollFrame = frame.scrollFrame
+		local rowFrame = frame:GetParent()
+		local firstSelection = scrollFrame.firstSelection
+
+		local selected = scrollFrame.selection[scrollFrame.dataMap[rowFrame.rowIndex]]
+
+
+		if selected then
+			scrollFrame.dragMode = true
+		else
+			scrollFrame.selectMode = true
+
+			if not IsShiftKeyDown() then
+				scrollFrame.firstSelection = rowFrame.rowIndex
+			end
+		end
+	end
+
+	local function EndClick(frame, mouseButton)
+		local rowFrame = frame:GetParent()
+		local scrollFrame = frame.scrollFrame
+
+
+		if rowFrame.rowIndex == scrollFrame.mouseOverIndex then
+			scrollFrame.OnClick(frame, mouseButton)
+		else
+			if scrollFrame.dragMode then
+				if frame.DropSelection then
+					frame:DropSelection(rowFrame.rowIndex)
+				elseif scrollFrame.DropSelection then
+					scrollFrame:DropSelection(scrollFrame.mouseOverIndex)
+				else
+					DropSelection(scrollFrame,scrollFrame.mouseOverIndex)
+				end
+			end
+		end
+
+		scrollFrame.clickTime = nil
+		scrollFrame.dragMode = nil
+		scrollFrame.selectMode = nil
+	end
+
 
 	local function OnEnter(frame)
 		local rowFrame = frame:GetParent()
@@ -490,13 +642,12 @@ do
 				rowFrame:OnEnter()
 			end
 		end
-
-
 	end
 
 
 	local function OnLeave(frame)
 		local rowFrame = frame:GetParent()
+		local scrollFrame = frame.scrollFrame
 
 		if frame.OnLeave then
 			if not frame:OnLeave() then
@@ -514,7 +665,7 @@ do
 
 	local function OnClick(frame, ...)
 		local rowFrame = frame:GetParent()
-		local scrollFrame = rowFrame:GetParent():GetParent()
+		local scrollFrame = frame.scrollFrame
 
 		-- if frame has click function, the call it.  if it returns true, then don't call parent onclick (if it exists)
 		if frame.OnClick then
@@ -528,22 +679,17 @@ do
 				rowFrame:OnClick(...)
 			end
 		end
-
-
 	end
 
 
+
+
 	local function SetHandlerScripts(scrollFrame, cellFrame)
-		cellFrame:SetScript("OnClick", scrollFrame.OnClick)
+--		cellFrame:SetScript("OnClick", scrollFrame.OnClick)
+		cellFrame:SetScript("OnMouseDown", StartClick)
+		cellFrame:SetScript("OnMouseUp", EndClick)
 		cellFrame:SetScript("OnEnter", scrollFrame.OnEnter)
 		cellFrame:SetScript("OnLeave", scrollFrame.OnLeave)
---[[
-		if cellFrame.button then
-			cellFrame.button:SetScript("OnClick", function(frame, mouseButton) scrollFrame.OnClick(cellFrame, mouseButton, "button") end)
---			cellFrame.button:SetScript("OnEnter", function(frame, mouseButton) scrollFrame.OnEnter(cellFrame) end)
---			cellFrame.button:SetScript("OnLeave", function(frame, mouseButton) scrollFrame.OnLeave(cellFrame) end)
-		end
-]]
 	end
 
 
@@ -728,11 +874,7 @@ do
 		sf:SetScript("OnSizeChanged", Draw)
 
 
-
 		sf:SetScript("OnVerticalScroll", function(frame, value) frame.scrollOffset = math.floor(value/frame.rowHeight+.5) sf:Draw() end)
-
-
-
 
 
 		return sf
@@ -1002,6 +1144,20 @@ do
 		editBox:Hide()
 
 
+		local function CellFrameEnter(frame,mb)
+			local func = frame.scrollFrame.columnHeaders[frame.index].OnEnter
+			if func then
+				func(frame,mb)
+			end
+		end
+
+		local function CellFrameLeave(frame,mb)
+			local func = frame.scrollFrame.columnHeaders[frame.index].OnLeave
+			if func then
+				func(frame,mb)
+			end
+		end
+
 
 		sf.InitColumns = function(scrollFrame, rowFrame)
 			local width = rowFrame:GetWidth()
@@ -1066,10 +1222,8 @@ do
 							frame.lastClick = now
 						end
 
-						c.OnEnter = function(frame,mb) local func = frame.scrollFrame.columnHeaders[frame.index].OnEnter if func then func(frame,mb) end end
-						c.OnLeave = function(frame,mb) local func = frame.scrollFrame.columnHeaders[frame.index].OnLeave if func then func(frame,mb) end end
-
-
+						c.OnEnter = CellFrameEnter 			--function(frame,mb) local func = frame.scrollFrame.columnHeaders[frame.index].OnEnter if func then func(frame,mb) end end
+						c.OnLeave = CellFrameLeave			--function(frame,mb) local func = frame.scrollFrame.columnHeaders[frame.index].OnLeave if func then func(frame,mb) end end
 						c.Edit = CellFrameEdit
 
 
