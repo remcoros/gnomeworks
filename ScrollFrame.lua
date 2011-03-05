@@ -546,7 +546,6 @@ do
 						break
 					end
 				end
-print("loc = ",loc)
 				table.remove(entry.parent.entries, loc)
 			end
 		end
@@ -603,15 +602,17 @@ print("loc = ",loc)
 		end
 	end
 
+
 	local function EndClick(frame, mouseButton)
 		local rowFrame = frame:GetParent()
 		local scrollFrame = frame.scrollFrame
 
+		local selected = scrollFrame.selection[scrollFrame.dataMap[rowFrame.rowIndex]]
 
 		if rowFrame.rowIndex == scrollFrame.mouseOverIndex then
-			scrollFrame.OnClick(frame, mouseButton)
+--			scrollFrame.OnClick(frame, mouseButton)
 		else
-			if scrollFrame.dragMode then
+			if not selected and scrollFrame.dragMode then
 				if frame.DropSelection then
 					frame:DropSelection(rowFrame.rowIndex)
 				elseif scrollFrame.DropSelection then
@@ -685,7 +686,7 @@ print("loc = ",loc)
 
 
 	local function SetHandlerScripts(scrollFrame, cellFrame)
---		cellFrame:SetScript("OnClick", scrollFrame.OnClick)
+		cellFrame:SetScript("OnClick", scrollFrame.OnClick)
 		cellFrame:SetScript("OnMouseDown", StartClick)
 		cellFrame:SetScript("OnMouseUp", EndClick)
 		cellFrame:SetScript("OnEnter", scrollFrame.OnEnter)

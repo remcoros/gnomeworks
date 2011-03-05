@@ -2334,9 +2334,27 @@ do
 
 
 	function GnomeWorks:CreateMainWindow()
+--[[
+		for i=1,128 do
+			local f = CreateFrame("Frame",nil,UIParent)
+			f:SetSize(200,200)
+			f:SetPoint("CENTER",0,0)
+			f:SetBackdrop({
+				bgFile = "Interface\\AddOns\\GnomeWorks\\Art\\frameInsetSmallBackground.tga",
+				edgeFile = "Interface\\AddOns\\GnomeWorks\\Art\\frameInsetSmallBorder.tga",
+				tile = true, tileSize = 16, edgeSize = 16,
+				insets = { left = 12, right = 10, top = 10, bottom = 10 }
+			})
+
+			print(i, f:GetFrameLevel())
+
+			f:SetFrameLevel(i)
+		end
+]]
+
 		frame = self.Window:CreateResizableWindow("GnomeWorksFrame", "GnomeWorks (r"..VERSION..")", 600, 400, ResizeMainWindow, GnomeWorksDB.config)
 
-		frame:Hide()
+--		frame:Hide()
 
 		frame:SetMinResize(500,400)
 

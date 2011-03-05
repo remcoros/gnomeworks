@@ -25,7 +25,7 @@ do
 		func = function(...)
 			local arg = ...
 
-			if not arg then
+			if not arg or arg=="" then
 				GnomeWorks:print("show time report")
 				GnomeWorks:MessageDispatchTimeReportToggle()
 			else

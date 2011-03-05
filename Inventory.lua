@@ -230,8 +230,10 @@ do
 		player = player or self.player or UnitName("player")
 
 		if not itemID then
-			for container,data in pairs(self.data.craftabilityData[player]) do
-				table.wipe(data)
+			if self.data.craftabilityData[player] then
+				for container,data in pairs(self.data.craftabilityData[player]) do
+					table.wipe(data)
+				end
 			end
 		else
 			local reagentUsage = self.data.reagentUsage[itemID]

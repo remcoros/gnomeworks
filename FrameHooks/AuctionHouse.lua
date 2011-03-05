@@ -162,7 +162,7 @@ do
 		reagentID = frame.reagentButton.itemID
 
 		if found then
-			GnomeWorks:printf("buying %s x %d for %s",(GetItemInfo(reagentID)),entry.count,QuickMoneyFormat(entry.buyOut))
+			GnomeWorks:printf("buying %s x %d for %s (id: %s)",(GetItemInfo(reagentID)),entry.count,QuickMoneyFormat(entry.buyOut),found)
 
 			PlaceAuctionBid("list", found, entry.buyOut)
 
