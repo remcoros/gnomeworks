@@ -214,8 +214,44 @@ do
 				entry.reserved = {}
 			end
 
+
+			local reagentsChanged
+
 			if not entry.reagentTree then
 				entry.reagentTree = {}
+				reagentsChanged = true
+			end
+
+
+			for index,source in ipairs(GnomeWorksDB.config.inventoryIndex) do
+				local treeSource = "reagentTree-"..source
+
+				if not entry[treeSource] then
+					entry[treeSource] = {}
+					reagentsChanged = true
+				end
+
+				local entryTreeSource = entry[treeSource]
+
+				for reagentID in pairs(entry.reagentTree) do
+					local inventory = GnomeWorks:GetInventoryCount(reagentID, player, source)
+
+					local oldInventory = entryTreeSource[reagentID]
+
+					if not oldInventory then
+						reagentsChanged = true
+					end
+
+					if inventory ~= oldInventory then
+						entryTreeSource[reagentID] = inventory
+						reagentsChanged = true
+					end
+				end
+			end
+
+
+			if not reagentsChanged then
+				return
 			end
 
 
@@ -402,7 +438,7 @@ do
 
 				local itemID = reagent.itemID
 
-				if entry.reserved[itemID]>0 then
+				if (entry.reserved[itemID] or 0)>0 then
 
 					if reagent.command == "collect" then
 						if reagent.source then
