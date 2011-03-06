@@ -232,12 +232,7 @@ do
 		if scrollFrame.InitRow then
 			local rowFrame = scrollFrame.rowFrame[rowIndex] or scrollFrame:InitRow(rowIndex)
 
-			local level = rowFrame:GetFrameLevel()
-
-			if level < scrollFrame:GetFrameLevel() then
-				print("|cffff0000ALERT!  rowframe has lost its draw order!   ",level)
-				rowFrame:SetFrameLevel(scrollFrame:GetFrameLevel()+2)
-			end
+			rowFrame:SetFrameLevel(scrollFrame:GetFrameLevel()+2)
 
 			rowFrame:Show()
 

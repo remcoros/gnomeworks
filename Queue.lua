@@ -1041,7 +1041,6 @@ do
 			self:SendMessageDispatch("QueueCountsChanged")
 
 			if GnomeWorksDB.config.queueLayoutFlat then
-
 				sf.data.entries = self.data.flatQueue[player]
 			else
 				sf.data.entries = self.data.queueData[player]
@@ -2102,9 +2101,9 @@ do
 
 							if entry.manualEntry then
 								if entry.sourcePlayer then
-									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t %s (%s)",icon or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,GnomeWorks:GetRecipeName(entry.recipeID), entry.sourcePlayer)
+									cellFrame.text:SetFormattedText("|T%s:0|t %s (%s)",icon or "",GnomeWorks:GetRecipeName(entry.recipeID), entry.sourcePlayer)
 								else
-									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t %s",icon or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,GnomeWorks:GetRecipeName(entry.recipeID))
+									cellFrame.text:SetFormattedText("|T%s:0|t %s",icon or "",GnomeWorks:GetRecipeName(entry.recipeID))
 								end
 							else
 
@@ -2122,9 +2121,9 @@ do
 								local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,GnomeWorks.player)
 
 								if entry.command == "create" and results[entry.itemID] ~= 1 then
-									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t |cffd0d090%s (%s x %d)",icon or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,GnomeWorks:GetRecipeName(entry.recipeID),(GetItemInfo(entry.itemID)),entry.count * results[entry.itemID])
+									cellFrame.text:SetFormattedText("|T%s:0|t |cffd0d090%s (%s x %d)",icon or "",GnomeWorks:GetRecipeName(entry.recipeID),(GetItemInfo(entry.itemID)),entry.count * results[entry.itemID])
 								else
-									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t |cffd0d090%s",icon or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,GnomeWorks:GetRecipeName(entry.recipeID))
+									cellFrame.text:SetFormattedText("|T%s:0|t |cffd0d090%s",icon or "",GnomeWorks:GetRecipeName(entry.recipeID))
 								end
 							end
 
@@ -2148,7 +2147,7 @@ do
 							local itemName = GetItemInfo(entry.itemID) or "item:"..entry.itemID
 
 							if craftable and entry.subGroup.expanded then
-								cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t |ca040ffffCraft|r |cffc0c0c0%s",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,GetItemIcon(entry.itemID) or "",itemName)
+								cellFrame.text:SetFormattedText("|T%s:0|t |ca040ffffCraft|r |cffc0c0c0%s",GetItemIcon(entry.itemID) or "",itemName)
 							else
 								local c = "|cffb0b000"
 
@@ -2159,9 +2158,9 @@ do
 
 
 								if not entry.source then
-									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t %sPurchase|r |cffc0c0c0%s", GetItemIcon(entry.itemID) or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,c,itemName)
+									cellFrame.text:SetFormattedText("|T%s:0|t %sPurchase|r |cffc0c0c0%s", GetItemIcon(entry.itemID) or "",c,itemName)
 								else
-									cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t %sFrom %s|r |cffc0c0c0%s", GetItemIcon(entry.itemID) or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1, inventoryColors[entry.source],entry.source,itemName)
+									cellFrame.text:SetFormattedText("|T%s:0|t %sFrom %s|r |cffc0c0c0%s", GetItemIcon(entry.itemID) or "", inventoryColors[entry.source],entry.source,itemName)
 								end
 							end
 
@@ -2174,10 +2173,10 @@ do
 							end
 ]]
 						elseif entry.command == "missing" then
-							cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t Missing Reagent: %s", GetItemIcon(entry.itemID) or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,(GetItemInfo(entry.itemID)) or "")
+							cellFrame.text:SetFormattedText("|T%s:0|t Missing Reagent: %s", GetItemIcon(entry.itemID) or "",(GetItemInfo(entry.itemID)) or "")
 							cellFrame.text:SetTextColor(1,0,0)
 						elseif entry.command == "options" then
-							cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t Missing Reagent: %s", GetItemIcon(entry.itemID) or "",cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,(GetItemInfo(entry.itemID)) or "")
+							cellFrame.text:SetFormattedText("|T%s:0|t Missing Reagent: %s", GetItemIcon(entry.itemID) or "",(GetItemInfo(entry.itemID)) or "")
 							cellFrame.text:SetTextColor(.8,.25,.8)
 						end
 					end,

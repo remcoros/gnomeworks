@@ -774,7 +774,8 @@ do
 							end
 
 
-							cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t %s", GnomeWorks:GetTradeSkillIcon(entry.index) or "", cellFrame:GetHeight()+1,cellFrame:GetHeight()+1,spellName or "recipe:"..entry.recipeID)
+--							cellFrame.text:SetFormattedText("|T%s:%d:%d:0:-2|t %s", GnomeWorks:GetTradeSkillIcon(entry.index) or "", cellFrame:GetHeight()-1,cellFrame:GetHeight()-1,spellName or "recipe:"..entry.recipeID)
+							cellFrame.text:SetFormattedText("|T%s:0|t %s", GnomeWorks:GetTradeSkillIcon(entry.index) or "",spellName or "recipe:"..entry.recipeID)
 
 							cellFrame.button:Hide()
 						end
@@ -2354,7 +2355,7 @@ do
 
 		frame = self.Window:CreateResizableWindow("GnomeWorksFrame", "GnomeWorks (r"..VERSION..")", 600, 400, ResizeMainWindow, GnomeWorksDB.config)
 
---		frame:Hide()
+		frame:Hide()
 
 		frame:SetMinResize(500,400)
 
