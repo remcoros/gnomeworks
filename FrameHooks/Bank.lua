@@ -416,11 +416,13 @@ do
 			end
 		end
 
+
 		for playerName, playerData in pairs(self.data.playerData) do
-			if playerData.guild == guild then
+			if self.data.craftabilityData[playerName] and playerData.guild == guild then
 				if dependency then
 					for i=dependency,#GnomeWorksDB.config.inventoryIndex do
-						if self.data.craftabilityData[playerName][GnomeWorksDB.config.inventoryIndex[i]] then
+						local inv = GnomeWorksDB.config.inventoryIndex[i]
+						if inv and self.data.craftabilityData[playerName][inv] then
 							table.wipe(self.data.craftabilityData[playerName][GnomeWorksDB.config.inventoryIndex[i]])
 						end
 					end

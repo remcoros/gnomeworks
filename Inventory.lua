@@ -358,7 +358,7 @@ do
 
 					for invLabel,isTracked in pairs(inventoryTracked) do
 						if isTracked then
-							if craftData[invLabel] then
+							if craftData[invLabel] and craftData[invLabel][itemID] then
 
 								craftData[invLabel][itemID] = nil
 								if reagentUsage then
@@ -559,7 +559,7 @@ do
 
 		for invLabel,isTracked in pairs(inventoryTracked) do
 			if isTracked then
-				if craftData[invLabel] then
+				if craftData[invLabel] and craftData[invLabel][itemID] then
 					craftData[invLabel][itemID] = nil
 					if reagentUsage then
 						self:UncacheReagentCounts(player, craftData[invLabel], reagentUsage)

@@ -63,6 +63,9 @@ do
 	local currentRecipe
 
 
+	local queueQueue = {}
+
+
 
 	local queueColors = {
 		needsMaterials = {1,0,0},
@@ -254,6 +257,8 @@ do
 
 
 	local function AdjustQueueCounts(player, entry)
+		local adjustments = 0
+
 		if entry.subGroup then
 			local count = entry.count
 			local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,player)
@@ -311,7 +316,7 @@ do
 
 			if not reagentsChanged then
 				AddItemsToShoppingList(player, entry)
-				return
+				return 0
 			end
 
 
@@ -371,6 +376,7 @@ do
 						end
 					end
 
+					adjustments = adjustments + 1
 				elseif reagent.command == "create" then
 					local itemID = reagent.itemID
 					local resultsReagent,reagentsReagent,tradeID = GnomeWorks:GetRecipeData(reagent.recipeID,player)
@@ -391,7 +397,7 @@ do
 					reagent.count = math.ceil(stillNeeded / resultsReagent[reagent.itemID])
 
 
-					AdjustQueueCounts(player, reagent)
+					adjustments = adjustments + AdjustQueueCounts(player, reagent) + 1
 
 					entry.reserved[itemID] = entry.reserved[itemID] + reagent.count * resultsReagent[itemID]
 
@@ -429,6 +435,8 @@ do
 				end
 			end
 		end
+
+		return adjustments
 	end
 
 
@@ -616,6 +624,15 @@ do
 
 
 	local function UpdateQueue(player, queue)
+		local AdjustCountsTime = 0
+		local CalculateQueueSkillUpsTime = 0
+		local CalculateQueueCostsTime = 0
+		local adjustments = 0
+		local invTime = 0
+		local reagentTime = 0
+		local reserveTime = 0
+		local reserveCount = 0
+
 		if queue then
 			queue.reagentTree = table.wipe(queue.reagentTree or {})
 
@@ -623,9 +640,13 @@ do
 				entry.parent = queue
 
 				if entry.command == "create" then
+local start = GetTime()
 					entry.numCraftable = GnomeWorks:InventoryRecipeIterations(entry.recipeID, player, "bag queue")
+invTime = invTime + GetTime()-start
 
-					AdjustQueueCounts(player, entry)
+local start = GetTime()
+					adjustments = adjustments + AdjustQueueCounts(player, entry)
+AdjustCountsTime = AdjustCountsTime + GetTime() - start
 
 					for reagentID, numNeeded in pairs(entry.reagentTree) do
 						queue.reagentTree[reagentID] = (queue.reagentTree[reagentID] or 0) + numNeeded
@@ -633,12 +654,17 @@ do
 
 
 --					PreventOverBuy(player, entry)
+local start = GetTime()
 					CalculateQueueCosts(player, entry)
+CalculateQueueCostsTime = CalculateQueueCostsTime + GetTime() - start
+
+local start = GetTime()
 					CalculateQueueSkillups(player, entry, GnomeWorks.data.skillUpRanks)
+CalculateQueueSkillUpsTime = CalculateQueueSkillUpsTime + GetTime() - start
 
 --					table.sort(entry.subGroup.entries, OptimalPriceQueueSort)
 
-
+local start = GetTime()
 					local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,player)
 
 
@@ -652,17 +678,29 @@ do
 							end
 						end
 					end
+reagentTime = reagentTime + GetTime() - start
 
+local start = GetTime()
 					for itemID,numNeeded in pairs(reagents) do
+						reserveCount = reserveCount + 1
 						GnomeWorks:ReserveItemForQueue(player, itemID, numNeeded * entry.count)
 					end
-
+reserveTime = reserveTime + GetTime() - start
 --					for itemID,numMade in pairs(results) do
 --						GnomeWorks:ReserveItemForQueue(player, itemID, -numMade * entry.count)
 --					end
 				end
 			end
 		end
+--[[
+		print("CalculateQueueSkillups",CalculateQueueSkillUpsTime)
+		print("CalculateQueueCosts",CalculateQueueCostsTime)
+		print("AdjustCounts",AdjustCountsTime)
+		print("inv", invTime)
+		print("reagent", reagentTime)
+		print("reserve", reserveTime, reserveCount)
+		print("total adjustments",adjustments)
+]]
 	end
 
 
@@ -994,7 +1032,8 @@ do
 
 
 
-	function GnomeWorks:AddToQueue(player, tradeID, recipeID, count)
+
+	function GnomeWorks:ExecuteAddToQueue(player, tradeID, recipeID, count)
 		local sourcePlayer
 
 		if not self.data.playerData[player] then
@@ -1029,10 +1068,38 @@ do
 
 			table.insert(queueData, newQueue)
 		end
-
-
-		self:SendMessageDispatch("QueueChanged")
 	end
+
+
+	function ProcessQueueQueue()
+		if #queueQueue > 0 then
+			for i=1,50 do
+				if #queueQueue > 0 then
+					local entry = table.remove(queueQueue,1)
+
+					GnomeWorks:ExecuteAddToQueue(unpack(entry))
+				else
+					break
+				end
+			end
+
+			GnomeWorks:SendMessageDispatch("QueueChanged")
+		end
+	end
+
+
+	local queueQueueTimer
+	function GnomeWorks:AddToQueue(player, tradeID, recipeID, count)
+		local entry = { player, tradeID, recipeID, count }
+
+		queueQueue[#queueQueue+1] = entry
+
+		if not queueQueueTimer then
+			queueQueueTimer = GnomeWorks:ScheduleRepeatingTimer(ProcessQueueQueue, 0.01)
+		end
+	end
+
+
 
 
 
@@ -1101,12 +1168,17 @@ do
 
 
 	function GnomeWorks:ShowQueueList(player)
+		local start = GetTime()
+
+		local rank, maxRank, estimatedSkillUp = self:GetTradeSkillRank()
+
 		local player = player or (self.data.playerData[self.player] and self.player) or UnitName("player")
 		queuePlayer = player
 
 		table.wipe(GnomeWorks.data.skillUpRanks)
 
 		if player then
+local start = GetTime()
 			frame.playerNameFrame:SetFormattedText("%s Queue",player)
 
 			if not self.data.queueData[player] then
@@ -1124,11 +1196,15 @@ do
 			for shoppingList,data in pairs(self.data.shoppingQueueData[player]) do
 				table.wipe(data)
 			end
+--print("init", GetTime()-start)
 
+local start = GetTime()
 			UpdateQueue(player, self.data.queueData[player])
+--print("update queue", GetTime()-start)
 
 --			BuildSourceQueues(player, self.data.queueData[player])
 
+local start = GetTime()
 			if not self.data.flatQueue then
 				self.data.flatQueue = {}
 			end
@@ -1137,7 +1213,6 @@ do
 
 			BuildFlatQueue(self.data.flatQueue[player], queue)
 
-
 			self:SendMessageDispatch("QueueCountsChanged")
 
 			if GnomeWorksDB.config.queueLayoutFlat then
@@ -1145,7 +1220,7 @@ do
 			else
 				sf.data.entries = self.data.queueData[player]
 			end
-
+--print("flat layout", GetTime()-start)
 
 --			queue.reagentTree = table.wipe(queue.reagentTree or {})
 
@@ -1156,20 +1231,33 @@ do
 				end
 			end
 ]]
-
+local start = GetTime()
 			GnomeWorks:ShoppingListUpdate(player)
+--print("shopping list update", GetTime()-start)
 
 --			GnomeWorks:PrepAuctionScan(queue)
 
+local start = GetTime()
+			local newRank, _, newEstimatedSkillUp = self:GetTradeSkillRank()
 
-			self:SendMessageDispatch("SkillRanksChanged")
+			if newRank ~= rank or newEstimatedSkillUp ~= estimatedSkillUp then
+				self:SendMessageDispatch("SkillRanksChanged")
+			end
+--print("skill ranks changed", GetTime()-start)
 
+
+local start = GetTime()
 			sf:Refresh()
---			sf:Show()
-			frame:Show()
+--print("refresh data", GetTime()-start)
 
+--			sf:Show()
+local start = GetTime()
+			frame:Show()
 			frame:SetToplevel(true)
+--print("show data", GetTime()-start)
 		end
+
+--		print("total time", GetTime()-start)
 	end
 
 
