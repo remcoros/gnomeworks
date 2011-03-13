@@ -1101,8 +1101,10 @@ do
 	end
 
 
+	local timeInAuctionCost = 0
 
 	function GnomeWorks:GetAuctionCost(itemID, count, skip)
+		local start = GetTime()
 		local data = self.data.auctionData[itemID]
 
 		if data then
@@ -1128,9 +1130,15 @@ do
 				end
 			end
 
+			timeInAuctionCost = timeInAuctionCost + GetTime() - start
 			return cost
 		end
 
+		timeInAuctionCost = timeInAuctionCost + GetTime() - start
 		return 10000000
+	end
+
+	function ReportTimeInAuctionCost()
+		print(timeInAuctionCost)
 	end
 end

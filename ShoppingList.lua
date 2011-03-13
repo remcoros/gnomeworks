@@ -9,7 +9,7 @@ do
 	local shoppingListPlayer
 
 
-	local queueList = { "bank", "mail", "guildBank", "alt", "sale", "vendor", "auction" }
+	local queueList = { "bank", "mail", "guildBank", "alt", "sale", "vendor", "auction", "missing" }
 
 
 

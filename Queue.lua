@@ -198,6 +198,60 @@ do
 	end
 
 
+	local function AddItemsToShoppingList(player, entry)
+		if player and entry and entry.subGroup.entries then
+			local shoppingQueueData = GnomeWorks.data.shoppingQueueData[player]
+
+			local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,player)
+
+			for k,reagent in ipairs(entry.subGroup.entries) do
+				reagent.parent = entry.subGroup.entries
+				local itemID = reagent.itemID
+
+				if reagent.command == "collect" then
+					local sourceQueue
+
+					if reagent.source then
+						sourceQueue = shoppingQueueData[reagent.source]
+					elseif GnomeWorks:VendorSellsItem(reagent.itemID) then
+						sourceQueue = shoppingQueueData.vendor
+					else
+						sourceQueue = shoppingQueueData.auction
+					end
+
+					if sourceQueue then
+						if sourceQueue[itemID] or reagent.count>0 then
+							sourceQueue[itemID] = (sourceQueue[itemID] or 0) + reagent.count
+						end
+					end
+
+				elseif reagent.command == "create" then
+					local resultsReagent,reagentsReagent,tradeID = GnomeWorks:GetRecipeData(reagent.recipeID,player)
+
+					AddItemsToShoppingList(player, reagent)
+
+					for itemID,numNeeded in pairs(reagentsReagent) do
+						GnomeWorks:ReserveItemForQueue(player, itemID, numNeeded * reagent.count)
+					end
+
+					for itemID,numMade in pairs(resultsReagent) do
+						GnomeWorks:ReserveItemForQueue(player, itemID, -numMade * reagent.count)
+					end
+
+					if tradeID == 100001 then					-- vendor conversion
+						local vendorQueue = shoppingQueueData.vendor
+						vendorQueue[itemID] = (vendorQueue[itemID] or 0) + reagent.count
+
+						if vendorQueue[itemID] == 0 then
+							vendorQueue[itemID] = nil
+						end
+					end
+				end
+			end
+		end
+	end
+
+
 
 	local function AdjustQueueCounts(player, entry)
 		if entry.subGroup then
@@ -251,6 +305,7 @@ do
 
 
 			if not reagentsChanged then
+				AddItemsToShoppingList(player, entry)
 				return
 			end
 
@@ -439,7 +494,6 @@ do
 				local itemID = reagent.itemID
 
 				if (entry.reserved[itemID] or 0)>0 then
-
 					if reagent.command == "collect" then
 						if reagent.source then
 							reagent.cost = 0
@@ -488,6 +542,11 @@ do
 			local orange, yellow, green, gray = GetSkillLevels(entry.recipeID)
 
 			local rank, maxRank, estimatedRank, bonus = GnomeWorks:GetTradeSkillRank(player, tradeID)
+
+			if rank >= maxRank then
+				return
+			end
+
 
 			local effectiveRank = rank - bonus
 
