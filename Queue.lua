@@ -276,6 +276,11 @@ do
 				reagentsChanged = true
 			end
 
+			if entry.count ~= entry.oldCount then
+				entry.oldCount = entry.count
+
+				reagentsChanged = true
+			end
 
 			for index,source in ipairs(GnomeWorksDB.config.inventoryIndex) do
 				local treeSource = "reagentTree-"..source
