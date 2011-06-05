@@ -851,10 +851,11 @@ do
 
 			recipeID = detailFrame.levelsBar.recipeID
 
-			local gray = GnomeWorks.data.recipeSkillLevels[4][recipeID] or 1
-			local green = GnomeWorks.data.recipeSkillLevels[3][recipeID] or 1
+			local gray = GnomeWorks.data.recipeSkillLevels[3][recipeID] or 1
 			local yellow = GnomeWorks.data.recipeSkillLevels[2][recipeID] or 1
 			local orange = GnomeWorks.data.recipeSkillLevels[1][recipeID] or 1
+
+			local green = (gray + yellow)/2
 
 			GameTooltip:AddLine(COLORORANGE..orange.."|r/"..COLORYELLOW..yellow.."|r/"..COLORGREEN..green.."|r/"..COLORGRAY..gray)
 
@@ -1143,7 +1144,13 @@ do
 
 
 		local function GetSkillLevels(id)
-			return GnomeWorks.data.recipeSkillLevels[1][id] or 0, GnomeWorks.data.recipeSkillLevels[2][id] or 0, GnomeWorks.data.recipeSkillLevels[3][id] or 0, GnomeWorks.data.recipeSkillLevels[4][id] or 0
+			local gray = GnomeWorks.data.recipeSkillLevels[3][id] or 1
+			local yellow = GnomeWorks.data.recipeSkillLevels[2][id] or 1
+			local orange = GnomeWorks.data.recipeSkillLevels[1][id] or 1
+
+			local green = math.ceil((gray + yellow)/2)
+
+			return orange, yellow, green, gray
 		end
 
 		function GnomeWorks:HideDetails()
@@ -1242,6 +1249,7 @@ do
 
 				local orange, yellow, green, gray = GetSkillLevels(recipeID)
 
+--print("update to new levels:", recipeID, GnomeWorks:GetRecipeName(recipeID), orange, yellow, green, gray)
 
 				detailFrame.levelsBar.recipeID = recipeID
 

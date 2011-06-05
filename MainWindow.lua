@@ -1565,18 +1565,6 @@ do
 
 
 
-
-
-	function GnomeWorks:CHAT_MSG_SKILL()
-		self:ParseSkillList()
-		if self.updateTimer then
-			self:CancelTimer(self.updateTimer, true)
-		end
-
-		self.updateTimer = self:ScheduleTimer("DoTradeSkillUpdate",.1)
-	end
-
-
 	function GnomeWorks:TRADE_SKILL_SHOW()
 --print("TRADE_SKILL_SHOW")
 		if IsControlKeyDown() then
@@ -1669,7 +1657,7 @@ do
 
 
 	function GnomeWorks:ShowStatus()
-		local rank, maxRank, estimatedSkillUp = self:GetTradeSkillRank()
+		local rank, maxRank, estimatedSkillUp = self:GetTradeSkillRank(self.player)
 
 
 		self.levelStatusBar:SetMinMaxValues(0,maxRank)
@@ -1722,7 +1710,12 @@ do
 			searchTextParameters.arg = ""
 		end
 
-		self:SendMessageDispatch("SkillListChanged")
+		if self.showTimer then
+			self:CancelTimer(self.showTimer, true)
+		end
+
+		self.showTimer = self:ScheduleTimer("SendMessageDispatch",.5,"SkillListChanged")
+--		self:SendMessageDispatch("SkillListChanged")
 --		sf:Refresh()
 	end
 
@@ -2067,7 +2060,9 @@ do
 			GnomeWorks:ShowQueueList()
 
 			if not numItems then
-				local _, _, _, _, _, _, _, itemStackCount = GetItemInfo(next(GnomeWorksDB.results[entry.recipeID]))
+				local results, reagents = GnomeWorks:GetRecipeData(entry.recipeID)
+
+				local _, _, _, _, _, _, _, itemStackCount = GetItemInfo(next(results))
 
 				if entry.totalCraftable < 1 then
 					numItems = itemStackCount
@@ -2376,18 +2371,6 @@ do
 
 
 		self:CreateTradeButtons(tradeIDList, tradeButtonFrame)
---[[
-		local t = tradeButtonFrame:CreateTexture(nil,"OVERLAY")
-		t:SetTexture(1,1,1,.5)
-		t:SetPoint("TOPLEFT",-5,5)
-		t:SetPoint("BOTTOMRIGHT",5,-5)
-]]
-
---		self.tradeButtonFrame:ClearAllPoints()
-
-
---		self.detailFrame:SetScript("OnShow", function() ResizeMainWindow(frame) end)
---		self.detailFrame:SetScript("OnHide", function() ResizeMainWindow(frame) end)
 
 		local searchBox = CreateFrame("EditBox","GnomeWorksSearch",frame)
 
@@ -2413,6 +2396,7 @@ do
 		searchBox:SetScript("OnEscapePressed", EditBox_ClearFocus)
 		searchBox:SetScript("OnEditFocusLost", EditBox_ClearHighlight)
 		searchBox:SetScript("OnEditFocusGained", EditBox_HighlightText)
+
 
 		searchBox:SetScript("OnTextChanged", function(f)
 			if f.oldText ~= f:GetText() then

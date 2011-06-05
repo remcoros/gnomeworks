@@ -25,10 +25,16 @@ do
 
 	local function Register()
 		local function GetSkillLevels(id)
-			return RecipeSkillLevels[1][id] or 0, RecipeSkillLevels[2][id] or 0, RecipeSkillLevels[3][id] or 0, RecipeSkillLevels[4][id] or 0
+			local gray = RecipeSkillLevels[3][recipeID] or 1
+			local yellow = RecipeSkillLevels[2][recipeID] or 1
+			local orange = GRecipeSkillLevels[1][recipeID] or 1
+
+			local green = (gray + yellow)/2
+
+			return orange, yellow, green, gray
 		end
 
-
+--[[
 		local function GetSkillLevelColor(id, rank)
 			if not id then return skillColors["unknown"] end
 
@@ -44,45 +50,20 @@ do
 
 			return skillColors["unknown"]
 		end
-
+]]
 
 		local function GetSkillUpChance(id, rank)
-			local orange, yellow, green, gray  = GetSkillLevels(id)
+			local one, zero = RecipeSkillLevels[2][id] or 1, RecipeSkillLevels[3][id] or 1
 
-			if rank < orange or rank >= gray then
-				return 0
-			elseif rank < yellow then
+			if rank <= one then
 				return 1
-			elseif rank >= yellow and rank < green then
-
-				local chance =  1-(rank-yellow+1)/(green-yellow+1)*.5
-
-				return chance
+			elseif rank >= zero then
+				return 0
 			else
-				local chance = (1-(rank-green+1)/(gray-green+1))*.5
-
-				return chance
+				return 1 - (rank - one) / (zero - one)
 			end
 		end
 
-
-
-
---[[
-		local costFilterMenu = {
-		}
-
-		local costFilterParameters = {
-			{
-				name = "HideUnprofitable",
-				text = "Hide Unprofitable",
-				enabled = false,
-				func = function(entry)
-					return (entry.value or 0) < (entry.cost or 0)
-				end,
-			},
-		}
-]]
 
 
 		local function ColumnControl(cellFrame,button,source)

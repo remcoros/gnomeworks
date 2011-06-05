@@ -39,38 +39,6 @@
 ]]--
 
 do
---[[
-	local unlinkableTrades = {
-		[2656] = true,			-- smelting (from mining)
-		[53428] = true,			-- runeforging
-		[51005] = true,			-- milling
-		[13262] = true,			-- disenchant
-		[31252] = true,			-- prospecting
-
-		[100000] = true,		-- common skills
-		[100001] = true,		-- vendor conversion
-		[100003] = true,		-- scroll making
-	}
-
-	local fakeTrades = {
-		[51005] = true,			-- milling
-		[13262] = true,			-- disenchant
-		[31252] = true,			-- prospecting
-
-		[100000] = true,		-- common skills
-		[100001] = true,		-- vendor conversions
-		[100003] = true,		-- scroll making
-	}
-
-	local tradeIcon = {
-		[100000] = "Interface\\Icons\\Ability_Creature_Cursed_01",
-		[100001] = "Interface\\Icons\\INV_Misc_Bag_10",
-		[100003] = "Interface\\Icons\\INV_Scroll_07",
-
-	}
-]]
-
-
 	local OverRide = {}
 
 	local tradeIDList = GnomeWorks.system.tradeIDList
@@ -101,7 +69,10 @@ do
 			end
 		end
 
-		table.insert(tradeIDList, tradeID)
+		if tradeID ~= 2656 then					-- smelting... oh smelting...
+			table.insert(tradeIDList, tradeID)
+		end
+
 
 		pseudoTrades[tradeID] = (api.GetTradeName and api.GetTradeName()) or GetSpellInfo(tradeID)
 		unlinkableTrades[tradeID] = true
@@ -114,11 +85,6 @@ do
 
 
 	function GnomeWorks:RecordKnownSpells(tradeID, player)
---print("wants to record spells for",tradeID, player)
---		if not self.data.knownSpells[player] then
---			self.data.knownSpells[player] = {}
---		end
-
 		if self.data.pseudoTradeData[tradeID] and self.data.pseudoTradeData[tradeID].RecordKnownSpells then
 			self.data.pseudoTradeData[tradeID].RecordKnownSpells(player)
 		end
@@ -229,44 +195,58 @@ do
 
 
 	for k,api in pairs(tradeSkillAPIs) do
---		if PseudoTrade[api] then
-			GnomeWorks[api] = function(self, ...)
-				local trade = self.data.pseudoTradeData[self.tradeID]
-				if trade then
-					if self.player ~= UnitName("player") and trade[api] then
+		GnomeWorks[api] = function(self, ...)
+			local trade = self.data.pseudoTradeData[self.tradeID]
+			if trade and trade[api] then
+--[[
+				if self.player ~= UnitName("player") then
+					return trade[api](...)
+				end
+]]
+				local currentTradeSkill = GetTradeSkillLine()
+
+				if currentTradeSkill == GetSpellInfo(2575) then														-- current skill in the api is mining/smelting
+					if GetSpellInfo(2656) ~= GetSpellInfo(self.tradeID) then											-- the requested skill is NOT smelting
+						return trade[api](...)
+					else
+						if (IsTradeSkillGuild() or IsTradeSkillLinked())  then											-- the requested skill IS mining/smelting and it's linked or a guild view
+							return _G[api](...)
+						end
+					end
+				else
+					if currentTradeSkill ~= GetSpellInfo(self.tradeID) or self.player ~= UnitName("player") then
 						return trade[api](...)
 					end
-					local currentTradeSkill = GetTradeSkillLine()
-
-					if currentTradeSkill == GetSpellInfo(2575) then
-						currentTradeSkill = GetSpellInfo(2656)
-					end
-
-					if currentTradeSkill ~= GetSpellInfo(self.tradeID) and trade[api] then
-						return trade[api](...)
-					end
-
-					return
 				end
-
-				if OverRide[api] then
-					return OverRide[api](...)
-				end
-
-				return _G[api](...)
 			end
---		else
---			GnomeWorks[api] = function(self,...)
---				return _G[api](...)
---			end
---		end
+
+			if OverRide[api] then
+				return OverRide[api](...)
+			end
+
+			return _G[api](...)
+		end
 	end
 
 
 
 	function GnomeWorks:IsPseudoTrade(tradeID)
-		if fakeTrades[tradeID] or (unlinkableTrades[tradeID] and ((tradeID == 2656 or tradeID == 53428) and not GetSpellLink((GetSpellInfo(tradeID))))) then
+		if fakeTrades[tradeID] then
 			return true
+		end
+
+		if unlinkableTrades[tradeID] then
+			if (tradeID == 2656 or tradeID == 53428) then 					-- smelting or runeforging
+				if not GetSpellLink((GetSpellInfo(tradeID))) then			-- current toon doesn't know smelting/runeforging
+					return true
+				end
+
+				if GetTradeSkillLine() == GetSpellInfo(tradeID) then		-- current trade skill is set accurately
+					return true
+				end
+			else
+				return true
+			end
 		end
 
 		return false

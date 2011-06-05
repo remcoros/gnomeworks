@@ -38,7 +38,7 @@ Libs\AceTimer-3.0\AceTimer-3.0.lua
 
 
 Libs\LibStagedExecution.lua
-
+Libs\LIbTradeSkillScan.lua
 
 
 #### Main files
@@ -69,6 +69,7 @@ PseudoTrades\Milling.lua
 PseudoTrades\Prospecting.lua
 PseudoTrades\VendorConversion.lua
 PseudoTrades\ScrollMaking.lua
+PseudoTrades\Smelting.lua
 
 
 #### API

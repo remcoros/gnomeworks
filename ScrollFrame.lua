@@ -254,6 +254,8 @@ do
 	local function Draw(scrollFrame)
 		local DrawRow = scrollFrame.DrawRow
 
+		scrollFrame:SetFrameLevel(scrollFrame:GetParent():GetFrameLevel()+2)
+
 		if not scrollFrame:IsVisible() then
 			return
 		end

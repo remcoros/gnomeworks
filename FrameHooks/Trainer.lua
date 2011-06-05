@@ -26,7 +26,12 @@ do
 
 				local skill, level = GetTrainerServiceSkillReq(i)
 
-				if GetSpellInfo(tradeID) == skill and not self.data.trainableSpells[recipeID] then
+				if skill == GetSpellInfo(2575) then				-- mining
+					skill = GetSpellInfo(2656)						-- smelting
+				end
+
+
+				if GnomeWorks:GetTradeName(tradeID) == skill and not self.data.trainableSpells[recipeID] then
 					self.data.trainableSpells[recipeID] = level
 
 					GnomeWorks.data.recipeSkillLevels[1][recipeID] = level

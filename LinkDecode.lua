@@ -211,8 +211,9 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 
 			local recipeCount = 0
 
+			local numSkills = GetNumTradeSkills()
 
-			for i=1,GetNumTradeSkills() do
+			for i=1,numSkills do
 				local gotNil = false
 
 				if GetTradeSkillItemLink(i) then --  and GetItemInfo(GetTradeSkillItemLink(i)) then
@@ -239,28 +240,22 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 			local skillName, skillType = GetTradeSkillInfo(1)
 			local gotNil
 
---			if skillType == "header" then
 
---print(recipeCount, GetNumTradeSkills())
-			if recipeCount == GetNumTradeSkills() then
---print(isLinked, playerName, GetTradeSkillLine())
-
-
+			if recipeCount == numSkills then
 				local knownSpells = GnomeWorks.data.knownSpells[playerName]
 				local knownItems = GnomeWorks.data.knownItems[playerName]
 
-				for i = 1, GetNumTradeSkills() do
+				for i = 1, numSkills do
 					local _,skillType = GetTradeSkillInfo(i)
 
 					if skillType ~= "header" then
 						local recipeLink = GetTradeSkillRecipeLink(i)
---print(recipeLink)
+
 						if not recipeLink then
 							gotNil = true
 							break
 						else
 							local spellID = tonumber(recipeLink:match("enchant:(%d+)"))
---print(spellID)
 							knownSpells[spellID] = i
 						end
 

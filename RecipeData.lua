@@ -336,9 +336,21 @@ print("getTradeInfo", recipeID)
 		local rank,maxRank,estimatedRank,bonus = GnomeWorks:GetTradeSkillRank()
 		rank = (estimatedRank or rank) - (bonus or 0)
 
-		for i=1,#skillLevelNames-1 do
-			if rank<(GnomeWorks.data.recipeSkillLevels[i][recipeID] or 0) then
-				return 6-i,skillLevelNames[i],skillColor[skillLevelNames[i]]
+		local skillLevels = GnomeWorks.data.recipeSkillLevels
+
+		local orange = skillLevels[1][recipeID] or 1
+		local yellow = skillLevels[2][recipeID] or 1
+		local gray = skillLevels[3][recipeID] or 1
+
+		if rank < orange then
+			return 5, "unknown", skillColor["unknown"]
+		elseif rank < yellow then
+			return 4, "optimal", skillColor["optimal"]
+		elseif rank < gray then
+			if rank < (yellow+gray)/2 then
+				return 3, "medium", skillColor["medium"]
+			else
+				return 2, "easy", skillColor["easy"]
 			end
 		end
 
@@ -375,60 +387,5 @@ print("getTradeInfo", recipeID)
 end
 
 
--- add smelting data from wowhead html source
-do
-	local smeltingRecipesData = '{"cat":11,"colors":[75,115,122,130],"creates":[2842,1,1],"id":2658,"learnedat":75,"level":0,"name":"5Smelt Silver","nskillup":1,"reagents":[[2775,1]],"schools":1,"skill":[186],"source":[6],"trainingcost":200},{"cat":11,"colors":[0,65,90,115],"creates":[2841,2,2],"id":2659,"learnedat":65,"level":0,"name":"6Smelt Bronze","nskillup":1,"reagents":[[2840,1],[3576,1]],"schools":1,"skill":[186],"source":[6],"trainingcost":200},{"cat":11,"colors":[155,170,177,185],"creates":[3577,1,1],"id":3308,"learnedat":155,"level":0,"name":"5Smelt Gold","nskillup":1,"reagents":[[2776,1]],"schools":1,"skill":[186],"source":[6],"trainingcost":2500},{"cat":11,"colors":[125,130,145,160],"creates":[3575,1,1],"id":3307,"learnedat":125,"level":0,"name":"6Smelt Iron","nskillup":1,"reagents":[[2772,1]],"schools":1,"skill":[186],"source":[6],"trainingcost":500},{"cat":11,"colors":[0,65,70,75],"creates":[3576,1,1],"id":3304,"learnedat":65,"level":0,"name":"6Smelt Tin","nskillup":1,"reagents":[[2771,1]],"schools":1,"skill":[186],"source":[6],"trainingcost":50},{"cat":11,"colors":[0,0,0,165],"creates":[3859,1,1],"id":3569,"learnedat":165,"level":0,"name":"6Smelt Steel","nskillup":1,"reagents":[[3575,1],[3857,1]],"schools":1,"skill":[186],"source":[6],"trainingcost":2500},{"cat":11,"colors":[1,25,47,70],"creates":[2840,1,1],"id":2657,"learnedat":1,"level":0,"name":"6Smelt Copper","nskillup":1,"reagents":[[2770,1]],"schools":1,"skill":[186],"source":[10]},{"cat":11,"colors":[230,250,270,290],"creates":[6037,1,1],"id":10098,"learnedat":230,"level":0,"name":"5Smelt Truesilver","nskillup":1,"reagents":[[7911,1]],"schools":1,"skill":[186],"source":[6],"trainingcost":10000},{"cat":11,"colors":[0,175,202,230],"creates":[3860,1,1],"id":10097,"learnedat":175,"level":0,"name":"6Smelt Mithril","nskillup":1,"reagents":[[3858,1]],"schools":1,"skill":[186],"source":[6],"trainingcost":5000},{"cat":11,"colors":[230,300,305,310],"creates":[11371,1,1],"id":14891,"learnedat":230,"level":0,"name":"6Smelt Dark Iron","nskillup":1,"reagents":[[11370,8]],"schools":1,"skill":[186]},{"cat":11,"colors":[230,250,270,290],"creates":[12359,1,1],"id":16153,"learnedat":230,"level":0,"name":"6Smelt Thorium","nskillup":1,"reagents":[[10620,1]],"schools":1,"skill":[186],"source":[6],"trainingcost":20000},{"cat":11,"colors":[0,275,300,325],"creates":[23445,1,1],"id":29356,"learnedat":275,"level":0,"name":"6Smelt Fel Iron","nskillup":1,"reagents":[[23424,2]],"schools":1,"skill":[186],"source":[6],"trainingcost":40000},{"cat":11,"colors":[0,325,332,340],"creates":[23446,1,1],"id":29358,"learnedat":325,"level":0,"name":"6Smelt Adamantite","nskillup":1,"reagents":[[23425,2]],"schools":1,"skill":[186],"source":[6],"trainingcost":40000},{"cat":11,"colors":[0,350,357,365],"creates":[23447,1,1],"id":29359,"learnedat":350,"level":0,"name":"5Smelt Eternium","nskillup":1,"reagents":[[23427,2]],"schools":1,"skill":[186],"source":[6],"trainingcost":40000},{"cat":11,"colors":[0,350,357,375],"creates":[23448,1,1],"id":29360,"learnedat":350,"level":0,"name":"5Smelt Felsteel","nskillup":1,"reagents":[[23445,3],[23447,2]],"schools":1,"skill":[186],"source":[6],"trainingcost":40000},{"cat":11,"colors":[0,0,0,375],"creates":[23449,1,1],"id":29361,"learnedat":375,"level":0,"name":"5Smelt Khorium","nskillup":1,"reagents":[[23426,2]],"schools":1,"skill":[186],"source":[6],"trainingcost":100000},{"cat":11,"colors":[0,0,0,375],"creates":[23573,1,1],"id":29686,"learnedat":375,"level":0,"name":"6Smelt Hardened Adamantite","nskillup":1,"reagents":[[23446,10]],"schools":1,"skill":[186],"source":[6],"trainingcost":100000},{"cat":11,"colors":[0,0,0,300],"creates":[22573,10,10],"id":35750,"learnedat":300,"level":0,"name":"6Earth Shatter","nskillup":1,"reagents":[[22452,1]],"schools":1,"skill":[186],"source":[6],"trainingcost":10000},{"cat":11,"colors":[0,0,0,300],"creates":[22574,10,10],"id":35751,"learnedat":300,"level":0,"name":"6Fire Sunder","nskillup":1,"reagents":[[21884,1]],"schools":1,"skill":[186],"source":[6],"trainingcost":10000},{"cat":11,"colors":[0,0,0,375],"creates":[35128,1,1],"id":46353,"learnedat":375,"level":0,"name":"5Smelt Hardened Khorium","nskillup":1,"reagents":[[23449,3],[23573,1]],"schools":1,"skill":[186],"source":[2]},{"cat":11,"colors":[0,350,362,375],"creates":[36916,1,1],"id":49252,"learnedat":350,"level":0,"name":"6Smelt Cobalt","nskillup":1,"reagents":[[36909,1]],"schools":1,"skill":[186],"source":[6],"trainingcost":100000},{"cat":11,"colors":[0,0,0,400],"creates":[36913,1,1],"id":49258,"learnedat":400,"level":0,"name":"6Smelt Saronite","nskillup":1,"reagents":[[36912,2]],"schools":1,"skill":[186],"source":[6],"trainingcost":150000},{"cat":11,"colors":[0,0,0,450],"creates":[37663,1,1],"id":55208,"learnedat":450,"level":0,"name":"5Smelt Titansteel","nskillup":1,"reagents":[[41163,3],[36860,1],[35624,1],[35627,1]],"schools":1,"skill":[186],"source":[6],"trainingcost":200000},{"cat":11,"colors":[0,0,0,450],"creates":[41163,1,1],"id":55211,"learnedat":450,"level":0,"name":"5Smelt Titanium","nskillup":1,"reagents":[[36910,2]],"schools":1,"skill":[186],"source":[6],"trainingcost":200000},{"cat":11,"colors":[300,350,362,375],"creates":[17771,1,1],"id":22967,"learnedat":300,"level":0,"name":"2Smelt Enchanted Elementium","nskillup":1,"reagents":[[18562,1],[12360,10],[17010,1],[18567,3]],"schools":1,"skill":[186],"source":[2]},{"cat":11,"colors":[0,250,255,260],"creates":[12655,1,1],"id":70524,"learnedat":250,"level":0,"name":"6Enchanted Thorium","nskillup":1,"reagents":[[12359,1],[11176,3]],"schools":1,"skill":[186],"source":[6],"trainingcost":10000},{"cat":11,"colors":[0,500,500,525],"creates":[53039,1,1],"id":74537,"learnedat":500,"level":0,"name":"6Smelt Hardened Elementium","nskillup":0,"reagents":[[52186,10],[52327,4]],"schools":1,"skill":[186],"source":[6],"trainingcost":50000},{"cat":11,"colors":[0,475,475,500],"creates":[52186,1,1],"id":74530,"learnedat":475,"level":0,"name":"6Smelt Elementium","nskillup":0,"reagents":[[52185,2]],"schools":1,"skill":[186],"source":[6],"trainingcost":50000},{"cat":11,"colors":[0,0,0,525],"creates":[51950,1,1],"id":74529,"learnedat":525,"level":0,"name":"5Smelt Pyrite","nskillup":0,"reagents":[[52183,2]],"schools":1,"skill":[186],"source":[6],"trainingcost":50000},{"cat":11,"colors":[0,425,437,475],"creates":[54849,1,1],"id":84038,"learnedat":425,"level":0,"name":"6Smelt Obsidium","nskillup":0,"reagents":[[53038,2]],"schools":1,"skill":[186],"source":[6],"trainingcost":50000}'
-	local smeltingRecipeData2 = '{"classs":7,"id":17771,"level":60,"name":"2Enchanted Elementium Bar","slot":0,"source":[1],"sourcemore":[{"c":11,"icon":"inv_ingot_thorium","n":"Smelt Enchanted Elementium","s":186,"t":6,"ti":22967}],"subclass":7},{"classs":7,"id":37663,"level":80,"name":"5Titansteel Bar","slot":0,"source":[1,2],"sourcemore":[{"c":11,"icon":"inv_ingot_titansteel_blue","n":"Smelt Titansteel","s":186,"t":6,"ti":55208}],"subclass":7},{"classs":7,"id":23447,"level":70,"name":"5Eternium Bar","slot":0,"source":[1,2],"sourcemore":[{"c":11,"icon":"inv_ingot_11","n":"Smelt Eternium","s":186,"t":6,"ti":29359}],"subclass":7},{"classs":7,"id":23449,"level":70,"name":"5Khorium Bar","slot":0,"source":[1,2],"sourcemore":[{"c":11,"icon":"inv_ingot_09","n":"Smelt Khorium","s":186,"t":6,"ti":29361}],"subclass":7},{"classs":7,"id":35128,"level":70,"name":"5Hardened Khorium","slot":0,"source":[1],"sourcemore":[{"c":11,"icon":"inv_ingot_thorium","n":"Smelt Hardened Khorium","s":186,"t":6,"ti":46353}],"subclass":7},{"classs":7,"id":23448,"level":60,"name":"5Felsteel Bar","slot":0,"source":[1],"sourcemore":[{"c":11,"icon":"inv_ingot_felsteel","n":"Smelt Felsteel","s":186,"t":6,"ti":29360}],"subclass":7},{"classs":7,"id":2842,"level":10,"name":"5Silver Bar","reqlevel":9,"slot":0,"source":[1,2,4],"sourcemore":[{"c":11,"icon":"inv_ingot_01","n":"Smelt Silver","s":186,"t":6,"ti":2658},{"z":40}],"subclass":7},{"classs":7,"id":52186,"level":83,"name":"6Elementium Bar","slot":0,"source":[1],"sourcemore":[{"c":11,"icon":"inv_misc_pyriumbar","n":"Smelt Elementium","s":186,"t":6,"ti":74530}],"subclass":7},{"classs":7,"id":53039,"level":83,"name":"6Hardened Elementium Bar","slot":0,"source":[1],"sourcemore":[{"c":11,"icon":"inv_misc_ebonsteelbar","n":"Smelt Hardened Elementium","s":186,"t":6,"ti":74537}],"subclass":7},{"classs":7,"id":54849,"level":81,"name":"6Obsidium Bar","slot":0,"source":[1],"sourcemore":[{"c":11,"icon":"inv_stone_15","n":"Smelt Obsidium","s":186,"t":6,"ti":84038}],"subclass":7},{"classs":7,"id":36913,"level":80,"name":"6Saronite Bar","slot":0,"source":[1,2],"sourcemore":[{"c":11,"icon":"inv_ingot_yoggthorite","n":"Smelt Saronite","s":186,"t":6,"ti":49258}],"subclass":7},{"classs":7,"id":36916,"level":72,"name":"6Cobalt Bar","slot":0,"source":[1,2],"sourcemore":[{"c":11,"icon":"inv_ingot_cobalt","n":"Smelt Cobalt","s":186,"t":6,"ti":49252}],"subclass":7},{"classs":7,"id":22573,"level":65,"name":"6Mote of Earth","slot":0,"source":[1,2,5],"sourcemore":[{"c":11,"icon":"inv_elemental_mote_earth01","n":"Earth Shatter","s":186,"t":6,"ti":35750}],"subclass":10},{"classs":7,"id":22574,"level":65,"name":"6Mote of Fire","slot":0,"source":[1,2,5],"sourcemore":[{"c":11,"icon":"inv_elemental_mote_fire01","n":"Fire Sunder","s":186,"t":6,"ti":35751}],"subclass":10},{"classs":7,"id":23446,"level":65,"name":"6Adamantite Bar","slot":0,"source":[1,2],"sourcemore":[{"c":11,"icon":"inv_ingot_10","n":"Smelt Adamantite","s":186,"t":6,"ti":29358}],"subclass":7},{"classs":7,"id":23573,"level":65,"name":"6Hardened Adamantite Bar","slot":0,"source":[1],"sourcemore":[{"c":11,"icon":"inv_ingot_adamantite","n":"Smelt Hardened Adamantite","s":186,"t":6,"ti":29686}],"subclass":7},{"classs":7,"id":23445,"level":60,"name":"6Fel Iron Bar","slot":0,"source":[1,2],"sourcemore":[{"c":11,"icon":"inv_ingot_feliron","n":"Smelt Fel Iron","s":186,"t":6,"ti":29356}],"subclass":7},{"classs":7,"id":11371,"level":50,"name":"6Dark Iron Bar","slot":0,"source":[1],"sourcemore":[{"c":11,"icon":"inv_ingot_mithril","n":"Smelt Dark Iron","s":186,"t":6,"ti":14891}],"subclass":7},{"classs":7,"id":12359,"level":50,"name":"6Thorium Bar","slot":0,"source":[1],"sourcemore":[{"c":11,"icon":"inv_ingot_07","n":"Smelt Thorium","s":186,"t":6,"ti":16153}],"subclass":7},{"classs":7,"id":3860,"level":40,"name":"6Mithril Bar","slot":0,"source":[1],"sourcemore":[{"c":11,"icon":"inv_ingot_06","n":"Smelt Mithril","s":186,"t":6,"ti":10097}],"subclass":7},{"classs":7,"id":3859,"level":35,"name":"6Steel Bar","slot":0,"source":[1],"sourcemore":[{"c":11,"icon":"inv_ingot_steel","n":"Smelt Steel","s":186,"t":6,"ti":3569}],"subclass":7},{"classs":7,"id":3575,"level":30,"name":"6Iron Bar","slot":0,"source":[1],"sourcemore":[{"c":11,"icon":"inv_ingot_iron","n":"Smelt Iron","s":186,"t":6,"ti":3307}],"subclass":7},{"classs":7,"id":2841,"level":20,"name":"6Bronze Bar","slot":0,"source":[1],"sourcemore":[{"c":11,"icon":"inv_ingot_bronze","n":"Smelt Bronze","s":186,"t":6,"ti":2659}],"subclass":7},{"classs":7,"id":3576,"level":20,"name":"6Tin Bar","slot":0,"source":[1],"sourcemore":[{"c":11,"icon":"inv_ingot_05","n":"Smelt Tin","s":186,"t":6,"ti":3304}],"subclass":7},{"classs":7,"id":2840,"level":10,"name":"6Copper Bar","slot":0,"source":[1,2],"sourcemore":[{"c":11,"icon":"inv_ingot_02","n":"Smelt Copper","s":186,"t":6,"ti":2657},{"icon":"inv_misc_gift_01","n":"Smokywood Pastures Gift Pack","q":1,"t":3,"ti":17727}],"subclass":7},{"classs":7,"id":51950,"level":85,"name":"5Pyrium Bar","slot":0,"source":[1],"subclass":7},{"classs":7,"id":41163,"level":80,"name":"5Titanium Bar","slot":0,"source":[1],"subclass":7},{"classs":7,"id":6037,"level":50,"name":"5Truesilver Bar","slot":0,"source":[1,2],"subclass":7},{"classs":7,"id":3577,"level":30,"name":"5Gold Bar","slot":0,"source":[1,2],"subclass":7},{"classs":7,"id":12655,"level":55,"name":"6Enchanted Thorium Bar","slot":0,"source":[1],"subclass":7}'
-
-
--- format: {"cat":11,"colors":[75,115,122,130],"creates":[2842,1,1],"id":2658,"learnedat":75,"level":0,"name":"5Smelt Silver","nskillup":1,"reagents":[[2775,1]],"schools":1,"skill":[186],"source":[6],"trainingcost":200}
-	local function AddSmeltingData()
-		for data in string.gmatch(smeltingRecipesData,"%b{}") do
-			local orange, yellow, green, gray = string.match(data,'"colors":%[(%d+),(%d+),(%d+),(%d+)%]')
-			orange = tonumber(orange)
-			yellow = tonumber(yellow)
-			green = tonumber(green)
-			gray = tonumber(gray)
-
-			local recipeID = tonumber(string.match(data,'"id":(%d+)'))
-
-			local skillUps = tonumber(string.match(data,'"nskillup":(%d+)')) or 1
-
-			local itemID,numMadeMin,numMadeMax = string.match(data,'"creates":%[(%d+),(%d+),(%d+)%]')
-
-			itemID = tonumber(itemID)
-			local numMade = ((tonumber(numMadeMin) or 1) + (tonumber(numMadeMax or numMadeMin) or 1))/2
-
-			local reagentString = string.match(data,'"reagents":(%b[])')
-
-			GnomeWorksDB.tradeIDs[recipeID] = 2656
-			GnomeWorksDB.results[recipeID] = { [itemID] = numMade }
-			GnomeWorksDB.reagents[recipeID] = {}
-			GnomeWorksDB.skillUps[recipeID] = (skillUps~=1) and skillUps
-
-			GnomeWorks.data.recipeSkillLevels[2][recipeID] = yellow
-			GnomeWorks.data.recipeSkillLevels[3][recipeID] = green
-			GnomeWorks.data.recipeSkillLevels[4][recipeID] = gray
-
-			GnomeWorks:AddToItemCache(itemID, recipeID, numMade)
-
---			print("spell",(GetSpellLink(recipeID)))
---			print("creates", (GetItemInfo(itemID)), "x", numMade)
---			print("needs:")
-			for reagentData in string.gmatch(reagentString, "%b[]") do
-				local itemID, numNeeded = string.match(reagentData,"(%d+),(%d+)")
-				itemID = tonumber(itemID)
-				numNeeded = tonumber(numNeeded)
---				print("    ",(GetItemInfo(itemID)), "x", numNeeded)
-				GnomeWorksDB.reagents[recipeID][itemID] = numNeeded
-				GnomeWorks:AddToReagentCache(itemID, recipeID, numNeeded)
-			end
-		end
-	end
-
-
-	GnomeWorks:RegisterMessageDispatch("AddSpoofedRecipes",AddSmeltingData)
-
-end
 
 

@@ -501,7 +501,7 @@ do
 		end
 
 		GnomeWorksDB.gwVersion = VERSION
-
+		GnomeWorksDB.clientBuild = tonumber(clientBuild)
 
 		local player = UnitName("player")
 
@@ -518,7 +518,7 @@ do
 
 		if LibStub then
 			GnomeWorks.libPT = LibStub:GetLibrary("LibPeriodicTable-3.1", true)
---			self.libTS = LibStub:GetLibrary("LibTradeSkill", true)
+
 		end
 
 
@@ -561,7 +561,7 @@ do
 			end
 		end
 
-		InitDBTables("serverData", "vendorItems", "results", "names", "reagents", "tradeIDs", "skillUps", "vendorOnly", "recipeBlackList", "preferredSource")
+		InitDBTables("serverData", "vendorItems", "results", "names", "reagents", "tradeIDs", "skillUps", "vendorOnly", "recipeBlackList", "preferredSource", "guidList","spellList")
 
 
 
@@ -726,6 +726,7 @@ do
 		GnomeWorks:SendMessageDispatch("AddSpoofedRecipes")
 
 
+		GnomeWorksDB.guidList[UnitName("player")] = string.gsub(UnitGUID("player"),"0x0+", "")
 
 		GnomeWorks.data.groupList = {}
 
@@ -808,21 +809,6 @@ do
 		ConcatLists("knownItems")
 	end
 
-
---[[
-	function GnomeWorks:CHAT_MSG_SYSTEM(event,arg1)
-print("CHAT_MSG_SYSTEM",arg1)
-		if string.find(arg1,ERR_SKILL_UP_SI) then
-print(arg1)
-			self:DoTradeSkillUpdate()
-		end
-
-		if string.find(arg1,ERR_LEARN_RECIPE_S) then
-print(arg1)
-			self:DoTradeSkillUpdate()
-		end
-	end
-]]
 
 	local function RegisterEvents()
 		GnomeWorks:RegisterEvent("MERCHANT_UPDATE")
@@ -907,7 +893,7 @@ print(arg1)
 			end
 
 			GnomeWorks:RegisterEvent("TRADE_SKILL_SHOW")
-	--		GnomeWorks:RegisterEvent("TRADE_SKILL_UPDATE")
+			GnomeWorks:RegisterEvent("TRADE_SKILL_UPDATE")
 			GnomeWorks:RegisterEvent("TRADE_SKILL_CLOSE")
 
 			GnomeWorks:RegisterEvent("CHAT_MSG_SKILL")
@@ -981,30 +967,30 @@ print(arg1)
 	end)
 
 
+	GnomeWorks.libTSScan = LibStub:GetLibrary("LibTradeSkillScan", true)
+
 	initList:AddSegment(InitializeData, "GnomeWorks: InitializeData")
 	initList:AddSegment(ParseTradeLinks, "GnomeWorks: ParseTradeLinks")
 	initList:AddSegment(ParseKnownRecipes, "GnomeWorks: ParseKnownRecipes")
 	initList:AddSegment(CreateUI, "GnomeWorks: CreateUI")
 	initList:AddSegment(RegisterEvents, "GnomeWorks: RegisterEvents")
 
-	local function registerLoad()
---print("gw registering addon_load event")
-		GnomeWorks:RegisterEvent("ADDON_LOADED", function(event, name)
---		print("gnomeworks detected the loading of "..tostring(name))
-			if string.lower(name) == string.lower(modName) then
-				GnomeWorks:UnregisterEvent(event)
+	local function BeginInit(spellList)
+		if spellList then
+			GnomeWorksDB.spellList = spellList
+		end
 
-				initList:Execute()
-			end
-		end)
+		initList:Execute()
 	end
 
+	GnomeWorks:RegisterEvent("ADDON_LOADED", function(event, name)
+		if string.lower(name) == string.lower(modName) then
+			GnomeWorks.libTSScan:Register("GnomeWorks", BeginInit, GnomeWorksDB.clientBuild, GnomeWorksDB.spellList)
+			GnomeWorks:UnregisterEvent(event)
+		end
+	end)
 
-	registerLoad()
 
---	GnomeWorks:ScheduleTimer(registerLoad, 0.0)
-
---	print("gw parsed")
 
 
 	local function setFrameLevels(parent, f, ...)

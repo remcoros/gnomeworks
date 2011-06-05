@@ -193,8 +193,7 @@ do
 			local isLinked,player = IsTradeSkillLinked()
 
 			if player and isLinked then
-				if player == UnitName("player") then -- and (rank ~= self:GetTradeSkillRank(player, tradeID) or rank == 0) then
-	--				player = player.." ShoppingList"
+				if player == UnitName("player") then
 					player = "All Recipes"
 				end
 
@@ -407,6 +406,21 @@ DebugSpam("done parsing skill list")
 
 		return true
 	end
+
+
+
+	function GnomeWorks:CHAT_MSG_SKILL()
+		self:ScheduleTimer("ParseSkillList",.05)
+--		self:ParseSkillList()
+		if self.updateTimer then
+			self:CancelTimer(self.updateTimer, true)
+		end
+
+		self.updateTimer = self:ScheduleTimer("DoTradeSkillUpdate",.1)
+	end
+
+
+
 
 	function GnomeWorks:OpenTradeLink(tradeLink, player)
 		if tradeLink then
@@ -648,7 +662,7 @@ DebugSpam("done parsing skill list")
 		local index = 2000
 
 		for recipeID,level in pairs(self.data.trainableSpells) do
-			if self:GetRecipeTradeID(recipeID) == tradeID then
+			if self:GetRecipeTradeID(recipeID) == tradeID and not (self.data.knownSpells[player] and self.data.knownSpells[player][recipeID]) then
 				GnomeWorks:RecipeGroupAddRecipe(subSlotGroup, recipeID, -recipeID, true)
 				GnomeWorks:RecipeGroupAddRecipe(subCategoryGroup, recipeID, -recipeID, true)
 				GnomeWorks:RecipeGroupAddRecipe(flatGroup, recipeID, -recipeID, true)
@@ -661,6 +675,19 @@ DebugSpam("done parsing skill list")
 		self:RecipeGroupAddSubGroup(categoryGroup, subCategoryGroup, 1500, true)
 	end
 
+
+
+	function GnomeWorks:GenerateTradeSkillLink(player)
+		local guid = 0
+
+		if GnomeWorksDB.guidList[player] then
+			guid = GnomeWorksDB.guidList[player]
+		end
+
+		local link = GnomeWorks.libTSScan:GenerateLink(guid)
+
+		return link
+	end
 
 
 
@@ -705,16 +732,12 @@ DebugSpam("SCAN BUSY!")
 		local isLinked, playerLinked = IsTradeSkillLinked()
 
 		if isLinked then
---			self:CacheTradeSkillLink(GetTradeSkillListLink()) -- this makes a temporary slot, then it will be over-written by the hooked method
+			self:CacheTradeSkillLink(self:GenerateTradeSkillLink(playerLinked)) -- this makes a temporary slot, then it will be over-written by the hooked method
 
 			player = playerLinked
-			if player == UnitName("player") then -- and (rank ~= self:GetTradeSkillRank(player, tradeID) or rank == 0) then
---				player = player.." ShoppingList"
+			if player == UnitName("player") then
 				player = "All Recipes"
 			end
-
---			print(IsTradeSkillLinked())
---			print(player.." "..rank.."/"..maxRank)
 		else
 			player = UnitName("player")
 		end
@@ -749,7 +772,7 @@ DebugSpam("SCAN BUSY!")
 
 
 	-- Unregsiter all frames from reacitng to update events since we're likely to generate a number of them in the scan
---		UnregisterUpdateEvents()
+		UnregisterUpdateEvents()
 
 		for i = 1, GetNumTradeSkills() do
 			local skillName, skillType, _, isExpanded = GetTradeSkillInfo(i)
@@ -878,6 +901,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 					else
 						local recipeLink = GetTradeSkillRecipeLink(i)
 						local recipeID = GetIDFromLink(recipeLink)
+
 
 						if not recipeID then
 							gotNil = true
@@ -1033,7 +1057,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 
 -- re-regsiter the update events again now that we're done scanning
---		RegisterUpdateEvents()
+		RegisterUpdateEvents()
 
 
 --		self:RecipeGroupConstructDBString(mainGroup)
@@ -1259,7 +1283,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 	end
 
 
-	function GnomeWorks:GetTradeSkillRankTBR(player, tradeID)
+	function GnomeWorks:GetTradeSkillRankNonPlayer(player, tradeID)
 		if not tradeID and not IsTradeSkillLinked() then
 			local skill, rank, maxRank = self:GetTradeSkillLine()
 
@@ -1274,15 +1298,6 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		tradeID = tradeID or self.tradeID
 		player = player or self.player
 
---[[
-		if not player then
-			print("player is nil")
-		end
-
-		if not tradeID then
-			print("tradeID is nil")
-		end
-]]
 
 		local link = (self.data.playerData[player] and self.data.playerData[player].links and self.data.playerData[player].links[tradeID])
 
@@ -1335,6 +1350,8 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 				end
 			end
 			return rank, maxRank, skillUps, bonus
+		else
+			return self:GetTradeSkillRankNonPlayer(player, tradeID)
 		end
 
 		return 0, 0, 0, 0
