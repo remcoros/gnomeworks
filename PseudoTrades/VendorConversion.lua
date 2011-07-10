@@ -1,5 +1,5 @@
 
-local vendorConversionTradeID = 100001
+local vendorConversionTradeID = 1000001
 
 do
 	local skillList = {}

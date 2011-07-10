@@ -7,6 +7,19 @@ if not Lib then
 	return -- No Upgrade needed.
 end
 
+local CloseTradeSkill
+
+local maxSkillDepth = 30
+
+if ArmoryTradeSkillFrame then
+	maxSkillDepth = 0
+	CloseTradeSkill = function()
+		ArmoryTradeSkillFrame.closing = nil
+		_G.CloseTradeSkill()
+	end
+else
+	CloseTradeSkill = CloseTradeSkill
+end
 
 
 do
@@ -153,7 +166,7 @@ do
 			spellBit = 0
 
 			if tradeIndex <= #tradeIDList then
-				OnTradeSkillClose()
+				OnTradeSkillClose(frame)
 			else
 				ScanComplete(frame)
 			end
@@ -161,7 +174,7 @@ do
 	end
 
 
-	local tradeSkillDepth = 30
+	local tradeSkillDepth = maxSkillDepth
 
 	local function OnTradeSkillUpdate(frame)
 		if spellBit > 0 and bitMapSizes[tradeIndex] then
@@ -183,7 +196,7 @@ do
 					spellList[tradeIDList[tradeIndex]][spellBit] = recipeID
 				end
 
-				if tradeSkillDepth < 30 then
+				if tradeSkillDepth < maxSkillDepth then
 					tradeSkillDepth = tradeSkillDepth + 1
 					CloseTradeSkill()
 				else
@@ -221,7 +234,7 @@ do
 		framesRegistered = { GetFramesRegisteredForEvent("TRADE_SKILL_SHOW") }
 
 		for k,f in pairs(framesRegistered) do
-			f:UnregisterEvent("TRADE_SKILL_SHOW")
+--			f:UnregisterEvent("TRADE_SKILL_SHOW")
 		end
 
 

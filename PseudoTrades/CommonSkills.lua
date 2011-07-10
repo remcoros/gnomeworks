@@ -560,7 +560,7 @@ do
 	end
 
 	GnomeWorks:RegisterMessageDispatch("AddSpoofedRecipes", function ()
-		local trade,recipeList  = GnomeWorks:AddPseudoTrade(100000,api)
+		local trade,recipeList  = GnomeWorks:AddPseudoTrade(1000000,api)
 
 		trade.priority = 1.25
 

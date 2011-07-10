@@ -1,4 +1,4 @@
-## Interface: 40000
+## Interface: 40200
 ## Title: GnomeWorks
 ## Notes: A replacement tradeskill window
 ## Author: lilsparky
@@ -6,7 +6,6 @@
 ## Version: @project-revision@
 
 ## SavedVariables: GnomeWorksDB
-## OptionalDeps: LibPeriodicTable-3.1
 
 
 ## LoadManagers: AddonLoader
@@ -16,10 +15,6 @@
 #### List of embedded libraries
 #@no-lib-strip@
 Libs\LibStub\LibStub.lua
-Libs\LibPeriodicTable-3.1\LibPeriodicTable-3.1.lua
-#Libs\LibPeriodicTable-3.1\LibPeriodicTable-3.1-Tradeskill\LibPeriodicTable-3.1-Tradeskill.lua
-#Libs\LibPeriodicTable-3.1\LibPeriodicTable-3.1-TradeskillResultMats\LibPeriodicTable-3.1-TradeskillResultMats.lua
-Libs\LibPeriodicTable-3.1\LibPeriodicTable-3.1-TradeskillLevels\LibPeriodicTable-3.1-TradeskillLevels.lua
 Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
 Libs\AceEvent-3.0\AceEvent-3.0.lua
 Libs\AceTimer-3.0\AceTimer-3.0.lua
