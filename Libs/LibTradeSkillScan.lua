@@ -18,7 +18,7 @@ if ArmoryTradeSkillFrame then
 		_G.CloseTradeSkill()
 	end
 else
-	CloseTradeSkill = CloseTradeSkill
+	CloseTradeSkill = _G.CloseTradeSkill
 end
 
 
