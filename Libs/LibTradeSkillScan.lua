@@ -9,7 +9,7 @@ end
 
 local CloseTradeSkill
 
-local maxSkillDepth = 30
+local maxSkillDepth = 0 -- 30
 
 if ArmoryTradeSkillFrame then
 	maxSkillDepth = 0
@@ -234,7 +234,7 @@ do
 		framesRegistered = { GetFramesRegisteredForEvent("TRADE_SKILL_SHOW") }
 
 		for k,f in pairs(framesRegistered) do
---			f:UnregisterEvent("TRADE_SKILL_SHOW")
+			f:UnregisterEvent("TRADE_SKILL_SHOW")
 		end
 
 
