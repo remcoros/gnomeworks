@@ -905,10 +905,10 @@ reserveTime = reserveTime + GetTime() - start
 				if numMade > .1 then
 					local cooldownGroup = GnomeWorks:GetSpellCooldownGroup(recipeID)
 
-					if not cooldownGroup and GnomeWorks:IsSpellKnown(recipeID, player) and not GnomeWorksDB.recipeBlackList[recipeID] then -- and not cooldownUsed[cooldownGroup] then
-						local recursive
+					local results, reagents, tradeID = GnomeWorks:GetRecipeData(recipeID)
 
-						local results, reagents = GnomeWorks:GetRecipeData(recipeID)
+					if not cooldownGroup and GnomeWorks:IsSpellKnown(recipeID, player) and not GnomeWorksDB.recipeBlackList[recipeID] and not GnomeWorksDB.recipeBlackList[tradeID] then -- and not cooldownUsed[cooldownGroup] then
+						local recursive
 
 						if reagents then
 							for reagentID,numNeeded in pairs(reagents) do
@@ -941,7 +941,10 @@ reserveTime = reserveTime + GetTime() - start
 
 			for recipeID,numMade in pairs(source[reagentID]) do
 				if numMade > .1 then
-					if GnomeWorks:IsSpellKnown(recipeID, player) and not GnomeWorksDB.recipeBlackList[recipeID] then
+
+					local results, reagents, tradeID = GnomeWorks:GetRecipeData(recipeID)
+
+					if GnomeWorks:IsSpellKnown(recipeID, player) and not GnomeWorksDB.recipeBlackList[recipeID] and not GnomeWorksDB.recipeBlackList[tradeID] then
 						local cooldownGroup = GnomeWorks:GetSpellCooldownGroup(recipeID)
 
 						if cooldownGroup then

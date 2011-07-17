@@ -31,38 +31,54 @@ do
 			GameTooltip:AddDoubleLine("|cffffffffModifier",bonus)
 		end
 
+		if GnomeWorks:IsTradeSkillDataCurrent(GnomeWorks.player,frame.tradeID) == false then
+			GameTooltip:AddLine(" ")
+			GameTooltip:AddLine("*** Collecting Data ***",1,1,0)
+		end
+
+		if GnomeWorksDB.recipeBlackList[frame.tradeID] then
+			GameTooltip:AddLine(" ")
+			GameTooltip:AddLine("*** Blacklisted ***",1,.1,.1)
+		end
+
 		GameTooltip:AddLine(" ")
 		GameTooltip:AddLine("Shift-Click to Link",.7,.7,.7)
+		GameTooltip:AddLine("Right Click to Blacklist",.7,.7,.7)
 
 		GameTooltip:Show()
 	end
 
 	local function OnClick(frame, button)
-		if frame.tradeLink then
---			local tradeString = string.match(frame.tradeLink, "(trade:%d+:%d+:%d+:[0-9A-F]+:[0-9A-Za-z+/]+)")
---			SetItemRef(tradeString,frame.tradeLink, button)
-			if IsShiftKeyDown() then
-				if (not ChatEdit_InsertLink(frame.tradeLink)) then
-					ChatEdit_GetLastActiveWindow():Show()
-					ChatEdit_InsertLink(frame.tradeLink)
+		if button == "LeftButton" then
+			if frame.tradeLink then
+				if IsShiftKeyDown() then
+					if (not ChatEdit_InsertLink(frame.tradeLink)) then
+						ChatEdit_GetLastActiveWindow():Show()
+						ChatEdit_InsertLink(frame.tradeLink)
+					end
+				else
+					GnomeWorks:OpenTradeLink(frame.tradeLink, GnomeWorks.player)
 				end
 			else
-				GnomeWorks:OpenTradeLink(frame.tradeLink, GnomeWorks.player)
+				if IsShiftKeyDown() then
+					local spellName = GetSpellInfo(frame.tradeID)
+					local _,link = GetSpellLink(frame.tradeID)
+
+	--				link = string.gsub(link,spellName,string.format("%s's Ultimate %s Service",(UnitName("player")),spellName))
+
+					if (not ChatEdit_InsertLink(link) ) then
+						ChatEdit_GetLastActiveWindow():Show()
+						ChatEdit_InsertLink(link)
+					end
+				elseif ((GetTradeSkillLine() == "Mining" and "Smelting") or GetTradeSkillLine()) ~= frame.tradeName or IsTradeSkillLinked() then
+					CastSpellByName(frame.tradeName)
+				end
 			end
 		else
-			if IsShiftKeyDown() then
-				local spellName = GetSpellInfo(frame.tradeID)
-				local _,link = GetSpellLink(frame.tradeID)
-
---				link = string.gsub(link,spellName,string.format("%s's Ultimate %s Service",(UnitName("player")),spellName))
-
-				if (not ChatEdit_InsertLink(link) ) then
-					ChatEdit_GetLastActiveWindow():Show()
-					ChatEdit_InsertLink(link)
-				end
-			elseif ((GetTradeSkillLine() == "Mining" and "Smelting") or GetTradeSkillLine()) ~= frame.tradeName or IsTradeSkillLinked() then
-				CastSpellByName(frame.tradeName)
-			end
+			GnomeWorksDB.recipeBlackList[frame.tradeID] = not GnomeWorksDB.recipeBlackList[frame.tradeID]
+			GnomeWorks:SendMessageDispatch("QueueCountsChanged")
+			OnEnter(frame)
+			GnomeWorks:UpdateTradeButtons(GnomeWorks.player, GnomeWorks.tradeID)
 		end
 
 		if frame.tradeID == GnomeWorks.tradeID then
@@ -103,6 +119,8 @@ do
 			local spellIcon = GnomeWorks:GetTradeIcon(tradeID)
 
 			local button = CreateFrame("CheckButton", "GWTSButton"..i, frame, "ActionButtonTemplate")
+
+			button:RegisterForClicks("AnyUp")
 
 			button:SetAlpha(0.8)
 
@@ -147,6 +165,14 @@ do
 			local links = self:GetTradeLinkList(player)
 
 			for i,button in ipairs(frame.buttons) do
+
+				if GnomeWorksDB.recipeBlackList[button.tradeID] then
+					button:GetNormalTexture():SetGradient("vertical", 1,0,0, 1,0,0)
+				else
+					button:GetNormalTexture():SetGradient("vertical", 1,1,1, 1,1,1)
+				end
+
+
 				if links and links[button.tradeID] then
 					button:Show()
 
@@ -162,9 +188,10 @@ do
 
 
 					if GnomeWorks:IsTradeSkillDataCurrent(player,button.tradeID) == false then
-						button:GetNormalTexture():SetGradient("vertical", 1,0,0,1,0,0)
+--						button:GetNormalTexture():SetGradient("vertical", .5,.5,.5, .5,.5,.5)
+						button:SetAlpha(.25)
 					else
-						button:GetNormalTexture():SetGradient("vertical", 1,1,1,1,1,1)
+						button:SetAlpha(1)
 					end
 
 					button:SetPoint("TOPLEFT", position, 0)
