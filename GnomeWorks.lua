@@ -9,7 +9,7 @@ if not tonumber(VERSION) then
 end
 
 
-GnomeWorks = { plugins = {} }
+GnomeWorks = { plugins = {}, options = {} }
 GnomeWorksDB = {}
 
 
@@ -108,26 +108,26 @@ do
 			insets = { left = 5, right = 5, top = 5, bottom = 4 }
 		}
 
-	local pluginInputBox = CreateFrame("Frame", nil, UIParent)
+	local optionInputBox = CreateFrame("Frame", nil, UIParent)
 
-	pluginInputBox:SetBackdrop(tipBackDrop)
-	pluginInputBox:SetBackdropBorderColor(TOOLTIP_DEFAULT_COLOR.r, TOOLTIP_DEFAULT_COLOR.g, TOOLTIP_DEFAULT_COLOR.b)
-	pluginInputBox:SetBackdropColor(TOOLTIP_DEFAULT_BACKGROUND_COLOR.r, TOOLTIP_DEFAULT_BACKGROUND_COLOR.g, TOOLTIP_DEFAULT_BACKGROUND_COLOR.b)
+	optionInputBox:SetBackdrop(tipBackDrop)
+	optionInputBox:SetBackdropBorderColor(TOOLTIP_DEFAULT_COLOR.r, TOOLTIP_DEFAULT_COLOR.g, TOOLTIP_DEFAULT_COLOR.b)
+	optionInputBox:SetBackdropColor(TOOLTIP_DEFAULT_BACKGROUND_COLOR.r, TOOLTIP_DEFAULT_BACKGROUND_COLOR.g, TOOLTIP_DEFAULT_BACKGROUND_COLOR.b)
 
-	pluginInputBox:SetHeight(40)
-	pluginInputBox:SetWidth(150)
-	pluginInputBox:Hide()
+	optionInputBox:SetHeight(40)
+	optionInputBox:SetWidth(150)
+	optionInputBox:Hide()
 
 	do
-		local label = pluginInputBox:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		local label = optionInputBox:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 		label:SetPoint("TOPLEFT",5,-5)
 		label:SetHeight(13)
 		label:SetPoint("RIGHT",-5,0)
 		label:SetJustifyH("LEFT")
 
-		pluginInputBox.label = label
+		optionInputBox.label = label
 
-		local editBox = CreateFrame("EditBox",nil,pluginInputBox)
+		local editBox = CreateFrame("EditBox",nil,optionInputBox)
 		editBox:SetPoint("BOTTOMLEFT",5,5)
 		editBox:SetHeight(13)
 		editBox:SetPoint("RIGHT",-5,0)
@@ -135,22 +135,22 @@ do
 
 		editBox:SetAutoFocus(true)
 
-		editBox:SetScript("OnEnterPressed",function(f) pluginInputBox:Hide() EditBox_ClearFocus(f) pluginInputBox:SetVariable(f:GetText()) end)
-		editBox:SetScript("OnEscapePressed", function(f) pluginInputBox:Hide() EditBox_ClearFocus(f) end)
+		editBox:SetScript("OnEnterPressed",function(f) optionInputBox:Hide() EditBox_ClearFocus(f) optionInputBox:SetVariable(f:GetText()) end)
+		editBox:SetScript("OnEscapePressed", function(f) optionInputBox:Hide() EditBox_ClearFocus(f) end)
 		editBox:SetScript("OnEditFocusLost", EditBox_ClearHighlight)
 		editBox:SetScript("OnEditFocusGained", EditBox_HighlightText)
 
 		editBox:EnableMouse(true)
 		editBox:SetFontObject("GameFontHighlightSmall")
 
-		pluginInputBox.editBox = editBox
+		optionInputBox.editBox = editBox
 
-		pluginInputBox:SetScript("OnUpdate", function(p)
+		optionInputBox:SetScript("OnUpdate", function(p)
 			UIDropDownMenu_StopCounting(p.button:GetParent())
 		end)
 
 
-		pluginInputBox:SetScript("OnHide", function(p)
+		optionInputBox:SetScript("OnHide", function(p)
 			p:Hide()
 		end)
 	end
@@ -183,29 +183,29 @@ do
 
 
 
-	function pluginInputBox:SetVariable(value)
-		local varTable = pluginInputBox.varTable
+	function optionInputBox:SetVariable(value)
+		local varTable = optionInputBox.varTable
 		varTable.value = value
-		pluginInputBox.plugin:Update()
+		optionInputBox.plugin:Update()
 
 		varTable.menuButton.text = string.format(varTable.format, varTable.value)
-		pluginInputBox.button:SetText(varTable.menuButton.text)
+		optionInputBox.button:SetText(varTable.menuButton.text)
 	end
 
 
 
 	local function DoTextEntry(button, plugin, var)
-		pluginInputBox.label:SetText(plugin.variables[var].label)
-		pluginInputBox.editBox:SetText(plugin.variables[var].value)
-		pluginInputBox:Show()
-		pluginInputBox:SetPoint("TOPLEFT",button,"TOPRIGHT",10,0)
+		optionInputBox.label:SetText(plugin.variables[var].label)
+		optionInputBox.editBox:SetText(plugin.variables[var].value)
+		optionInputBox:Show()
+		optionInputBox:SetPoint("TOPLEFT",button,"TOPRIGHT",10,0)
 
-		pluginInputBox.plugin = plugin
-		pluginInputBox.varTable = plugin.variables[var]
-		pluginInputBox.button = button
+		optionInputBox.plugin = plugin
+		optionInputBox.varTable = plugin.variables[var]
+		optionInputBox.button = button
 
 --		UIDropDownMenu_StopCounting(button:GetParent())
-		pluginInputBox:SetParent(button)
+		optionInputBox:SetParent(button)
 	end
 
 
@@ -285,7 +285,44 @@ do
 
 		return plugin
 	end
+
+
+
+	--[[
+
+		GnomeWorks:RegisterOption(name, initialize)
+
+		name - name of option (eg "guild inventory tracking")
+		initialize - function to call prior to initializing gnomeworks
+
+		returns option table (used for connecting function to option)
+
+		-- yes, this hijacks the plugin code
+	]]
+
+	function GnomeWorks:RegisterOption(name, initialize)
+		local option = {
+			name = name,
+			AddButton = AddButton,
+			AddInput = AddInput,
+			AddMenu = AddMenu,
+			enabled = true,
+			initialize = initialize,
+			menuList = {
+			},
+			variables = {
+			},
+			Update = function() end,
+		}
+
+		GnomeWorks.options[name] = option
+
+		return option
+	end
+
 end
+
+
 
 
 do
@@ -400,7 +437,6 @@ end
 
 
 local defaultConfig = {
-	scrollFrameLineHeight = 15,
 	currentGroup = { self = {}, alt = {} },
 	currentFilter = { self = {}, alt = {} },
 
@@ -421,8 +457,75 @@ local defaultConfig = {
 	collectInventories = { "bank", "mail", "sale", "guildBank", "alt" },
 
 	altGuildAccess = {},
+
+	displayOptions = {
+	},
 }
 
+-- display options
+do
+	local optionList = {
+		scrollFrameLineHeight =  { "Line Height", 15, filter = tonumber },
+		trainingMode = { "Trainable Skills", true, message = "SkillListChanged" },
+		estimateLevel = { "Estimate Level", true,  message = "SkillRankChanged QueueChanged " },
+	}
+
+	for k,v in pairs(optionList) do
+		defaultConfig.displayOptions[k] = v[2]
+	end
+
+
+	local option
+
+
+	local function RegisterDisplayOptions()
+		for k,v in pairs(optionList) do
+			v[2] = GnomeWorksDB.config.displayOptions[k]
+		end
+
+		local function toggle(opt)
+			return function()
+				GnomeWorksDB.config.displayOptions[opt] = not GnomeWorksDB.config.displayOptions[opt]
+
+				if optionList[opt].message then
+					GnomeWorks:SendMessageDispatch(optionList[opt].message)
+				end
+			end
+		end
+
+
+		for k,opt in pairs(optionList) do
+
+			if type(opt[2]) == "boolean" then
+				local button = option:AddButton(opt[1], toggle(k))
+
+				button.checked = function() return GnomeWorksDB.config.displayOptions[k] end
+
+				button.keepShownOnClick = 1
+			else
+				option.variables[k] = { value = opt[2], label = opt[1]..": (reload)", format = opt[1].." %s", opt = opt }
+
+				local button = option:AddInput(k)
+
+				button.keepShownOnClick = 1
+			end
+		end
+
+		return true
+	end
+
+	option = GnomeWorks:RegisterOption("Display Options", RegisterDisplayOptions)
+
+	option.Update = function()
+		for k,v in pairs(option.variables) do
+			if v.opt.filter then
+				GnomeWorksDB.config.displayOptions[k] = v.opt.filter(v.value)
+			else
+				GnomeWorksDB.config.displayOptions[k] = v.value
+			end
+		end
+	end
+end
 
 
 
@@ -518,9 +621,7 @@ do
 
 		if LibStub then
 			GnomeWorks.libPT = LibStub:GetLibrary("LibPeriodicTable-3.1", true)
-
 		end
-
 
 
 		local function DeepCopy(src,dst)
@@ -909,10 +1010,21 @@ do
 			GnomeWorks:RegisterEvent("GUILD_RECIPE_KNOWN_BY_MEMBERS")
 
 --			GnomeWorks:RegisterEvent("GUILD_ROSTER_UPDATE")
+			for name,option in pairs(GnomeWorks.options) do
+--	print("initializing option",name)
+				local status, returnValue = pcall(option.initialize, option)
+				if status then
+					option.loaded = returnValue
+				else
+					GnomeWorks:warning(name,"could not be initialized")
+					GnomeWorks:warning(returnValue)
+				end
+			end
+
 
 			for name,plugin in pairs(GnomeWorks.plugins) do
-	--print("initializing",name)
-				local status, returnValue = pcall(plugin.initialize)
+--	print("initializing plugin",name)
+				local status, returnValue = pcall(plugin.initialize, plugin)
 				if status then
 					plugin.loaded = returnValue
 				else

@@ -656,7 +656,7 @@ do
 
 		reagentFrame = CreateFrame("Frame",nil,parentFrame)
 		reagentFrame:SetPoint("BOTTOM",0,20)
-		reagentFrame:SetPoint("TOP", detailFrame, "TOP", 0, 15 - GnomeWorksDB.config.scrollFrameLineHeight)
+		reagentFrame:SetPoint("TOP", detailFrame, "TOP", 0, 15 - GnomeWorksDB.config.displayOptions.scrollFrameLineHeight)
 		reagentFrame:SetPoint("RIGHT", parentFrame, -20,0)
 		reagentFrame:SetPoint("LEFT", detailFrame, "RIGHT", 5,0)
 

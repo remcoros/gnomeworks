@@ -665,7 +665,9 @@ local start = GetTime()
 CalculateQueueCostsTime = CalculateQueueCostsTime + GetTime() - start
 
 local start = GetTime()
-					CalculateQueueSkillups(player, entry, GnomeWorks.data.skillUpRanks)
+					if GnomeWorksDB.config.displayOptions.estimateLevel then
+						CalculateQueueSkillups(player, entry, GnomeWorks.data.skillUpRanks)
+					end
 CalculateQueueSkillUpsTime = CalculateQueueSkillUpsTime + GetTime() - start
 
 --					table.sort(entry.subGroup.entries, OptimalPriceQueueSort)

@@ -988,7 +988,7 @@ do
 
 --		local st = LibScrollingTable:CreateST(columnHeaders,rows,nil,nil,parentFrame)
 
-		local lineHeight = GnomeWorksDB.config.scrollFrameLineHeight or 15
+		local lineHeight = GnomeWorksDB.config.displayOptions.scrollFrameLineHeight or 15
 
 		local sf = libScrollKit:Create(parentFrame, lineHeight)
 

@@ -23,7 +23,7 @@ local LARGE_NUMBER = 1000000
 
 -- guild toggle options
 do
-	local plugin
+	local option
 
 	local function RegisterAccessToggle()
 
@@ -61,7 +61,7 @@ do
 			for guildName,inv in pairs(GnomeWorks.data.guildInventory) do
 				guilds = guilds + 1
 
-				local button = plugin:AddButton(guildName, toggle(guildName))
+				local button = option:AddButton(guildName, toggle(guildName))
 				button.checked = 	function()
 										if not GnomeWorksDB.config.altGuildAccess[guildName] then
 											return false
@@ -93,7 +93,7 @@ do
 			end
 
 			if guilds == 0 then
-				plugin:AddButton("No Guild Inventories Found")
+				option:AddButton("No Guild Inventories Found")
 			end
 		end
 
@@ -104,7 +104,7 @@ do
 
 
 
-	plugin = GnomeWorks:RegisterPlugin("Alt GuildBank Access", RegisterAccessToggle)
+	option = GnomeWorks:RegisterOption("Alt GuildBank Access", RegisterAccessToggle)
 end
 
 
@@ -185,7 +185,8 @@ do
 		GnomeWorks:BuildInventoryHeirarchy()
 	end
 ]]
-	local plugin
+
+	local option
 
 	local function RegisterInventoryToggle()
 
@@ -200,7 +201,7 @@ do
 
 
 			for k,inv in ipairs(GnomeWorks.system.inventoryIndex) do
-				local button = plugin:AddButton(GnomeWorks.system.inventoryColors[inv]..inv, toggle(inv))
+				local button = option:AddButton(GnomeWorks.system.inventoryColors[inv]..inv, toggle(inv))
 				button.checked = function() return GnomeWorksDB.config.inventoryTracked[inv] end
 
 				button.keepShownOnClick = 1
@@ -212,9 +213,7 @@ do
 		return true
 	end
 
-
-
-	plugin = GnomeWorks:RegisterPlugin("Toggle Inventories", RegisterInventoryToggle)
+	option = GnomeWorks:RegisterOption("Toggle Inventories", RegisterInventoryToggle)
 end
 
 

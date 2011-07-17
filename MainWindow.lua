@@ -140,7 +140,7 @@ do
 
 
 	local playerSelectMenu
-	local pluginMenu
+	local pluginMenu, optionsMenu
 
 
 	local columnHeaders
@@ -520,6 +520,7 @@ do
 			enabled = false,
 			func = function(entry)
 				local difficulty = GnomeWorks:GetRecipeDifficulty(entry.recipeID)
+
 				if difficulty > 4 then
 					return false
 				else
@@ -538,6 +539,7 @@ do
 			enabled = false,
 			func = function(entry)
 				local difficulty = GnomeWorks:GetRecipeDifficulty(entry.recipeID)
+
 				if difficulty > 3 and difficulty < 5 then
 					return false
 				else
@@ -555,6 +557,7 @@ do
 			coords = {0,1,.5,.75},
 			func = function(entry)
 				local difficulty = GnomeWorks:GetRecipeDifficulty(entry.recipeID)
+
 				if difficulty > 2 and difficulty < 5 then
 					return false
 				else
@@ -573,6 +576,7 @@ do
 			enabled = false,
 			func = function(entry)
 				local difficulty = GnomeWorks:GetRecipeDifficulty(entry.recipeID)
+
 				if difficulty > 1 and difficulty < 5 then
 					return false
 				else
@@ -1231,7 +1235,7 @@ do
 
 		skillFrame = CreateFrame("Frame",nil,frame)
 		skillFrame:SetPoint("BOTTOMLEFT",20,20)
-		skillFrame:SetPoint("TOP", frame, 0, -70 - GnomeWorksDB.config.scrollFrameLineHeight)
+		skillFrame:SetPoint("TOP", frame, 0, -70 - GnomeWorksDB.config.displayOptions.scrollFrameLineHeight)
 		skillFrame:SetPoint("RIGHT", frame, -20,0)
 
 		sf = GnomeWorks:CreateScrollingTable(skillFrame, ScrollPaneBackdrop, columnHeaders, ResizeSkillFrame)
@@ -1375,6 +1379,14 @@ do
 
 
 		sf.IsEntryFiltered = function(self, entry)
+			if not GnomeWorksDB.config.displayOptions.trainingMode then
+				local difficulty = GnomeWorks:GetRecipeDifficulty(entry.recipeID)
+
+				if difficulty > 4 then
+					return true
+				end
+			end
+
 			for k,filter in pairs(activeFilterList) do
 				if filter.enabled then
 					if filter.func(entry, filter.arg) then
@@ -2217,7 +2229,78 @@ do
 		end
 
 
+		local ShowOptions do
+			local function InitMenu(menuFrame, level, menuList)
+				if (level == 1) then  -- options
+					local title = {}
+					local button = {}
+
+					title.text = "Options"
+					title.fontObject = "GameFontNormal"
+					title.notCheckable = true
+
+					UIDropDownMenu_AddButton(title)
+
+					local count = 0
+
+					for name,data in pairs(GnomeWorks.options) do
+						if data.loaded then
+							button.text = name
+							button.hasArrow = #data.menuList>0
+							button.menuList = data.menuList
+							button.disabled = false
+							button.notCheckable = true
+
+							UIDropDownMenu_AddButton(button)
+							count = count + 1
+						end
+					end
+
+					if count == 0 then
+						button.text = "No Options Found"
+						button.disabled = true
+						button.notCheckable = true
+
+						UIDropDownMenu_AddButton(button)
+					end
+				elseif (level or 0) > 1 then
+--					local menuList = UIDROPDOWNMENU_MENU_VALUE
+
+					if type(menuList) == "table" then
+						for index = 1, #menuList do
+							local button = menuList[index]
+							if type(button) == "table" then
+								if (button.text) then
+									button.index = index
+									button.value = button.menuList
+									UIDropDownMenu_AddButton( button, level )
+								end
+							end
+						end
+					elseif type(menuList) == "function" then		-- if menuList is a function, then call it to add buttons
+						menuList(menuFrame, level)
+					end
+
+--					for index, button in ipairs(UIDROPDOWNMENU_MENU_VALUE) do
+--						UIDropDownMenu_AddButton(button, level)
+--					end
+				end
+			end
+
+			function ShowOptions(frame)
+				if not optionsMenu then
+					optionsMenu = CreateFrame("Frame", "GWOptionMenu", UIParent, "UIDropDownMenuTemplate")
+				end
+
+				UIDropDownMenu_Initialize(optionsMenu, InitMenu, "MENU")
+				ToggleDropDownMenu(1, nil, optionsMenu, frame, 0, 0)
+			end
+		end
+
+
 		local function ToggleLayoutMode()
+			CloseDropDownMenus()
+
 			layoutMode = not layoutMode
 
 			for k,f in ipairs(GnomeWorks.scrollFrameList) do
@@ -2229,15 +2312,16 @@ do
 			end
 		end
 
-
+		local b = GnomeWorks.options["Display Options"]:AddButton("Edit Layout", ToggleLayoutMode)
+		b.notCheckable = true
 
 		local buttons = {}
 
 
 		local buttonConfig = {
 			{ text = "Back", operation = PopRecipe, width = 50 },
-			{ text = "Adjust Layout", operation = ToggleLayoutMode, width = 100 },
-			{ text = "Plugins", operation = ShowPlugins, width = 50 },
+			{ text = "Options", operation = ShowOptions, width = 60 },
+			{ text = "Plugins", operation = ShowPlugins, width = 60 },
 		}
 
 

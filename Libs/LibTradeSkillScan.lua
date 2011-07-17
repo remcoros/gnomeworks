@@ -348,22 +348,24 @@ do
 		local b = 1
 		local bitmap = ""
 
-		for i=1,#data do
-			if mask[data[i]] == true then
-				v = v + b
+		if data then
+			for i=1,#data do
+				if mask[data[i]] == true then
+					v = v + b
+				end
+
+				b = b * 2
+
+				if b == 64 then
+					bitmap = bitmap .. encodedByte[v+1]
+					v = 0
+					b = 1
+				end
 			end
 
-			b = b * 2
-
-			if b == 64 then
+			if b>1 then
 				bitmap = bitmap .. encodedByte[v+1]
-				v = 0
-				b = 1
 			end
-		end
-
-		if b>1 then
-			bitmap = bitmap .. encodedByte[v+1]
 		end
 
 		return bitmap
