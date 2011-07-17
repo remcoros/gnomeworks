@@ -18,6 +18,7 @@ do
 				[2550] = {
 					GourmetNorthrend = true,
 					GourmetOutland = true
+					GourmetCataclysm = true,
 				}
 			}
 
@@ -166,46 +167,7 @@ do
 		end
 
 		-- ---------- End addon support section. ----------
---[[
-		if (ExamineTradeSkillUI == nil) then
 
-			function ExamineTradeSkillUI()
-
-			-- Hide all icons:
-			for btn, icon in pairs(icons) do
-				icon:Hide()
-				highlights[icon]:Hide()
-				icon.name = nil
-			end
-
-
-			local tradeName = LBI[GetTradeSkillLine()]
-			if (TradeSkillLookup[tradeName]) then
-			  -- Find icons that should be displayed:
-				local skillOffset = FauxScrollFrame_GetOffset(TradeSkillListScrollFrame)
-				local skillName, skillType
-
-				for i=1,TRADE_SKILLS_DISPLAYED do
-					skillName, skillType = GetTradeSkillInfo(i + skillOffset)
-					if (skillName and skillType ~= "header" and TradeSkillCheck(tradeName, skillName)) then
-						local icon = GetIcon( _G["TradeSkillSkill"..i] )
-
-						icon:Show()
-						highlights[icon]:Show()
-						icon.name = skillName
-					end
-				end
-			end
-
-			-- Needed for when the button's contents change while the cursor is over it:
-			if (currentButton and not skillButtonOnEnter(currentButton, nil, true)) then
-				GameTooltip:Hide()  -- Hide tooltip if skillButtonOnEnter didn't show it.
-			end
-		  end
-
-		  hooksecurefunc("TradeSkillFrame_Update", ExamineTradeSkillUI)
-		end
-]]
 
 		local function UpdateData(scrollFrame, entry)
 			local results, reagents, tradeID = GnomeWorks:GetRecipeData(entry.recipeID)
@@ -263,34 +225,8 @@ do
 
 							return true
 						end,
-
---						menuList = SubMenu,
 					},
 				}
-
---[[
-				for flag,name in pairs(sourceFlags) do
-					local button = {
-						text = name,
-						func = function()
-							if not ARLSourceFlags[flag] then
-								ARLSourceFlags[flag] = true
-							else
-								ARLSourceFlags[flag] = nil
-							end
-
-							GWScrollFrame:Refresh()
-						end,
-						checked = function() return ARLSourceFlags[flag] end
-					}
-
-					ARLSourceFlags[flag] = true
-
-					sourceFlagBitValue[flag] = math.pow(2,flag-1)
-
-					table.insert(SubMenu, button)
-				end
-]]
 
 				GnomeWorks:CreateFilterMenu(FilterParameters, FilterMenu, GWScrollFrame.columnHeaders[2])
 
