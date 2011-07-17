@@ -17,7 +17,7 @@ do
 			local TradeSkillAch = {
 				[2550] = {
 					GourmetNorthrend = true,
-					GourmetOutland = true
+					GourmetOutland = true,
 					GourmetCataclysm = true,
 				}
 			}
