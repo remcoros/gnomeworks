@@ -467,7 +467,7 @@ do
 	local optionList = {
 		scrollFrameLineHeight =  { "Line Height", 15, filter = tonumber },
 		trainingMode = { "Trainable Skills", true, message = "SkillListChanged" },
-		estimateLevel = { "Estimate Level", true,  message = "SkillRankChanged QueueCountsChanged " },
+		estimateLevel = { "Estimate Level", true,  message = "SkillRankChanged QueueChanged" },
 	}
 
 	for k,v in pairs(optionList) do

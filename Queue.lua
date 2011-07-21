@@ -241,7 +241,7 @@ do
 						GnomeWorks:ReserveItemForQueue(player, itemID, -numMade * reagent.count)
 					end
 
-					if tradeID == 100001 then					-- vendor conversion
+					if tradeID == 1000001 then					-- vendor conversion
 						local vendorQueue = shoppingQueueData.vendor
 						vendorQueue[itemID] = (vendorQueue[itemID] or 0) + reagent.count
 
@@ -414,7 +414,7 @@ do
 						GnomeWorks:ReserveItemForQueue(player, itemID, -numMade * reagent.count)
 					end
 
-					if tradeID == 100001 then					-- vendor conversion
+					if tradeID == 1000001 then					-- vendor conversion
 						local vendorQueue = shoppingQueueData.vendor
 						vendorQueue[itemID] = (vendorQueue[itemID] or 0) + reagent.count
 
@@ -1146,7 +1146,7 @@ reserveTime = reserveTime + GetTime() - start
 
 					local vendorQueue = shoppingQueueData.vendor
 
-					if tradeID == 100001 then					-- vendor conversion
+					if tradeID == 1000001 then					-- vendor conversion
 						vendorQueue[entry.itemID] = (vendorQueue[entry.itemID] or 0) + entry.count
 
 						if vendorQueue[entry.itemID] == 0 then
