@@ -255,7 +255,9 @@ do
 			minSize = stackSize
 		end
 
-		if GetItemCount(itemID)<minSize then
+		local onHand = GetItemCount(itemID)
+
+		if onHand < minSize then
 			return
 		end
 
@@ -274,11 +276,12 @@ do
 				end
 
 				if itemID == bagItemID then
-
 					local _, inBag, locked  = GetContainerItemInfo(bag, i)
 
+					onHand = onHand - inBag
+
 					if not targetSlot then
-						if not locked and inBag <= minSize then
+						if not locked and inBag < minSize then
 							targetBag = bag
 							targetSlot = i
 							targetSize = inBag
@@ -293,7 +296,9 @@ do
 
 							targetSize = targetSize + numMoved
 
-							return
+							if onHand == 0 or targetSize > minSize then
+								return
+							end
 						end
 					end
 				end

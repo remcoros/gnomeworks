@@ -1459,8 +1459,14 @@ local start = GetTime()
 --					GnomeWorks:print(GnomeWorks:GetTradeName(tradeID),"isn't functional yet.")
 					local pseudoTrade = GnomeWorks.data.pseudoTradeData[tradeID]
 
+
 					if pseudoTrade and pseudoTrade.DoTradeSkill then
 						doTradeEntry = entry
+
+
+						if not GnomeWorks.MainWindow:IsVisible() then
+							GnomeWorks.hideMainWindow = true
+             			end
 
 						local result = pseudoTrade.DoTradeSkill(entry.recipeID, entry.count)
 

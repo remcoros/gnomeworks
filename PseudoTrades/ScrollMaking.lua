@@ -527,6 +527,8 @@ do
 	api.RecordKnownSpells = function(player)
 		local knownSpells = GnomeWorks.data.knownSpells[player]
 
+		if not knownSpells then return end
+
 		for spellID in pairs(knownSpells) do
 			if scrollIDs[spellID] and knownSpells[spellID] then
 				local recipeID = ScrollMakingSpellID(scrollIDs[spellID])

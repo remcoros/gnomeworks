@@ -1568,9 +1568,9 @@ do
 
 
 	function GnomeWorks:DoTradeSkillUpdate()
---print("DO UPDATE")
+		self.updateTimer = nil
+
 		if frame:IsVisible() then
---print("SCAN TRADE")
 			self:ScanTrade()
 		end
 	end
@@ -1726,7 +1726,8 @@ do
 			self:CancelTimer(self.showTimer, true)
 		end
 
-		self.showTimer = self:ScheduleTimer("SendMessageDispatch",.5,"SkillListChanged")
+		self.showTimer = self:ScheduleTimer(function() self.showTimer = nil GnomeWorks:SendMessageDispatch("SkillListChanged") end, .5)
+
 --		self:SendMessageDispatch("SkillListChanged")
 --		sf:Refresh()
 	end

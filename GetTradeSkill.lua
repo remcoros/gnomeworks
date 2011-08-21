@@ -150,7 +150,7 @@ do
 	function OverRide.GetTradeSkillInfo(index)
 		if index<0 then
 			local rank,maxRank,estimatedRank = GnomeWorks:GetTradeSkillRank()
-			rank = estimatedRank or rank
+			rank = estimatedRank or rank or 0
 
 			local spellName = GetSpellInfo(-index)
 
