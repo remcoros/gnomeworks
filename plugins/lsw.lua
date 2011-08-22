@@ -503,11 +503,13 @@ do
 					if GnomeWorks:VendorSellsItem(entry.itemID) then
 						entry.cost = (LSW.vendorCost(entry.itemID) or 0) * entry.count
 
+--[[
 						local name,_,_,_,_,_,_,_,_,tex,sellCost = GetItemInfo(entry.itemID)
 
 						if sellCost then
 							entry.cost = sellCost*4 * (entry.count)
 						end
+]]
 					else
 						entry.cost = (LSW.auctionCost(entry.itemID) or 0) * (entry.count)
 					end
