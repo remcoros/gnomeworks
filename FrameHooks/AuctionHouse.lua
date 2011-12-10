@@ -89,7 +89,7 @@ do
 
 
 		for i=1,num do
-			local name, texture, count, _, _, _, _, _, buyOut, _, _, seller = GetAuctionItemInfo("list",i)
+			local name, texture, count, _, _, _, _, _, _, buyOut, _, _, seller = GetAuctionItemInfo("list",i)
 
 			if name == reagentName and count == entry.count and buyOut == entry.buyOut then
 				return i
@@ -786,7 +786,7 @@ do
 		local numPages = math.ceil(totalNum / 50)
 
 		for i=1,num do
-			local name, texture, count, _, _, _, _, _, buyOut, _, _, seller = GetAuctionItemInfo("list",i)
+			local name, texture, count, _, _, _, _, _, _, buyOut, _, _, seller = GetAuctionItemInfo("list",i)
 
 
 			if name == reagentName and buyOut>0 and reagentID then
@@ -1022,7 +1022,7 @@ do
 
 
 		for i=1,numOwned do
-			local name, texture, count, quality, canUse, level, minBid, minIncrement, buyoutPrice, bidAmount, highBidder, owner, saleStatus = GetAuctionItemInfo("owner", i)
+			local name, texture, count, quality, canUse, level, _, minBid, minIncrement, buyoutPrice, bidAmount, highBidder, owner, saleStatus = GetAuctionItemInfo("owner", i)
 
 			if saleStatus ~= 1 then
 				local link = GetAuctionItemLink("owner",i)
