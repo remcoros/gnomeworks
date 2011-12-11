@@ -1022,7 +1022,7 @@ do
 
 
 		for i=1,numOwned do
-			local name, texture, count, quality, canUse, level, _, minBid, minIncrement, buyoutPrice, bidAmount, highBidder, owner, saleStatus = GetAuctionItemInfo("owner", i)
+			local name, texture, count, quality, canUse, level, levelColHeader, minBid, minIncrement, buyoutPrice, bidAmount, highBidder, owner, saleStatus = GetAuctionItemInfo("owner", i)
 
 			if saleStatus ~= 1 then
 				local link = GetAuctionItemLink("owner",i)
