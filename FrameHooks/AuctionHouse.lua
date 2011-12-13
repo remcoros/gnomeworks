@@ -1,9 +1,34 @@
 
 
+local _G = _G
+
+local UnitName = UnitName
+local string,math,table = 
+      string,math,table
+
+local debugprofilestop = debugprofilestop
+
+local function GetTime()
+	return debugprofilestop()/1000
+end
+
+local print,next,ipairs,pairs,tonumber = 
+      print,next,ipairs,pairs,tonumber
+
+local GnomeWorks = GnomeWorks
+
+local NUM_AUCTION_ITEMS_PER_PAGE = NUM_AUCTION_ITEMS_PER_PAGE
+
+--GLOBALS: CreateFrame LoadAddOn hooksecurefunc
+--GLOBALS: GetItemInfo GetItemIcon
+--GLOBALS: CanSendAuctionQuery QueryAuctionItems GetNumAuctionItems GetAuctionItemInfo GetAuctionItemLink
+--GLOBALS: SortAuctionItems IsAuctionSortReversed PlaceAuctionBid GetOwnerAuctionItems
+--GLOBALS: AuctionFrame AuctionFrameTopLeft AuctionFrameTop AuctionFrameTopRight AuctionFrameBotLeft AuctionFrameBot AuctionFrameBotRight
+--GLOBALS: PanelTemplates_TabResize PanelTemplates_SetNumTabs PanelTemplates_EnableTab
+--GLOBALS: GameTooltip
 
 
-
-
+--GLOBALS: GnomeWorksDB
 
 do
 	local reagentID, page
@@ -166,7 +191,7 @@ do
 
 			PlaceAuctionBid("list", found, entry.buyOut)
 
-			PurchaseIsPending = true
+			purchaseIsPending = true
 
 			GnomeWorks:ExecuteOnEvent("UPDATE_PENDING_MAIL", ProcessPurchase, entry, 2.0, ReportFailedPurchase)
 		else
@@ -535,14 +560,16 @@ do
 
 
 
-		local originalAuctionFrameTab_OnClick = AuctionFrameTab_OnClick
+		-- local originalAuctionFrameTab_OnClick = AuctionFrameTab_OnClick
 
-		function AuctionFrameTab_OnClick(self, ...)
+		-- function AuctionFrameTab_OnClick(self, ...)
+		hooksecurefunc("AuctionFrameTab_OnClick", function(self,...)
+
 			local index = self:GetID()
 
 			frame:Hide()
 
-			originalAuctionFrameTab_OnClick(self, ...)
+			-- originalAuctionFrameTab_OnClick(self, ...)
 
 			if index == GWAuctionTabID then
 				frame:Show()
@@ -553,7 +580,8 @@ do
 				AuctionFrameBot:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Auction-Bot")
 				AuctionFrameBotRight:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-BotRight")
 			end
-		end
+		end)
+		
 
 
 		BuildScrollingBuyFrame(buyFrame)
@@ -572,7 +600,7 @@ do
 
 		button:EnableMouse(true)
 
-		GWAuctionItemIconNormalTexture:SetAllPoints(button)			-- for some reason they added an offset in the template in 4.0.1
+		_G.GWAuctionItemIconNormalTexture:SetAllPoints(button)			-- for some reason they added an offset in the template in 4.0.1
 
 		button:SetScript("OnEnter", function(b)
 			GameTooltip:SetOwner(b,"ANCHOR_NONE")
@@ -701,7 +729,7 @@ do
 			reagentFrame.sf:Refresh()
 
 			if not frame:IsVisible() then
-				AuctionFrameTab_OnClick(auctionTab, "LeftButton", false)
+				_G.AuctionFrameTab_OnClick(auctionTab, "LeftButton", false)
 			end
 
 --			frame:Show()
@@ -845,7 +873,7 @@ do
 
 
 	function GnomeWorks:BeginReagentScan(queueData)
-		player = UnitName("player")
+		local player = UnitName("player")
 
 		SortAuctionItems("list", "buyout")
 
@@ -996,7 +1024,7 @@ do
 	local ownedPage = 0
 	local ownScanRunning
 
-	function ScanOwnedAuctions()
+	local function ScanOwnedAuctions()
 		local player = UnitName("player")
 		local numOwned,totalItems = GetNumAuctionItems("owner")
 		local invData = GnomeWorks.data.inventoryData[player].sale
@@ -1138,7 +1166,7 @@ do
 		return 10000000
 	end
 
-	function ReportTimeInAuctionCost()
+	function GnomeWorks:ReportTimeInAuctionCost()
 		print(timeInAuctionCost)
 	end
 end
