@@ -349,6 +349,7 @@ do
 			auction = 	"|cffb0b000",		-- gold
 			mail = 		"|cff60fff0",		-- teal
 			sale = 		"|cff30b080",		-- dark green
+			missing = 	"|cffff0000",		-- red
 		},
 
 		inventoryFormat = {},
@@ -741,6 +742,10 @@ do
 
 			if not shoppingQueueData.auction then
 				shoppingQueueData.auction = {}
+			end
+
+			if not shoppingQueueData.missing then
+				shoppingQueueData.missing = {}
 			end
 		end
 

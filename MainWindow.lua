@@ -1595,7 +1595,7 @@ do
 				local recipeID = GnomeWorks.selectedEntry.recipeID
 
 				if recipeID then
-					GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() GnomeWorks:DoRecipeSelection(recipeID) return true end, "SelectRecipe")			-- return true = fire once
+--					GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() GnomeWorks:DoRecipeSelection(recipeID) return true end, "SelectRecipe")			-- return true = fire once
 				end
 			end
 
@@ -1638,6 +1638,7 @@ do
 			end
 
 			local player, tradeID, label, groupName = self:RecipeGroupValidate(player, tradeID, groupLabel or "By Category", group)
+--print( player, tradeID, label, groupName)
 
 			local group = self:RecipeGroupFind(player, tradeID, label, groupName)
 

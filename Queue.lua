@@ -493,6 +493,35 @@ do
 	end
 
 
+	local function CalculateTotalReagents(player, entry, dataTable)
+
+		if entry.subGroup then
+			local count = entry.count
+			local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,player)
+
+			for itemID, numNeeded in pairs(reagents) do
+				dataTable[itemID] = (dataTable[itemID] or 0) + (numNeeded*entry.count - entry.reserved[itemID])
+			end
+
+			local shoppingQueueData = GnomeWorks.data.shoppingQueueData[player]
+
+
+--			for k,reagent in ipairs(entry.subGroup.entries) do
+			for k=#entry.subGroup.entries,1,-1 do
+				local reagent = entry.subGroup.entries[k]
+
+				local itemID = reagent.itemID
+
+				if entry.count>0 then
+					if reagent.command == "create" then
+						CalculateTotalReagents(player, reagent, dataTable)
+					end
+				end
+			end
+		end
+	end
+
+
 	local function CalculateQueueCosts(player, entry)
 		if entry.subGroup then
 			local count = entry.count
@@ -641,6 +670,7 @@ do
 
 		if queue then
 			queue.reagentTree = table.wipe(queue.reagentTree or {})
+			queue.totalReagents = table.wipe(queue.totalReagents or {})
 
 			for k,entry in ipairs(queue) do
 				entry.parent = queue
@@ -658,6 +688,8 @@ AdjustCountsTime = AdjustCountsTime + GetTime() - start
 						queue.reagentTree[reagentID] = (queue.reagentTree[reagentID] or 0) + numNeeded
 					end
 
+
+					CalculateTotalReagents(player,entry,queue.totalReagents)
 
 --					PreventOverBuy(player, entry)
 local start = GetTime()

@@ -549,8 +549,13 @@ DebugSpam("done parsing skill list")
 
 
 	function GnomeWorks:DoRecipeSelection(recipeID)
+--print("DoRecipeSelection",GnomeWorks:GetRecipeName(recipeID))
 		if not recipeID then
-			return
+			if GnomeWorks.selectedEntry then
+				recipeID = GnomeWorks.selectedEntry.recipeID
+			else
+				return
+			end
 		end
 
 		local skillIndex = GnomeWorks:FindRecipeSkillIndex(recipeID)
@@ -571,6 +576,8 @@ DebugSpam("done parsing skill list")
 
 
 	function GnomeWorks:SelectRecipe(recipeID)
+--print("SelectRecipe",GnomeWorks:GetRecipeName(recipeID))
+
 		if not recipeID then return end
 
 		if type(recipeID) == "table" then
@@ -581,7 +588,8 @@ DebugSpam("done parsing skill list")
 		local _,_,tradeID = GnomeWorks:GetRecipeData(recipeID)
 
 		if tradeID ~= self.tradeID then
-			GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() GnomeWorks:DoRecipeSelection(recipeID) return true end, "SelectRecipe")			-- return true = fire once
+--			GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() GnomeWorks:DoRecipeSelection(recipeID) return true end, "SelectRecipe")			-- return true = fire once
+--			GnomeWorks:RegisterMessageDispatch("TradeScanComplete", function() GnomeWorks:DoRecipeSelection() return true end, "SelectRecipe")			-- return true = fire once
 
 			if player == (UnitName("player")) and not pseudoTrades[tradeID] then
 				if tradeID then

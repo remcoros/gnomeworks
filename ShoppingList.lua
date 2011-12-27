@@ -184,7 +184,10 @@ do
 
 	function GnomeWorks:ShoppingListUpdate(player)
 		if sf then
-			player = player or self.player
+			player = player or self.queuePlayer
+
+			queueData = self.data.queueData[player]
+
 
 			if self.data.playerData[player] then
 				for k,queue in pairs(queueList) do
@@ -204,7 +207,29 @@ do
 
 					local shoppingList = self.data.shoppingQueueData[player][queue]
 
-					if shoppingList then
+
+					if queue == "missing" then
+						local totalCost = 0
+
+						for itemID, count in pairs(queueData.totalReagents) do
+							local reagentCost = 0
+
+							if count and count > 0 then
+								itemCount = itemCount + 1
+
+								if data[itemCount] then
+									data[itemCount].itemID = itemID
+									data[itemCount].count = count
+									data[itemCount].index = itemCount
+									data[itemCount].cost = reagentCost
+								else
+									data[itemCount] = { itemID = itemID, count = count, index = itemCount, color = inventoryColors[queue], source = queue, cost = reagentCost }
+								end
+							end
+						end
+
+						sf.data.entries[k].cost = totalCost
+					elseif shoppingList then
 						local totalCost = 0
 
 						for itemID,count in pairs(shoppingList) do
