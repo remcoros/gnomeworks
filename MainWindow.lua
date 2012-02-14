@@ -168,18 +168,19 @@ do
 
 	local function filterText(entry, textFilter)
 		if textFilter and textFilter ~= "" then
-
 			if entry.recipeID then
 				local recipeID = entry.recipeID
 
 				if recipeID > 0 then
 					if not tooltipRecipeCache[recipeID] then
-						local tipLines = tooltipScanner:NumLines()
-
-						tooltipRecipeCache[recipeID] = tipLines
 
 						tooltipScanner:SetOwner(frame, "ANCHOR_NONE")
 						tooltipScanner:SetHyperlink("spell:"..entry.recipeID)
+						local tipLines = tooltipScanner:NumLines()
+						if tipLines<1 then
+							return false -- uncached recipe, show it for now!
+						end
+						tooltipRecipeCache[recipeID] = tipLines
 
 						for i=#tooltipRecipeCacheLeft,tipLines do
 							tooltipRecipeCacheLeft[i] = {}
@@ -207,7 +208,6 @@ do
 								found = true
 								break
 							end
-
 							if tooltipRecipeCacheRight[i][recipeID] and string.find(tooltipRecipeCacheRight[i][recipeID], w, 1, true) then
 								found = true
 								break
