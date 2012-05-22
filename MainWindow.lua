@@ -1328,7 +1328,9 @@ do
 
 
 		local function PasteEntries(scrollFrame)
-			if not GnomeWorks:RecipeGroupIsLocked() and scrollFrame.copyBuffer then
+			if not scrollFrame.copyBuffer then
+				print("GnomeWorks: Nothing to paste!")
+			elseif not GnomeWorks:RecipeGroupIsLocked()  then
 				local entry
 
 				for i=1,scrollFrame.numData do
@@ -1336,6 +1338,11 @@ do
 						entry = scrollFrame.dataMap[i]
 						break
 					end
+				end
+				
+				if not entry then
+					print("GnomeWorks: Select something to paste after. Hint: Ctrl+N for a new group!")
+					return
 				end
 
 				local parentGroup = entry.subGroup or entry.parent
