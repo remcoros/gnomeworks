@@ -698,11 +698,11 @@ do
 
 
 	local function ScrollFrameEventHandler(scrollFrame, event, ...)
-		if event == "MODIFIER_STATE_CHANGED" and MouseIsOver(scrollFrame) then
+		if event == "MODIFIER_STATE_CHANGED" then
 			local key, state = ...
 
 			if key == "LCTRL" or key == "RCTRL" then
-				if state == 1 and scrollFrame.keyboardEnabled then
+				if state == 1 and scrollFrame.keyboardEnabled and MouseIsOver(scrollFrame) then
 					scrollFrame:EnableKeyboard(scrollFrame.keyboardEnabled)
 				else
 					scrollFrame:EnableKeyboard(false)
