@@ -329,17 +329,6 @@ do
 	GnomeWorks.system = {
 		inventoryIndex = { "bag", "vendor", "bank", "mail", "sale", "guildBank", "alt" },
 
-		inventoryColorBlindTag = {
-			bag = "",
-			vendor = "v",
-			bank = "b",
-			mail = "m",
-			sale = "s",
-			guildBank = "g",
-			alt = "a",
-			auction = "$",
-		},
-
 		inventoryColors = {
 			bag = 		"|cffffff80",		-- yellow
 			vendor = 	"|cff80ff80",		-- green
@@ -350,6 +339,18 @@ do
 			mail = 		"|cff60fff0",		-- teal
 			sale = 		"|cff30b080",		-- dark green
 			missing = 	"|cffff0000",		-- red
+		},
+
+		inventoryColorBlindTag = {
+			bag =		"",
+			vendor =	"v",
+			bank =		"b",
+			guildBank =	"g",
+			alt =		"a",
+			auction =	"$",
+			mail =		"m",
+			sale =		"s",
+			missing =	"?",
 		},
 
 		inventoryFormat = {},
