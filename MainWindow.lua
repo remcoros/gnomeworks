@@ -2399,7 +2399,7 @@ do
 			GameTooltip:AddLine(GetSpellLink(recipeID))
 
 			for i = 1, numMembers, 1 do
-				local name, online = GetGuildRecipeMember(i)
+				local name, _, online = GetGuildRecipeMember(i)
 
 				GameTooltip:AddDoubleLine("|cffffffff"..name, online and "|cff00ff00ONLINE" or "|cffff0000OFFLINE")
 			end
