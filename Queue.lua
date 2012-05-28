@@ -134,8 +134,7 @@ do
 					local vendorSource
 
 					if GnomeWorks:VendorSellsItem(reagentID) then
-						local name,_,_,_,_,_,_,_,_,tex,sellCost = GetItemInfo(reagentID)
-						vendorCost = sellCost*4
+						vendorCost = GnomeWorks:GetVendorCost(reagentID)
 						vendorSource = "vendor"
 					end
 
@@ -539,9 +538,8 @@ do
 					if reagent.command == "collect" then
 						if reagent.source then
 							reagent.cost = 0
-						elseif GnomeWorks:VendorSellsItem(reagent.itemID) then
-							local name,_,_,_,_,_,_,_,_,tex,sellCost = GetItemInfo(itemID)
-							reagent.cost = ((sellCost or 0) +1) * 4 * reagent.count
+						elseif GnomeWorks:VendorSellsItem(itemID) then
+							reagent.cost = GnomeWorks:GetVendorCost(itemID) * reagent.count
 						else
 							reagent.cost = GnomeWorks:GetAuctionCost(itemID, reagent.count)
 						end

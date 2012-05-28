@@ -501,7 +501,7 @@ do
 
 				if not entry.source then
 					if GnomeWorks:VendorSellsItem(entry.itemID) then
-						entry.cost = (LSW.vendorCost(entry.itemID) or 0) * entry.count
+						entry.cost = GnomeWorks:GetVendorCost(entry.itemID) * entry.count
 
 --[[
 						local name,_,_,_,_,_,_,_,_,tex,sellCost = GetItemInfo(entry.itemID)
@@ -534,10 +534,14 @@ do
 			queueScrollFrame:Refresh()
 		end
 
+		local function GetVendorCost(self, itemID)
+			return LSW.vendorCost(itemID) or 0
+		end
 
 		local function Init()
 	--		LSW:ChatMessage("LilSparky's Workshop plugging into Skillet (v"..Skillet.version..")");
 
+			GnomeWorks.GetVendorCost = GetVendorCost
 
 			scrollFrame = GnomeWorks:GetSkillListScrollFrame()
 

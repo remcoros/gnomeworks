@@ -237,8 +237,7 @@ do
 
 							if queue == "vendor" then
 								if GnomeWorks:VendorSellsItem(itemID) then
-									local name,_,_,_,_,_,_,_,_,tex,sellCost = GetItemInfo(itemID)
-									reagentCost = ((sellCost or 0)) * 4 * count
+									reagentCost = GnomeWorks:GetVendorCost(itemID) * count
 									totalCost = totalCost + reagentCost
 								end
 							elseif queue == "auction" then
@@ -357,11 +356,10 @@ print("WTF?")
 --print("update row data", entry.command, entry.recipeID and GetSpellLink(entry.recipeID) or entry.itemID and GetItemInfo(entry.itemID))
 
 			if entry.source == vendor then
-				local name,_,_,_,_,_,_,_,_,tex,sellCost = GetItemInfo(itemID)
-				enrty.cost = ((sellCost or 0)) * 4 * entry.count
+				entry.cost = GnomeWorks:GetVendorCost(itemID) * entry.count
 			else
 				local name,_,_,_,_,_,_,_,_,tex,sellCost = GetItemInfo(itemID)
-				enrty.cost = ((sellCost or 0)) * 4 * entry.count
+				entry.cost = ((sellCost or 0)) * 4 * entry.count
 			end
 
 --print("done updating")

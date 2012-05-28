@@ -22,7 +22,17 @@ do
 		end
 	end
 
+	function GnomeWorks:GetVendorCost(itemID)
+		if itemID then
+			local _,_,_,_,_,_,_,_,_,_,itemSellPrice = GetItemInfo(itemID)
 
+			if itemSellPrice then
+				return itemSellPrice * 4
+			end
+		end
+		
+		return 0
+	end
 
 	local function RecordMerchantItem(itemID, i)
 		if GnomeWorks.data.reagentUsage[itemID] and not GnomeWorksDB.vendorItems[itemID] then -- and not GnomeWorksDB.results[spoofedRecipeID] then
