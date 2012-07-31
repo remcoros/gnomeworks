@@ -201,10 +201,10 @@ do
 			draw =	function (rowFrame,cellFrame,entry)
 						cellFrame.text:SetText(entry.numNeeded)
 
-						if entry.numNeeded < entry.totalCraftable then
-							cellFrame.text:SetTextColor(1,0,0)
+						if entry.numNeeded <= entry.totalCraftable then
+							cellFrame.text:SetTextColor(0,1,0)
 						else
-							cellFrame.text:SetTextColor(1,1,1)
+							cellFrame.text:SetTextColor(1,0,0)
 						end
 					end,
 			OnEnter = 	function(cellFrame)
