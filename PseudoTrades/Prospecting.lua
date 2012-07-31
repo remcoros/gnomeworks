@@ -116,38 +116,47 @@ do
 			[36934] = 0.045, --Eye of Zul
 		},
 		[53038] = { --Obsidium Ore
-			[52192] = 0.013, --Dream Emerald
 			[52178] = 0.25, --Zephyrite
-			[52179] = 0.247, --Alicite
+			[52179] = 0.25, --Alicite
 			[52180] = 0.25, --Nightstone
-			[52181] = 0.251, --Hessonite
-			[52182] = 0.251, --Jasper
+			[52181] = 0.25, --Hessonite
+			[52182] = 0.25, --Jasper
 			[52177] = 0.25, --Carnelian
-			[52193] = 0.012, --Ember Topaz
-			[52194] = 0.012, --Demonseye
+			[52195] = 0.015, --Amberjewel
+			[52194] = 0.015, --Demonseye
+			[52192] = 0.015, --Dream Emerald
+			[52193] = 0.015, --Ember Topaz
+			[52190] = 0.015, --Inferno Ruby
+			[52191] = 0.015, --Ocean Sapphire
 		},
 		[52185] = { --Elementium Ore
-			[52192] = 0.046, --Dream Emerald
-			[52178] = 0.182, --Zephyrite
-			[52179] = 0.182, --Alicite
-			[52180] = 0.183, --Nightstone
-			[52181] = 0.184, --Hessonite
-			[52182] = 0.184, --Jasper
-			[52177] = 0.183, --Carnelian
-			[52193] = 0.046, --Ember Topaz
-			[52194] = 0.045, --Demonseye
+			[52178] = 0.1875, --Zephyrite
+			[52179] = 0.1875, --Alicite
+			[52180] = 0.1875, --Nightstone
+			[52181] = 0.1875, --Hessonite
+			[52182] = 0.1875, --Jasper
+			[52177] = 0.1875, --Carnelian
+			[52195] = 0.0417, --Amberjewel
+			[52194] = 0.0417, --Demonseye
+			[52192] = 0.0417, --Dream Emerald
+			[52193] = 0.0417, --Ember Topaz
+			[52190] = 0.0417, --Inferno Ruby
+			[52191] = 0.0417, --Ocean Sapphire
 		},
 		[52183] = { --Pyrite Ore
-			[52327] = 2.001, --Volatile Earth
-			[52178] = 0.165, --Zephyrite
-			[52179] = 0.168, --Alicite
-			[52180] = 0.168, --Nightstone
-			[52181] = 0.167, --Hessonite
-			[52182] = 0.166, --Jasper
-			[52177] = 0.166, --Carnelian
-			[52193] = 0.076, --Ember Topaz
-			[52192] = 0.076, --Dream Emerald
-			[52194] = 0.074, --Demonseye
+			[52327] = 2.0, --Volatile Earth
+			[52178] = 0.16, --Zephyrite
+			[52179] = 0.16, --Alicite
+			[52180] = 0.16, --Nightstone
+			[52181] = 0.16, --Hessonite
+			[52182] = 0.16, --Jasper
+			[52177] = 0.16, --Carnelian
+			[52195] = 0.08, --Amberjewel
+			[52194] = 0.08, --Demonseye
+			[52192] = 0.08, --Dream Emerald
+			[52193] = 0.08, --Ember Topaz
+			[52190] = 0.08, --Inferno Ruby
+			[52191] = 0.08, --Ocean Sapphire
 		},
 	}
 
