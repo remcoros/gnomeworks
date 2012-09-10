@@ -801,7 +801,7 @@ do
 ]]
 		end
 
-		GnomeWorks:InventoryProcess(playeOverride)
+		GnomeWorks:InventoryProcess(playerOverride)
 
 		GnomeWorks:SendMessageDispatch("InventoryScanComplete")
 --	DebugSpam("InventoryScan Complete")
