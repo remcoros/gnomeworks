@@ -65,7 +65,7 @@ do
 				t = dispatchTable[message]
 				local times = timingTable[dispatchIndex[message]]
 
-				local timeStart = GetTime()
+				local timeStart = debugprofilestop()
 
 				local hooks = 0
 
@@ -73,7 +73,7 @@ do
 					if entry ~= "delete" then
 						hooks = hooks + 1
 
-						local entryTimeStart = GetTime()
+						local entryTimeStart = debugprofilestop()
 
 						if type(entry.func) == "function" and entry.func() then					-- message returns true when it's set to fire once
 							t[k] = "delete"
@@ -81,7 +81,7 @@ do
 							t[k] = "delete"
 						end
 
-						local elapsed = (GetTime()-entryTimeStart)
+						local elapsed = (debugprofilestop() - entryTimeStart)
 
 						entry.elapsed = entry.elapsed + elapsed
 						entry.iterations = entry.iterations + 1
@@ -97,7 +97,7 @@ do
 				times.listeners = hooks
 				times.iterations = times.iterations + hooks
 
-				local elapsed = (GetTime() - timeStart)
+				local elapsed = (debugprofilestop() - timeStart)
 
 				if elapsed > times.maxTime then
 					times.maxTime = elapsed
