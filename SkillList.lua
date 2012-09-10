@@ -486,7 +486,7 @@ DebugSpam("done parsing skill list")
 			if index then
 				local skillName, skillType = GetTradeSkillInfo(index)
 
-				if skillType ~= "header" then
+				if skillType ~= "header" and skillType ~= "subheader" then
 					SelectTradeSkill(index)
 					self:ShowDetails(index)
 					self:ShowReagents(index)
@@ -768,7 +768,7 @@ DebugSpam("SCAN BUSY!")
 		dataScanned[key] = false
 
 
-		if skillType ~= "header" then
+		if skillType ~= "header" and skillType ~= "subheader" then
 --			self:ScheduleTimer("UpdateMainWindow",.1)
 
 --			return
@@ -782,10 +782,11 @@ DebugSpam("SCAN BUSY!")
 	-- Unregsiter all frames from reacitng to update events since we're likely to generate a number of them in the scan
 		UnregisterUpdateEvents()
 
-		for i = 1, GetNumTradeSkills() do
+		local numSkills = GetNumTradeSkills()
+		for i = 1, numTradeSkills do
 			local skillName, skillType, _, isExpanded = GetTradeSkillInfo(i)
 
-			if skillType == "header" then
+			if skillType == "header" or skillType == "subheader" then
 				if not isExpanded then
 					ExpandTradeSkillSubClass(i)
 				end
@@ -793,8 +794,7 @@ DebugSpam("SCAN BUSY!")
 			end
 		end
 
-
-		local numSkills = GetNumTradeSkills()
+		local tradeName, rank, maxRank = GetTradeSkillLine()
 
 
 DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." "..numSkills.." recipes")
@@ -889,7 +889,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 
 				if skillName then
-					if skillType == "header" then
+					if skillType == "header" or skillType == "subheader" then
 						numHeaders = numHeaders + 1
 
 						local groupName
@@ -1037,7 +1037,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 
 
-	DebugSpam("Scan Complete")
+	DebugSpam("Scan Complete",(tradeName or "nil"))
 
 
 		if mainGroup then
@@ -1170,63 +1170,66 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 			self:RecipeGroupClearEntries(mainGroup)
 
-			for i=1,#TradeSkillSlots do
+			for i = 1, #TradeSkillSlots do
 				local groupName
 				local slotName = TradeSkillSlots[i]
+				local subslots = { GetTradeSkillSubCategories(i) }
 
 				local invSlot
 
 				if not slotName then
-					slotName = "slot "..i
-					gotNil = true
-				end
-
-				if groupList[slotName] then
-					groupList[slotName] = groupList[slotName]+1
-					groupName = slotName.." "..groupList[slotName]
+					DebugSpam("Skipping nil (probably sub-slot)")
 				else
-					groupList[slotName] = 1
-					groupName = slotName
-				end
 
-				local currentGroup = self:RecipeGroupNew(self.player, self.tradeID, "By Category", groupName)
-
-				SetTradeSkillCategoryFilter(i, 0)
-
-				for s=1,GetNumTradeSkills() do
-					local recipeLink = GetTradeSkillRecipeLink(s)
-
-
---[[
-					if TradeSkillSlots[i] ~= "NONEQUIPSLOT" then
-						invSlot = GetInventorySlotInfo(invSlotLookup[ TradeSkillSlots[i] ])
-						self:EnchantingRecipeSlotAssign(recipeID, invSlot)
+					if groupList[slotName] then
+						groupList[slotName] = groupList[slotName] + 1
+						groupName = slotName.." "..groupList[slotName]
+					else
+						groupList[slotName] = 1
+						groupName = slotName
 					end
-]]
 
+					local currentGroup = self:RecipeGroupNew(self.player, self.tradeID, "By Category", groupName)
 
-					if recipeLink then
-						local recipeID = GetIDFromLink(recipeLink)
---DebugSpam("adding "..(recipeLink or "nil").." to "..groupName)
---print(skillIndexLookup[recipeID])
-						if skillIndexLookup[recipeID] then
-							self:RecipeGroupAddRecipe(currentGroup, recipeID, skillIndexLookup[recipeID], true)
+					SetTradeSkillCategoryFilter(i, 0)
+
+					local numSkills = GetNumTradeSkills()
+					for s = 1, numSkills do
+						local recipeLink = GetTradeSkillRecipeLink(s)
+
+						if recipeLink then
+							local recipeID = GetIDFromLink(recipeLink)
+							if skillIndexLookup[recipeID] then
+								self:RecipeGroupAddRecipe(currentGroup, recipeID, skillIndexLookup[recipeID], true)
+							end
 						end
 					end
 
+					for j, slot in pairs(subslots) do
+						DebugSpam("Subslot:",slot)
+						SetTradeSkillCategoryFilter(i, j)
+
+						local numSkills = GetNumTradeSkills()
+						for s = 1, numSkills do
+							local recipeLink = GetTradeSkillRecipeLink(s)
+
+							if recipeLink then
+								local recipeID = GetIDFromLink(recipeLink)
+--DebugSpam("adding "..(recipeLink or "nil").." to "..groupName)
+--print(skillIndexLookup[recipeID])
+								if skillIndexLookup[recipeID] then
+									self:RecipeGroupAddRecipe(currentGroup, recipeID, skillIndexLookup[recipeID], true)
+								end
+							end
+						end
+					end
+
+					self:RecipeGroupAddSubGroup(mainGroup, currentGroup, i + 1000, true)
 				end
-
-				self:RecipeGroupAddSubGroup(mainGroup, currentGroup, i+1000, true)
 			end
+
+			SetTradeSkillCategoryFilter(0, 0)
 		end
-
-		SetTradeSkillCategoryFilter(0, 0)
-
-		if gotNil then
-			self:ScheduleTimer("ScanTrade",5)
-		end
-
---		self:RegisterEvent("TRADE_SKILL_UPDATE")
 	end
 
 
