@@ -1295,45 +1295,48 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		if not tradeID and not IsTradeSkillLinked() then
 			local skill, rank, maxRank = self:GetTradeSkillLine()
 
-			if self.data.skillUpRanks[tradeID or self.tradeID] then
-				if self.data.skillUpRanks[tradeID or self.tradeID] > maxRank then
-					maxRank = math.ceil(self.data.skillUpRanks[tradeID or self.tradeID]/75)*75
+			local skillUps = self.data.skillUpRanks[tradeID]
+			if skillUps then
+				if skillUps > maxRank then
+					maxRank = math.ceil(skillUps / 75) * 75
 				end
 			end
-			return rank, maxRank, self.data.skillUpRanks[tradeID or self.tradeID]
+
+			return rank, maxRank, self.data.skillUpRanks[self.tradeID]
 		end
 
 		tradeID = tradeID or self.tradeID
 		player = player or self.player
 
-
 		local link = (self.data.playerData[player] and self.data.playerData[player].links and self.data.playerData[player].links[tradeID])
 
 		if not link then
 			link = linkDB[player] and linkDB[player][tradeID]
-		end
 
-		if link then
-			local rank, maxRank = string.match(link,"trade:%d+:(%d+):(%d+)")
-
-			rank = tonumber(rank)
-			maxRank = tonumber(maxRank)
-
-			if self.data.skillUpRanks[tradeID or self.tradeID] then
-				if self.data.skillUpRanks[tradeID or self.tradeID] > maxRank then
-					maxRank = math.ceil(self.data.skillUpRanks[tradeID or self.tradeID]/75)*75
-				end
+			if not link then
+				return 0, 0
 			end
-			return rank, maxRank, self.data.skillUpRanks[tradeID or self.tradeID]
 		end
 
-		return 0, 0
+		local rank, maxRank = string.match(link, "trade:%d+:(%d+):(%d+)")
+
+		rank = tonumber(rank)
+		maxRank = tonumber(maxRank)
+
+		local skillUps = self.data.skillUpRanks[tradeID]
+		if skillUps then
+			if skillUps > maxRank then
+				maxRank = math.ceil(skillUps / 75) * 75
+			end
+		end
+
+		return rank, maxRank, self.data.skillUpRanks[tradeID]
 	end
 
 
 	function GnomeWorks:GetTradeSkillRank(player, tradeID)
 		if player == "Guild Recipes" then
-			return 525, 525, 525, 0
+			return 525, 525
 		end
 
 		tradeID = tradeID or self.tradeID
@@ -1341,30 +1344,27 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 		local data = self.data.playerData[player]
 
-		if data then
-			if not data.rank then
-				return 0,0,0,0
-			end
-
-			local rank = data.rank[tradeID] or 1
-			local maxRank = data.maxRank[tradeID] or 75
-			local bonus = data.bonus[tradeID] or 0
-
-			local skillUps = self.data.skillUpRanks[tradeID]
-
-			if skillUps then
-				if skillUps > maxRank then
-					maxRank = math.ceil(skillUps/75)*75
-				end
-			end
-			return rank, maxRank, skillUps, bonus
-		else
+		if not data then
 			return self:GetTradeSkillRankNonPlayer(player, tradeID)
 		end
 
-		return 0, 0, 0, 0
-	end
+		if not data.rank then
+			return 0, 0
+		end
 
+		local rank = data.rank[tradeID] or 1
+		local maxRank = data.maxRank[tradeID] or 75
+		local bonus = data.bonus[tradeID] or 0
+
+		local skillUps = self.data.skillUpRanks[tradeID]
+		if skillUps then
+			if skillUps > maxRank then
+				maxRank = math.ceil(skillUps / 75) * 75
+			end
+		end
+
+		return rank, maxRank, skillUps, bonus
+	end
 
 
 	function GnomeWorks:GetSkillColor(index)

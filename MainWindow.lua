@@ -1683,15 +1683,8 @@ do
 		self.levelStatusBar:SetMinMaxValues(0,maxRank)
 		self.levelStatusBar:SetValue(rank)
 		self.levelStatusBar.estimatedLevel:SetMinMaxValues(0,maxRank)
-
+		self.levelStatusBar.estimatedLevel:SetValue(estimatedSkillUp or rank)
 --		self.levelStatusBar:Show()
-
-
-		if estimatedSkillUp then
-			self.levelStatusBar.estimatedLevel:SetValue(estimatedSkillUp)
-		else
-			self.levelStatusBar.estimatedLevel:SetValue(rank)
-		end
 
 		self.playerNameFrame:SetFormattedText("%s - %s", self.player or "??", self:GetTradeName(self.tradeID) or "??")
 	end
@@ -2607,7 +2600,7 @@ do
 			local minValue, maxValue = frame:GetMinMaxValues()
 			local level = frame.level:GetValue()
 
-			if value/maxValue > .5 then
+			if maxValue > 0 and value / maxValue > 0.5 then
 				levelText:SetJustifyH("LEFT")
 			else
 				levelText:SetJustifyH("RIGHT")
@@ -2624,7 +2617,7 @@ do
 		level:HookScript("OnValueChanged", function(frame, value)
 			local minValue, maxValue = frame:GetMinMaxValues()
 
-			if value/maxValue > .5 then
+			if maxValue > 0 and value / maxValue > 0.5 then
 				levelText:SetJustifyH("LEFT")
 			else
 				levelText:SetJustifyH("RIGHT")

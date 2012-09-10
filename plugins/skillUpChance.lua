@@ -152,15 +152,15 @@ do
 			end,
 
 			enabled = function()
-				local realRank,maxRank,estimatedRank,bonus = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, GnomeWorks.tradeID)
-				rank = (estimatedRank or realRank) - (bonus or 0)
-
 				if not plugin.enabled then
 					return
 				end
 
 				if scrollFrame:IsVisible() then
-					if rank and maxRank and realRank < maxRank then
+					local realRank, maxRank, estimatedRank, bonus = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, GnomeWorks.tradeID)
+					rank = (estimatedRank or realRank) - (bonus or 0)
+
+					if rank > 0 and realRank < maxRank then
 						if not GnomeWorks.data.pseudoTradeData[GnomeWorks.tradeID] then
 							return true
 						end
