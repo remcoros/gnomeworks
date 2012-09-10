@@ -1596,7 +1596,6 @@ do
 		else
 			self:GetTradeIDFromAPI()
 
-			TradeSkillFrame_Update()						-- seems to fix the early bailout of trade skill iterations
 
 			if GnomeWorks.selectedEntry then
 				local recipeID = GnomeWorks.selectedEntry.recipeID
