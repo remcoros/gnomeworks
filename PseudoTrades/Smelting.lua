@@ -523,8 +523,6 @@ do
 		GnomeWorks:CraftabilityPurge()
 		GnomeWorks:InventoryScan()
 
-		collectgarbage("collect")
-
 		GnomeWorks:SendMessageDispatch("TradeScanComplete")
 		return
 	end

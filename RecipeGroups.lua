@@ -320,7 +320,7 @@ function GnomeWorks:RecipeGroupPasteEntry(entry, group)
 
 		if entry.subGroup then
 			 if entry.subGroup == group then
-			 	return
+				return
 			end
 
 			local newName, newIndex = self:RecipeGroupNewName(group.key, entry.name)
@@ -348,7 +348,7 @@ function GnomeWorks:RecipeGroupMoveEntry(entry, group)
 
 		if entry.subGroup then
 			 if entry.subGroup == group then
-			 	return
+				return
 			end
 		end
 
@@ -797,8 +797,8 @@ do
 --[[
 	<EditBox name="GroupButtonNameEdit" historyLines="0" autoFocus="true" hidden="true">
 		<Size>
-  			<AbsDimension x="293" y="16" />
-  		</Size>
+			<AbsDimension x="293" y="16" />
+		</Size>
 		<FontString inherits="GameFontNormalSmall" justifyH="RIGHT">
 			<Anchors>
 				<Anchor point="LEFT">
@@ -1076,11 +1076,6 @@ do
 
 
 			RemoveLabel(player,tradeID,label)
-
-
-
-
-			collectgarbage("collect")
 
 			RecipeGroupSelect()
 		end

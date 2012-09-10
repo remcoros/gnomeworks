@@ -1085,16 +1085,6 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 			self:ScheduleTimer("ScanTrade",2)
 		end
 
-
-
-
---local totalUsage = collectgarbage("count")
---print(totalUsage)
-		collectgarbage("collect")
---print("cleaned up",totalUsage - collectgarbage("count"),"kilobytes of garbage")
-
-
-
 		if scanTimeEnd - scanTimeStart > .25 then
 			GnomeWorks:warning("trade skill scan took", scanTimeEnd - scanTimeStart,"seconds")
 		end

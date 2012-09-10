@@ -1046,8 +1046,6 @@ do
 				end
 			end)
 
-			collectgarbage("collect")
-
 			GnomeWorks:ScheduleTimer("TRADE_SKILL_UPDATE", 0.01)
 
 			RegisterSlashCommands()

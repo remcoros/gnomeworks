@@ -536,8 +536,6 @@ do
 
 		GnomeWorks:InventoryScan()
 
-		collectgarbage("collect")
-
 		GnomeWorks:ScheduleTimer("UpdateMainWindow",.1)
 		GnomeWorks:SendMessageDispatch("TradeScanComplete")
 		return
