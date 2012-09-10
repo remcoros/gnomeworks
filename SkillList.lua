@@ -1191,7 +1191,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 				local currentGroup = self:RecipeGroupNew(self.player, self.tradeID, "By Category", groupName)
 
-				SetTradeSkillSubClassFilter(i,1,1)
+				SetTradeSkillCategoryFilter(i, 0)
 
 				for s=1,GetNumTradeSkills() do
 					local recipeLink = GetTradeSkillRecipeLink(s)
@@ -1220,7 +1220,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 			end
 		end
 
-		SetTradeSkillSubClassFilter(0,1,1)
+		SetTradeSkillCategoryFilter(0, 0)
 
 		if gotNil then
 			self:ScheduleTimer("ScanTrade",5)

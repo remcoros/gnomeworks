@@ -868,7 +868,7 @@ do
 		table.insert(list,"All Recipes")
 		table.insert(list,1,player)
 
-		SetTradeSkillSubClassFilter(0, 1, 1)
+		SetTradeSkillCategoryFilter(0, 0)
 		SetTradeSkillItemNameFilter("")
 		SetTradeSkillItemLevelFilter(0,0)
 		TradeSkillOnlyShowSkillUps(false)
