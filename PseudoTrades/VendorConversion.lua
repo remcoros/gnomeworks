@@ -328,7 +328,7 @@ do
 			end
 		end
 
-		mainRecipeList = recipeList
+		--mainRecipeList = recipeList
 
 		trade.skillList = skillList
 

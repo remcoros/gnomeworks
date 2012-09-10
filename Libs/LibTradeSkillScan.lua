@@ -255,9 +255,9 @@ do
 		progressBar = CreateFrame("Frame", nil, UIParent)
 
 		progressBar:SetBackdrop({bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-                                            edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-                                            tile = true, tileSize = 16, edgeSize = 16,
-                                            insets = { left = 4, right = 4, top = 4, bottom = 4 }});
+											edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+											tile = true, tileSize = 16, edgeSize = 16,
+											insets = { left = 4, right = 4, top = 4, bottom = 4 }});
 		progressBar:SetBackdropColor(0,0,0,1);
 
 
@@ -449,7 +449,7 @@ do
 
 			map = decodedByte[string.byte(bitmap, i) or 65]
 
-			v = decodedByte[string.byte(bitmap,i+1) or 65]
+			local v = decodedByte[string.byte(bitmap, i + 1) or 65]
 			map = bit.lshift(map, 6) + v
 
 
@@ -514,7 +514,7 @@ do
 		local len = math.min(#b1,#b2)
 
 		for i=1,len do
-			result = bit.band(b1[i],b2[i] or 0)
+			local result = bit.band(b1[i], b2[i] or 0)
 
 			if result~=0 then
 				for b=0,29 do

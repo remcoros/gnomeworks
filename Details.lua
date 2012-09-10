@@ -7,7 +7,6 @@ local GnomeWorks = GnomeWorks
 
 
 
-
 do
 	local backDrop  = {
 				bgFile = "Interface\\AddOns\\GnomeWorks\\Art\\frameInsetSmallBackground.tga",
@@ -849,7 +848,7 @@ do
 --			local r,g,b = SkilletSkillName:GetTextColor()
 --			GameTooltip:AddLine(SkilletSkillName:GetText(),r,g,b)
 
-			recipeID = detailFrame.levelsBar.recipeID
+			local recipeID = detailFrame.levelsBar.recipeID
 
 			local gray = GnomeWorks.data.recipeSkillLevels[3][recipeID] or 1
 			local yellow = GnomeWorks.data.recipeSkillLevels[2][recipeID] or 1
@@ -1196,7 +1195,8 @@ do
 					local itemIcon = GetItemIcon(itemID)
 
 					if itemID < 0 then
-						_,_,itemIcon = GetSpellInfo(-itemID)
+						local _
+						_, _, itemIcon = GetSpellInfo(-itemID)
 					end
 
 					detailIconList[resultCount]:SetNormalTexture(itemIcon)

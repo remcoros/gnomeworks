@@ -62,7 +62,7 @@ do
 	function GnomeWorks:SendMessageDispatch(messageList)
 		for message in string.gmatch(messageList, "%a+") do
 			if dispatchTable[message] then
-				t = dispatchTable[message]
+				local t = dispatchTable[message]
 				local times = timingTable[dispatchIndex[message]]
 
 				local timeStart = debugprofilestop()

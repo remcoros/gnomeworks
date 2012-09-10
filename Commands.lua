@@ -6,6 +6,8 @@
 
 
 do
+	local GnomeWorks = GnomeWorks
+
 	GnomeWorks.commands = {}
 
 	GnomeWorks.commands.show = {

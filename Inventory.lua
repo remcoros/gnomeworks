@@ -240,7 +240,7 @@ do
 				for container,data in pairs(self.data.craftabilityData[player]) do
 					data[itemID] = nil
 					if reagentUsage then
-						itemUncached = self:UncacheReagentCounts(player, data, reagentUsage)
+						local itemUncached = self:UncacheReagentCounts(player, data, reagentUsage)
 					end
 				end
 			end
@@ -288,7 +288,7 @@ do
 						end
 					else
 						if not locked then
-							numMoved = math.min(stackSize-targetSize, inBag)
+							local numMoved = math.min(stackSize-targetSize, inBag)
 
 							SplitContainerItem(bag, i, numMoved)
 
@@ -345,7 +345,7 @@ do
 			for itemID in pairs(GnomeWorks.data.trackedItems) do
 				local inBag = GetItemCount(itemID)
 				local inBank = GetItemCount(itemID,true) - inBag
-				local recahe
+				local recache
 
 				if (bag[itemID] or 0) ~= inBag then
 					bag[itemID] = inBag

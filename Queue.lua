@@ -1091,7 +1091,7 @@ reserveTime = reserveTime + GetTime() - start
 	end
 
 
-	function ProcessQueueQueue()
+	local function ProcessQueueQueue()
 		if #queueQueue > 0 then
 			for i=1,50 do
 				if #queueQueue > 0 then
@@ -1123,7 +1123,7 @@ reserveTime = reserveTime + GetTime() - start
 
 
 
-	function BuildSourceQueues(player, queue)
+	local function BuildSourceQueues(player, queue)
 		if queue then
 			local shoppingQueueData = GnomeWorks.data.shoppingQueueData[player]
 
@@ -1475,7 +1475,7 @@ local start = GetTime()
 
 						if not GnomeWorks.MainWindow:IsVisible() then
 							GnomeWorks.hideMainWindow = true
-             			end
+						end
 
 						local result = pseudoTrade.DoTradeSkill(entry.recipeID, entry.count)
 
@@ -1680,7 +1680,7 @@ local start = GetTime()
 
 		local eventTable = { }
 
-		controlFrame = CreateFrame("Frame", nil, frame)
+		local controlFrame = CreateFrame("Frame", nil, frame)
 
 
 --		controlFrame:SetPoint("LEFT",20,0)
@@ -2634,7 +2634,7 @@ local start = GetTime()
 				playerMenu.func = DoSelection
 
 				for k,player in pairs(GnomeWorks.data.toonList) do
-					data = GnomeWorks.data.playerData[player]
+					local data = GnomeWorks.data.playerData[player]
 
 					if data.build == clientBuild then
 						playerMenu.text = player
@@ -2676,7 +2676,7 @@ local start = GetTime()
 
 		BuildQueueScrollingFrame()
 
-		shoppingListSF = GnomeWorks:BuildShoppingListScrollFrame(frame)
+		local shoppingListSF = GnomeWorks:BuildShoppingListScrollFrame(frame)
 
 
 		self.queueFrame = { scrollFrame = sf}

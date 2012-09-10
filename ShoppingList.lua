@@ -5,6 +5,7 @@
 local GnomeWorks = GnomeWorks
 
 do
+	local sf
 	local shoppingListFrame
 	local shoppingListPlayer
 
@@ -186,7 +187,7 @@ do
 		if sf then
 			player = player or self.queuePlayer
 
-			queueData = self.data.queueData[player]
+			local queueData = self.data.queueData[player]
 
 
 			if self.data.playerData[player] then

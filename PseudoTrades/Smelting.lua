@@ -333,7 +333,7 @@ do
 		local recipeID = skillList[index]
 
 		if recipeID then
-			itemID = next(smeltingData[recipeID].results)
+			local itemID = next(smeltingData[recipeID].results)
 
 			if itemID then
 				local _,link = GetItemInfo(itemID)

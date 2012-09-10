@@ -3,8 +3,8 @@
 local _G = _G
 
 local UnitName = UnitName
-local string,math,table = 
-      string,math,table
+local string, math, table =
+	  string, math, table
 
 local debugprofilestop = debugprofilestop
 
@@ -12,8 +12,8 @@ local function GetTime()
 	return debugprofilestop()/1000
 end
 
-local print,next,ipairs,pairs,tonumber = 
-      print,next,ipairs,pairs,tonumber
+local print, next, ipairs, pairs, tonumber =
+	  print, next, ipairs, pairs, tonumber
 
 local GnomeWorks = GnomeWorks
 
@@ -581,7 +581,7 @@ do
 				AuctionFrameBotRight:SetTexture("Interface\\AuctionFrame\\UI-AuctionFrame-Bid-BotRight")
 			end
 		end)
-		
+
 
 
 		BuildScrollingBuyFrame(buyFrame)

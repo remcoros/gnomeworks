@@ -554,7 +554,7 @@ do
 	hooksecurefunc("UIDropDownMenu_CreateFrames", FixMenuFrameLevels)
 
 
-	function memUsage(t)
+	local function memUsage(t)
 		local slots = 0
 		local bytes = 0
 		local size = 1

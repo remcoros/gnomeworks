@@ -79,7 +79,7 @@ do
 				end
 
 				for id,i in pairs(lookup) do
-					_, _, completed = GetAchievementCriteriaInfo(id, i)
+					local _, _, completed = GetAchievementCriteriaInfo(id, i)
 
 					if (completed) then
 						lookup[id] = nil
@@ -276,7 +276,7 @@ do
 			end)
 
 
-			scrollFrame = GnomeWorks:GetSkillListScrollFrame()
+			local scrollFrame = GnomeWorks:GetSkillListScrollFrame()
 
 			scrollFrame:RegisterRowUpdate(UpdateData, plugin)
 

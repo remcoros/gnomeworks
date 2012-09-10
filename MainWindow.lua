@@ -13,6 +13,7 @@ do
 	-- filter the text of the skill button
 	-- only set up for english clients at the moment
 
+	local controlFrame
 
 	local GLYPH_MATCH_STRING	= "(%w+) Glyph"
 	local GLYPH_REPLACEMENT_STRING	= "Glyph of"
@@ -792,12 +793,11 @@ do
 						if entry.subGroup then
 							cr,cg,cb = 1,.82,0
 						else
---							if not entry.skillColor then
-							_,_,entry.skillColor = GnomeWorks:GetRecipeDifficulty(entry.recipeID)
---							end
+							local _
+							_, _, entry.skillColor = GnomeWorks:GetRecipeDifficulty(entry.recipeID)
 
 							if entry.skillColor then
-								cr,cg,cb = entry.skillColor.r, entry.skillColor.g, entry.skillColor.b
+								cr, cg, cb = entry.skillColor.r, entry.skillColor.g, entry.skillColor.b
 							end
 						end
 
@@ -1476,11 +1476,11 @@ do
 
 				if not entry.itemColor then
 
-					local _,itemRarity,reqLevel
+					local _, itemRarity, reqLevel
 					local itemColor
 
 					if itemLink then
-						_,_,itemRarity,_,reqLevel = GetItemInfo(itemLink)
+						_, _, itemRarity, _, reqLevel = GetItemInfo(itemLink)
 
 						itemColor = itemQualityColor[itemRarity]
 
@@ -1796,7 +1796,7 @@ do
 				local index = 1
 
 				for k,player in pairs(GnomeWorks.data.toonList) do
-					data = GnomeWorks.data.playerData[player]
+					local data = GnomeWorks.data.playerData[player]
 
 					if data.build == clientBuild then
 						playerMenu.text = player

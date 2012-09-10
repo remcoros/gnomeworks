@@ -758,7 +758,7 @@ info.opacity = [0.0 - 1.0]  --  Percentatge of the opacity, 1.0 is fully shown, 
 info.opacityFunc = [function()]  --  Function called by the opacity slider when you change its value
 info.cancelFunc
 ]]
-		windowMenuFrame = CreateFrame("Frame", "GWWindowMenuFrame", getglobal("UIParent"), "UIDropDownMenuTemplate")
+		local windowMenuFrame = CreateFrame("Frame", "GWWindowMenuFrame", getglobal("UIParent"), "UIDropDownMenuTemplate")
 
 
 		local mover = CreateFrame("Frame",frameName.."Mover",frame)
@@ -778,7 +778,7 @@ info.cancelFunc
 
 				local entry = windowMenu[3]
 
-				f = frame
+				local f = frame
 
 
 				entry.r,entry.g,entry.b = f.config.r or 255, f.config.g or 255, f.config.b or 255
@@ -877,7 +877,7 @@ info.cancelFunc
 					local x, y = GetCursorPosition()
 					local uiScale = UIParent:GetEffectiveScale()
 					local entry = windowMenu[3]
-					f = frame
+					local f = frame
 
 					entry.r,entry.g,entry.b = f.config.r or 255, f.config.g or 255, f.config.b or 255
 

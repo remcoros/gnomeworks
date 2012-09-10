@@ -452,7 +452,7 @@ DebugSpam("done parsing skill list")
 	end
 
 
-	function SelectEntryByIndex(data,index)
+	local function SelectEntryByIndex(data,index)
 		if data then
 			for k,v in ipairs(data.entries) do
 

@@ -8,7 +8,7 @@ do
 	local pseudoTrades = GnomeWorks.system.pseudoTrades
 
 
-	function OnLeave(frame)
+	local function OnLeave(frame)
 		GameTooltip:Hide()
 	end
 
