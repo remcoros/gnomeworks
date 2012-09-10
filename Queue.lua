@@ -496,22 +496,22 @@ do
 
 		if entry.subGroup then
 			local count = entry.count
-			local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,player)
+			local results, reagents = GnomeWorks:GetRecipeData(entry.recipeID, player)
 
 			for itemID, numNeeded in pairs(reagents) do
-				dataTable[itemID] = (dataTable[itemID] or 0) + (numNeeded*entry.count - entry.reserved[itemID])
+				dataTable[itemID] = (dataTable[itemID] or 0) + (numNeeded * count - (entry.reserved[itemID] or 0))
 			end
 
 			local shoppingQueueData = GnomeWorks.data.shoppingQueueData[player]
 
 
 --			for k,reagent in ipairs(entry.subGroup.entries) do
-			for k=#entry.subGroup.entries,1,-1 do
+			for k = #entry.subGroup.entries, 1, -1 do
 				local reagent = entry.subGroup.entries[k]
 
 				local itemID = reagent.itemID
 
-				if entry.count>0 then
+				if count > 0 then
 					if reagent.command == "create" then
 						CalculateTotalReagents(player, reagent, dataTable)
 					end
