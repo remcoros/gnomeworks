@@ -582,58 +582,37 @@ do
 		if entry.command == "create" then
 			local count = entry.count
 			local factor = GnomeWorksDB.skillUps[entry.recipeID] or 1
-
-			local results,reagents,tradeID = GnomeWorks:GetRecipeData(entry.recipeID,player)
-
+			local results, reagents, tradeID = GnomeWorks:GetRecipeData(entry.recipeID, player)
 			local orange, yellow, green, gray = GetSkillLevels(entry.recipeID)
-
 			local rank, maxRank, estimatedRank, bonus = GnomeWorks:GetTradeSkillRank(player, tradeID)
 
-			if rank >= maxRank then
+			if not tradeTable[tradeID] then
+				tradeTable[tradeID] = rank - (bonus or 0)
+			end
+
+			local effectiveRank = tradeTable[tradeID]
+
+			if effectiveRank >= maxRank then
 				return
 			end
 
-
-			local effectiveRank = rank - bonus
-
-			if not tradeTable[tradeID] then
-				tradeTable[tradeID] = rank
-			end
-
-
-			if effectiveRank + count*factor < yellow then
-				tradeTable[tradeID] = tradeTable[tradeID] + count*factor
-			elseif effectiveRank >= gray then
-				-- nothing
-			else
-				while count>0 do
-					local rank = tradeTable[tradeID] - bonus
-
+			if effectiveRank + count * factor < yellow then
+				tradeTable[tradeID] = tradeTable[tradeID] + count * factor
+			elseif effectiveRank < gray then
+				while count > 0 do
 					if effectiveRank >= gray then
-						count = 0
+						count = 1
 					elseif effectiveRank < yellow then
-						rank = rank + factor
-						count = count - 1
-					elseif effectiveRank >= yellow and effectiveRank < green then
-						local chance =  1-(effectiveRank-yellow+1)/(effectiveRank-yellow+1)*.5
-						count = count - (1/chance)
-						if count >= 0 then
-							rank = rank + 1
-						end
+						effectiveRank = effectiveRank + factor
 					else
-						local chance = (1-(effectiveRank-green+1)/(effectiveRank-green+1))*.5
-						count = count - (1/chance)
-						if count >= 0 then
-							rank = rank + 1
-						end
+						effectiveRank = effectiveRank + (1 - (math.floor(effectiveRank) - yellow + 1) / (gray - yellow + 1))
 					end
-
-					tradeTable[tradeID] = rank
+					count = count - 1
 				end
+				tradeTable[tradeID] = math.floor(effectiveRank)
 			end
 		end
 	end
-
 
 
 	local sourceScore = {

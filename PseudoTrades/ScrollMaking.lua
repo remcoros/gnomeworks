@@ -486,7 +486,7 @@ do
 
 
 	api.GetTradeSkillLine = function()
-		local rank, maxRank = GnomeWorks:GetTradeSkillRanks(GnomeWorks.player, 7411)
+		local rank, maxRank = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, 7411)
 		return "Scroll Making", rank, maxRank
 	end
 

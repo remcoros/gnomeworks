@@ -353,7 +353,7 @@ do
 
 
 	api.GetTradeSkillLine = function()
-		local rank, maxRank = GnomeWorks:GetTradeSkillRanks(GnomeWorks.player, 2656)
+		local rank, maxRank = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, 2656)
 		return (GetSpellInfo(2656)), rank, maxRank
 	end
 
