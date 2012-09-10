@@ -1698,11 +1698,14 @@ do
 
 	function GnomeWorks:TRADE_SKILL_UPDATE(...)
 --print("MAIN WINDOW TRADE_SKILL_UPDATE")
-		if self.updateTimer then
-			self:CancelTimer(self.updateTimer, true)
-		end
+		local _, _, _, _, _, _, isTradeSkill, _, _ = UnitCastingInfo('player')
+		if not isTradeSkill then
+			if self.updateTimer then
+				self:CancelTimer(self.updateTimer, true)
+			end
 
-		self.updateTimer = self:ScheduleTimer("DoTradeSkillUpdate",.1)
+			self.updateTimer = self:ScheduleTimer("DoTradeSkillUpdate", 0.1)
+		end
 	end
 
 
