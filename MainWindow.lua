@@ -24,7 +24,7 @@ do
 
 
 
-	glyphTypes = {}
+	local glyphTypes = {}
 
 	local glyphTypeColor = {
 		[GLYPH_TOKEN_MAJOR] = "|cffff40a0",
@@ -1339,7 +1339,7 @@ do
 						break
 					end
 				end
-				
+
 				if not entry then
 					print("GnomeWorks: Select something to paste after. Hint: Ctrl+N for a new group!")
 					return
@@ -2013,7 +2013,7 @@ do
 		end
 
 
-		local function MarerialsSomewhere(button)
+		local function MaterialsSomewhere(button)
 			local entry = GnomeWorks.selectedEntry
 
 			if entry then
