@@ -149,11 +149,13 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 			local recipeCount = 0
 
 
-			for i=1,GetNumTradeSkills() do
+			local numTradeSkills = GetNumTradeSkills()
+			for i = 1, numTradeSkills do
 				local gotNil = false
 
 				if GetTradeSkillItemLink(i) then -- and GetItemInfo(GetTradeSkillItemLink(i)) then
-					for r=1,GetTradeSkillNumReagents(i) do
+					local numReagents = GetTradeSkillNumReagents(i)
+					for r = 1, numReagents do
 						if not GetTradeSkillReagentItemLink(i,r) then -- or not GetItemInfo(GetTradeSkillReagentItemLink(i,r)) then
 							gotNil = true
 							break
@@ -174,13 +176,13 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 
 
 			if playerName then
-				frameText:SetText((playerName or "??").." "..(linkDecodeList[decodeIndex] or "??").." "..(recipeCount or "??").."/"..GetNumTradeSkills().." recipes")
+				frameText:SetText((playerName or "??").." "..(linkDecodeList[decodeIndex] or "??").." "..(recipeCount or "??").."/"..numTradeSkills.." recipes")
 			else
 				playerName = UnitName("player")
 
 				local tradeName = GetTradeSkillLine()
 
-				frameText:SetText(playerName.." "..tradeName.." "..GetNumTradeSkills().." recipes")
+				frameText:SetText(playerName.." "..tradeName.." "..numTradeSkills.." recipes")
 			end
 
 
@@ -195,29 +197,29 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 		if event == "TRADE_SKILL_SHOW" then
 			TradeSkillSetFilter(-1, -1)
 
-			local isLinked,playerName = IsTradeSkillLinked()
+			local isLinked, playerName = IsTradeSkillLinked()
+			local numSkills = GetNumTradeSkills())
 
 			if playerName and linkDecodeList[decodeIndex] then
-				frameText:SetText(playerName.." "..linkDecodeList[decodeIndex].." "..GetNumTradeSkills().." recipes")
+				frameText:SetText(playerName.." "..linkDecodeList[decodeIndex].." "..numSkills.." recipes")
 --print(playerName.." "..linkDecodeList[decodeIndex].." "..GetNumTradeSkills().." recipes")
 			else
 				playerName = UnitName("player")
 
 				local tradeName = GetTradeSkillLine()
 
-				frameText:SetText(playerName.." "..tradeName.." "..GetNumTradeSkills().." recipes")
+				frameText:SetText(playerName.." "..tradeName.." "..numSkills.." recipes")
 			end
 
 
 			local recipeCount = 0
 
-			local numSkills = GetNumTradeSkills()
-
-			for i=1,numSkills do
+			for i = 1, numSkills do
 				local gotNil = false
 
 				if GetTradeSkillItemLink(i) then --  and GetItemInfo(GetTradeSkillItemLink(i)) then
-					for r=1,GetTradeSkillNumReagents(i) do
+					local numReagents = GetTradeSkillNumReagents(i)
+					for r = 1, numReagents do
 						if not GetTradeSkillReagentItemLink(i,r) then -- or not GetItemInfo(GetTradeSkillReagentItemLink(i,r)) then
 							gotNil = true
 							break
