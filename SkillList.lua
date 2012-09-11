@@ -783,7 +783,7 @@ DebugSpam("SCAN BUSY!")
 		UnregisterUpdateEvents()
 
 		local numSkills = GetNumTradeSkills()
-		for i = 1, numTradeSkills do
+		for i = 1, numSkills do
 			local skillName, skillType, _, isExpanded = GetTradeSkillInfo(i)
 
 			if skillType == "header" or skillType == "subheader" then

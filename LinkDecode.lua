@@ -198,7 +198,7 @@ frameText:SetText("Scanning: "..playerNameList[decodeIndex].." "..linkDecodeList
 			TradeSkillSetFilter(-1, -1)
 
 			local isLinked, playerName = IsTradeSkillLinked()
-			local numSkills = GetNumTradeSkills())
+			local numSkills = GetNumTradeSkills()
 
 			if playerName and linkDecodeList[decodeIndex] then
 				frameText:SetText(playerName.." "..linkDecodeList[decodeIndex].." "..numSkills.." recipes")
