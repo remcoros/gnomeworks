@@ -1234,7 +1234,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 			self:RecipeGroupClearEntries(mainGroup)
 
-			for i=1,#TradeSkillSlots do
+			for i = 1, #TradeSkillSlots do
 				local groupName
 				local slotName = TradeSkillSlots[i]
 
@@ -1252,17 +1252,9 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 				SetTradeSkillInvSlotFilter(i,1,1)
 
-				for s=1,GetNumTradeSkills() do
+				local numSkills = GetNumTradeSkills()
+				for s = 1, numSkills() do
 					local recipeLink = GetTradeSkillRecipeLink(s)
-
-
---[[
-					if TradeSkillSlots[i] ~= "NONEQUIPSLOT" then
-						invSlot = GetInventorySlotInfo(invSlotLookup[ TradeSkillSlots[i] ])
-						self:EnchantingRecipeSlotAssign(recipeID, invSlot)
-					end
-]]
-
 
 					if recipeLink then
 						local recipeID = GetIDFromLink(recipeLink)
@@ -1271,7 +1263,6 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 							self:RecipeGroupAddRecipe(currentGroup, recipeID, skillIndexLookup[recipeID], true)
 						end
 					end
-
 				end
 
 				self:RecipeGroupAddSubGroup(mainGroup, currentGroup, i+1000, true)
