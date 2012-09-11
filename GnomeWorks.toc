@@ -1,4 +1,4 @@
-## Interface: 40300
+## Interface: 50001
 ## Title: GnomeWorks
 ## Notes: A replacement tradeskill window
 ## Author: lilsparky
