@@ -1253,7 +1253,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 				SetTradeSkillInvSlotFilter(i,1,1)
 
 				local numSkills = GetNumTradeSkills()
-				for s = 1, numSkills() do
+				for s = 1, numSkills do
 					local recipeLink = GetTradeSkillRecipeLink(s)
 
 					if recipeLink then
