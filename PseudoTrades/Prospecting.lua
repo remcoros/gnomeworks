@@ -158,6 +158,67 @@ do
 			[52190] = 0.08, --Inferno Ruby
 			[52191] = 0.08, --Ocean Sapphire
 		},
+		[72092] = { -- Ghost Iron Ore
+			[90407] = 0.8, --Sparkling Shard
+			[76136] = 0.25, --Pandarian Garnet
+			[76137] = 0.25, --Alexandrite
+			[76133] = 0.25, --Lapis Lazuli
+			[76135] = 0.25, --Roguestone
+			[76134] = 0.25, --Sunstone
+			[76130] = 0.25, --Tiger Opal
+			[76131] = 0.05, --Primordial Ruby
+			[76138] = 0.05, --River's Heart
+			[76142] = 0.05, --Sun's Radiance
+			[76140] = 0.05, --Vermilion Onyx
+			[76139] = 0.05, --Wild Jade
+			[76141] = 0.05, --Imperial Amethyst
+		},		
+		[72093] = { -- Kyparite
+			[90407] = 1.0, --Sparkling Shard
+			[76136] = 0.3, --Pandarian Garnet
+			[76137] = 0.3, --Alexandrite
+			[76133] = 0.3, --Lapis Lazuli
+			[76135] = 0.3, --Roguestone
+			[76134] = 0.3, --Sunstone
+			[76130] = 0.3, --Tiger Opal
+			[76131] = 0.10, --Primordial Ruby
+			[76138] = 0.10, --River's Heart
+			[76142] = 0.10, --Sun's Radiance
+			[76140] = 0.10, --Vermilion Onyx
+			[76139] = 0.10, --Wild Jade
+			[76141] = 0.10, --Imperial Amethyst
+		},		
+		-- Note: WoWHead data pretty new yet, this is by far NOT correct!
+		[72103] = { -- White Trillium Ore
+			[90407] = 1.0, --Sparkling Shard
+			[76136] = 0.3, --Pandarian Garnet
+			[76137] = 0.1, --Alexandrite
+			[76133] = 0.1, --Lapis Lazuli
+			[76135] = 0.1, --Roguestone
+			[76134] = 0.1, --Sunstone
+			[76130] = 0.1, --Tiger Opal
+			[76131] = 0.3, --Primordial Ruby
+			[76138] = 0.3, --River's Heart
+			[76142] = 0.3, --Sun's Radiance
+			[76140] = 0.3, --Vermilion Onyx
+			[76139] = 0.1, --Wild Jade
+			[76141] = 0.3, --Imperial Amethyst
+		},		
+		[72094] = { -- Black Trillium Ore
+			[90407] = 1.0, --Sparkling Shard
+			[76136] = 0.3, --Pandarian Garnet
+			[76137] = 0.1, --Alexandrite
+			[76133] = 0.1, --Lapis Lazuli
+			[76135] = 0.1, --Roguestone
+			[76134] = 0.1, --Sunstone
+			[76130] = 0.1, --Tiger Opal
+			[76131] = 0.3, --Primordial Ruby
+			[76138] = 0.3, --River's Heart
+			[76142] = 0.3, --Sun's Radiance
+			[76140] = 0.3, --Vermilion Onyx
+			[76139] = 0.1, --Wild Jade
+			[76141] = 0.3, --Imperial Amethyst
+		}
 	}
 
 
@@ -166,6 +227,10 @@ do
 	local prospectingReagents = {}
 
 	local prospectingLevels = {
+		[72094] = 525, -- Black Trillium Ore
+		[72103] = 525, -- White Trillium Ore
+		[72093] = 525, -- Kyparite
+		[72092] = 525, -- Ghost Iron Ore
 		[52183] = 500, --Pyrite Ore
 		[52185] = 475, --Elementium Ore
 		[53038] = 425, --Obsidium Ore
