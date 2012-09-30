@@ -782,26 +782,8 @@ DebugSpam("SCAN BUSY!")
 	-- Unregsiter all frames from reacitng to update events since we're likely to generate a number of them in the scan
 		UnregisterUpdateEvents()
 
-		local numSkills = GetNumTradeSkills()
-		for i = 1, numSkills do
-			local skillName, skillType, _, isExpanded = GetTradeSkillInfo(i)
-
-			if skillType == "header" or skillType == "subheader" then
-				if not isExpanded then
-					ExpandTradeSkillSubClass(i)
-				end
-
-			end
-		end
-
 		local tradeName, rank, maxRank = GetTradeSkillLine()
-
-
-DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." "..numSkills.." recipes")
-
-
-
-
+        DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil"))
 
 		if not data.skillDB[key] then
 			data.skillDB[key] = { difficulty = {}, recipeID = {}, cooldown = {}}
@@ -838,7 +820,6 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 			self:RecipeGroupClearEntries(mainGroup)
 		end
 
-
 		if GetTradeSkillInvSlots() then
 			slotGroup = self:RecipeGroupNew(player,tradeID,"By Slot")
 
@@ -848,14 +829,12 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 			self:RecipeGroupClearEntries(slotGroup)
 		end
 
-
 		local flatGroup = self:RecipeGroupNew(player,tradeID,"Flat")
 
 		flatGroup.locked = true
 		flatGroup.autoGroup = true
 
 		self:RecipeGroupClearEntries(flatGroup)
-
 
 		if not self.data.knownSpells[player] then
 			self.data.knownSpells[player] = {}
@@ -865,19 +844,16 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 			self.data.knownItems[player] = {}
 		end
 
-
 		local knownSpells = self.data.knownSpells[player]
 
 		local knownItems = self.data.knownItems[player]
 
-
 		local groupList = {}
 
-
-
 		local numHeaders = 0
-
-		for i = 1, numSkills, 1 do
+		local numSkills = GetNumTradeSkills()
+        local i=1
+		repeat
 			local localNil
 
 			repeat
@@ -887,9 +863,12 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 				localNil = nil
 
-
 				if skillName then
 					if skillType == "header" or skillType == "subheader" then
+					    if not isExpanded then
+					        ExpandTradeSkillSubClass(i)
+					        numSkills = GetNumTradeSkills()
+					    end
 						numHeaders = numHeaders + 1
 
 						local groupName
@@ -902,14 +881,9 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 							groupName = skillName
 						end
 
---						currentGroup = self:RecipeGroupNew(player, tradeID, "By Category", groupName)
---						currentGroup.autoGroup = true
-
---						self:RecipeGroupAddSubGroup(mainGroup, currentGroup, i, true)
 					else
 						local recipeLink = GetTradeSkillRecipeLink(i)
 						local recipeID = GetIDFromLink(recipeLink)
-
 
 						if not recipeID then
 							gotNil = true
@@ -917,20 +891,9 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 							break
 						end
 
-
 						GnomeWorks:RecipeGroupAddRecipe(flatGroup, recipeID, i, true)
 
 						knownSpells[recipeID] = true
-
-
-
-						if currentGroup then
---							GnomeWorks:RecipeGroupAddRecipe(currentGroup, recipeID, i, true)
-						else
---							GnomeWorks:RecipeGroupAddRecipe(mainGroup, recipeID, i, true)
-						end
-
-
 
 						local cd = GetTradeSkillCooldown(i)
 
@@ -939,11 +902,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 						if cd then
 							cooldown[i] = cd + time()
-
---							skillDBString = skillDBString.." cd=" .. cd + time()
--- TODO: SaveCooldown info
 						end
-
 
 						skillIndexLookup[recipeID] = i
 
@@ -962,10 +921,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 								break
 							end
 
-
 							local itemID, numMade = -recipeID, 1				-- itemID = RecipeID, numMade = 1 for enchants/item enhancements
-
-
 
 							if GetItemInfo(itemLink) then
 								itemID = GetIDFromLink(itemLink)
@@ -979,19 +935,16 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 								GnomeWorks:AddToItemCache(itemID, recipeID, numMade)					-- add a cross reference for the source of particular items
 							end
 
-
-
-
 							local reagentData = {}
 
-							for j=1, GetTradeSkillNumReagents(i), 1 do
+                            local numReagents = GetTradeSkillNumReagents(i)
+							for j=1, numReagents, 1 do
 								local reagentName, _, numNeeded = GetTradeSkillReagentInfo(i,j)
 
 								local reagentID = 0
 
 								if reagentName then
 									local reagentLink = GetTradeSkillReagentItemLink(i,j)
-
 									reagentID = GetIDFromLink(reagentLink)
 								else
 									localNil = true
@@ -1002,7 +955,6 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 								reagentData[reagentID] = numNeeded
 
 								self:AddToReagentCache(reagentID, recipeID, numNeeded)
---								self:ItemDataAddUsedInRecipe(reagentID, recipeID)				-- add a cross reference for where a particular item is used
 							end
 
 							reagents[recipeID] = reagentData
@@ -1032,26 +984,21 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 				recipeIsCached[recipeID] = nil
 				results[recipeID] = nil
 			end
-		end
 
-
-
+			i = i+1
+		until i > numSkills
 
 	DebugSpam("Scan Complete",(tradeName or "nil"))
-
 
 		if mainGroup then
 			self:ScanCategoryGroups(mainGroup)
 		end
 
-
 		if slotGroup then
 			self:ScanSlotGroups(slotGroup)
 		end
 
-
 		local scanTimeEnd = GetTime()
-
 
 		if self.data.craftabilityData[self.player] then
 			for inv, data in pairs(self.data.craftabilityData[self.player]) do
@@ -1059,29 +1006,16 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 			end
 		end
 
-
 		self:InventoryScan()
 
-
-
--- re-regsiter the update events again now that we're done scanning
 		RegisterUpdateEvents()
-
-
---		self:RecipeGroupConstructDBString(mainGroup)
---		self:RecipeGroupConstructDBString(flatGroup)
---		self:RecipeGroupConstructDBString(slotGroup)
 
 		self.scanInProgress = false
 
-
 		if numHeaders > 0 and not gotNil then
 			dataScanned[key] = true
---print(key, "data scanned")
-
 			self:AddTrainableSkills(player, tradeID)
 		else
---print(key, "not scanned")
 			self:ScheduleTimer("ScanTrade",2)
 		end
 
@@ -1089,12 +1023,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 			GnomeWorks:warning("trade skill scan took", scanTimeEnd - scanTimeStart,"seconds")
 		end
 
-
---		self:ScheduleTimer("UpdateMainWindow",.1)
 		self:SendMessageDispatch("TradeScanComplete")
---		self:SendMessageDispatch("GnomeWorksDetailsChanged")
-
-
 
 		return skillData, player, tradeID
 	end
@@ -1160,10 +1089,10 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 			self:RecipeGroupClearEntries(mainGroup)
 
-			for i = 1, #TradeSkillSlots do
+			for i=1,#TradeSkillSlots do
 				local groupName
 				local slotName = TradeSkillSlots[i]
-				local subslots = { GetTradeSkillSubCategories(i) }
+                local subslots = { GetTradeSkillSubCategories(i) }
 
 				local invSlot
 
@@ -1171,55 +1100,58 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 					DebugSpam("Skipping nil (probably sub-slot)")
 				else
 
-					if groupList[slotName] then
-						groupList[slotName] = groupList[slotName] + 1
-						groupName = slotName.." "..groupList[slotName]
-					else
-						groupList[slotName] = 1
-						groupName = slotName
-					end
+                    if groupList[slotName] then
+                        groupList[slotName] = groupList[slotName]+1
+                        groupName = slotName.." "..groupList[slotName]
+                    else
+                        groupList[slotName] = 1
+                        groupName = slotName
+                    end
 
-					local currentGroup = self:RecipeGroupNew(self.player, self.tradeID, "By Category", groupName)
+                    local currentGroup = self:RecipeGroupNew(self.player, self.tradeID, "By Category", groupName)
 
-					SetTradeSkillCategoryFilter(i, 0)
+                    SetTradeSkillCategoryFilter(i, 0)
 
-					local numSkills = GetNumTradeSkills()
-					for s = 1, numSkills do
-						local recipeLink = GetTradeSkillRecipeLink(s)
+                    local numSkills = GetNumTradeSkills()
+                    for s=1,numSkills do
+                        local recipeLink = GetTradeSkillRecipeLink(s)
 
-						if recipeLink then
-							local recipeID = GetIDFromLink(recipeLink)
-							if skillIndexLookup[recipeID] then
-								self:RecipeGroupAddRecipe(currentGroup, recipeID, skillIndexLookup[recipeID], true)
-							end
-						end
-					end
+                        if recipeLink then
+                            local recipeID = GetIDFromLink(recipeLink)
+                            if skillIndexLookup[recipeID] then
+                                self:RecipeGroupAddRecipe(currentGroup, recipeID, skillIndexLookup[recipeID], true)
+                            end
+                        end
 
-					for j, slot in pairs(subslots) do
-						DebugSpam("Subslot:",slot)
-						SetTradeSkillCategoryFilter(i, j)
+                    end
 
-						local numSkills = GetNumTradeSkills()
-						for s = 1, numSkills do
-							local recipeLink = GetTradeSkillRecipeLink(s)
+                    for j,slot in pairs(subslots) do
+                        DebugSpam("Subslot:",slot)
+                        SetTradeSkillCategoryFilter(i, j)
 
-							if recipeLink then
-								local recipeID = GetIDFromLink(recipeLink)
+                        local numSkills = GetNumTradeSkills()
+                        for s=1,numSkills do
+                            local recipeLink = GetTradeSkillRecipeLink(s)
+
+                            if recipeLink then
+                                local recipeID = GetIDFromLink(recipeLink)
 --DebugSpam("adding "..(recipeLink or "nil").." to "..groupName)
 --print(skillIndexLookup[recipeID])
-								if skillIndexLookup[recipeID] then
-									self:RecipeGroupAddRecipe(currentGroup, recipeID, skillIndexLookup[recipeID], true)
-								end
-							end
-						end
-					end
+                                if skillIndexLookup[recipeID] then
+                                    self:RecipeGroupAddRecipe(currentGroup, recipeID, skillIndexLookup[recipeID], true)
+                                end
+                            end
+                        end
+                    end
 
-					self:RecipeGroupAddSubGroup(mainGroup, currentGroup, i + 1000, true)
-				end
-			end
+                    self:RecipeGroupAddSubGroup(mainGroup, currentGroup, i+1000, true)
+                end
+            end
 
-			SetTradeSkillCategoryFilter(0, 0)
-		end
+            SetTradeSkillCategoryFilter(0, 0)
+        end
+
+--		self:RegisterEvent("TRADE_SKILL_UPDATE")
 	end
 
 
@@ -1234,7 +1166,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 			self:RecipeGroupClearEntries(mainGroup)
 
-			for i = 1, #TradeSkillSlots do
+			for i=1,#TradeSkillSlots do
 				local groupName
 				local slotName = TradeSkillSlots[i]
 
@@ -1252,8 +1184,8 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 				SetTradeSkillInvSlotFilter(i,1,1)
 
-				local numSkills = GetNumTradeSkills()
-				for s = 1, numSkills do
+                local numSkills = GetNumTradeSkills()
+				for s=1,numSkills do
 					local recipeLink = GetTradeSkillRecipeLink(s)
 
 					if recipeLink then
@@ -1263,6 +1195,7 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 							self:RecipeGroupAddRecipe(currentGroup, recipeID, skillIndexLookup[recipeID], true)
 						end
 					end
+
 				end
 
 				self:RecipeGroupAddSubGroup(mainGroup, currentGroup, i+1000, true)
@@ -1279,48 +1212,45 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 		if not tradeID and not IsTradeSkillLinked() then
 			local skill, rank, maxRank = self:GetTradeSkillLine()
 
-			local skillUps = self.data.skillUpRanks[tradeID]
-			if skillUps then
-				if skillUps > maxRank then
-					maxRank = math.ceil(skillUps / 75) * 75
+			if self.data.skillUpRanks[tradeID or self.tradeID] then
+				if self.data.skillUpRanks[tradeID or self.tradeID] > maxRank then
+					maxRank = math.ceil(self.data.skillUpRanks[tradeID or self.tradeID]/75)*75
 				end
 			end
-
-			return rank, maxRank, self.data.skillUpRanks[self.tradeID]
+			return rank, maxRank, self.data.skillUpRanks[tradeID or self.tradeID]
 		end
 
 		tradeID = tradeID or self.tradeID
 		player = player or self.player
 
+
 		local link = (self.data.playerData[player] and self.data.playerData[player].links and self.data.playerData[player].links[tradeID])
 
 		if not link then
 			link = linkDB[player] and linkDB[player][tradeID]
-
-			if not link then
-				return 0, 0
-			end
 		end
 
-		local rank, maxRank = string.match(link, "trade:%d+:(%d+):(%d+)")
+		if link then
+			local rank, maxRank = string.match(link,"trade:%d+:(%d+):(%d+)")
 
-		rank = tonumber(rank)
-		maxRank = tonumber(maxRank)
+			rank = tonumber(rank)
+			maxRank = tonumber(maxRank)
 
-		local skillUps = self.data.skillUpRanks[tradeID]
-		if skillUps then
-			if skillUps > maxRank then
-				maxRank = math.ceil(skillUps / 75) * 75
+			if self.data.skillUpRanks[tradeID or self.tradeID] then
+				if self.data.skillUpRanks[tradeID or self.tradeID] > maxRank then
+					maxRank = math.ceil(self.data.skillUpRanks[tradeID or self.tradeID]/75)*75
+				end
 			end
+			return rank, maxRank, self.data.skillUpRanks[tradeID or self.tradeID]
 		end
 
-		return rank, maxRank, self.data.skillUpRanks[tradeID]
+		return 0, 0
 	end
 
 
 	function GnomeWorks:GetTradeSkillRank(player, tradeID)
 		if player == "Guild Recipes" then
-			return 525, 525
+			return 525, 525, 525, 0
 		end
 
 		tradeID = tradeID or self.tradeID
@@ -1328,27 +1258,30 @@ DebugSpam("Scanning Trade "..(tradeName or "nil")..":"..(tradeID or "nil").." ".
 
 		local data = self.data.playerData[player]
 
-		if not data then
+		if data then
+			if not data.rank then
+				return 0,0,0,0
+			end
+
+			local rank = data.rank[tradeID] or 1
+			local maxRank = data.maxRank[tradeID] or 75
+			local bonus = data.bonus[tradeID] or 0
+
+			local skillUps = self.data.skillUpRanks[tradeID]
+
+			if skillUps then
+				if skillUps > maxRank then
+					maxRank = math.ceil(skillUps/75)*75
+				end
+			end
+			return rank, maxRank, skillUps, bonus
+		else
 			return self:GetTradeSkillRankNonPlayer(player, tradeID)
 		end
 
-		if not data.rank then
-			return 0, 0
-		end
-
-		local rank = data.rank[tradeID] or 1
-		local maxRank = data.maxRank[tradeID] or 75
-		local bonus = data.bonus[tradeID] or 0
-
-		local skillUps = self.data.skillUpRanks[tradeID]
-		if skillUps then
-			if skillUps > maxRank then
-				maxRank = math.ceil(skillUps / 75) * 75
-			end
-		end
-
-		return rank, maxRank, skillUps, bonus
+		return 0, 0, 0, 0
 	end
+
 
 
 	function GnomeWorks:GetSkillColor(index)

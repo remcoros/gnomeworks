@@ -15,6 +15,7 @@ do
 	   spells = {
 		11479 , -- Transmute: Iron to Gold
 		11480 , -- Transmute: Mithril to Truesilver
+		60350 , -- Transmute: Titanium
 
 		17559 , -- Transmute: Air to Fire
 		17560 , -- Transmute: Fire to Earth
@@ -34,7 +35,6 @@ do
 		28582 , -- Transmute: Primal Mana to Fire
 		28583 , -- Transmute: Primal Fire to Mana
 		28584 , -- Transmute: Primal Life to Earth
-
 		53771 , -- Transmute: Eternal Life to Shadow
 		53773 , -- Transmute: Eternal Life to Fire
 		53774 , -- Transmute: Eternal Fire to Water

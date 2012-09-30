@@ -496,22 +496,22 @@ do
 
 		if entry.subGroup then
 			local count = entry.count
-			local results, reagents = GnomeWorks:GetRecipeData(entry.recipeID, player)
+			local results,reagents = GnomeWorks:GetRecipeData(entry.recipeID,player)
 
 			for itemID, numNeeded in pairs(reagents) do
-				dataTable[itemID] = (dataTable[itemID] or 0) + (numNeeded * count - (entry.reserved[itemID] or 0))
+				dataTable[itemID] = (dataTable[itemID] or 0) + (numNeeded*count - (entry.reserved[itemID] or 0))
 			end
 
 			local shoppingQueueData = GnomeWorks.data.shoppingQueueData[player]
 
 
 --			for k,reagent in ipairs(entry.subGroup.entries) do
-			for k = #entry.subGroup.entries, 1, -1 do
+			for k=#entry.subGroup.entries,1,-1 do
 				local reagent = entry.subGroup.entries[k]
 
 				local itemID = reagent.itemID
 
-				if count > 0 then
+				if count>0 then
 					if reagent.command == "create" then
 						CalculateTotalReagents(player, reagent, dataTable)
 					end
@@ -582,37 +582,58 @@ do
 		if entry.command == "create" then
 			local count = entry.count
 			local factor = GnomeWorksDB.skillUps[entry.recipeID] or 1
-			local results, reagents, tradeID = GnomeWorks:GetRecipeData(entry.recipeID, player)
+
+			local results,reagents,tradeID = GnomeWorks:GetRecipeData(entry.recipeID,player)
+
 			local orange, yellow, green, gray = GetSkillLevels(entry.recipeID)
+
 			local rank, maxRank, estimatedRank, bonus = GnomeWorks:GetTradeSkillRank(player, tradeID)
 
-			if not tradeTable[tradeID] then
-				tradeTable[tradeID] = rank - (bonus or 0)
-			end
-
-			local effectiveRank = tradeTable[tradeID]
-
-			if effectiveRank >= maxRank then
+			if rank >= maxRank then
 				return
 			end
 
-			if effectiveRank + count * factor < yellow then
-				tradeTable[tradeID] = tradeTable[tradeID] + count * factor
-			elseif effectiveRank < gray then
-				while count > 0 do
+
+			local effectiveRank = rank - bonus
+
+			if not tradeTable[tradeID] then
+				tradeTable[tradeID] = rank
+			end
+
+
+			if effectiveRank + count*factor < yellow then
+				tradeTable[tradeID] = tradeTable[tradeID] + count*factor
+			elseif effectiveRank >= gray then
+				-- nothing
+			else
+				while count>0 do
+					local rank = tradeTable[tradeID] - bonus
+
 					if effectiveRank >= gray then
-						count = 1
+						count = 0
 					elseif effectiveRank < yellow then
-						effectiveRank = effectiveRank + factor
+						rank = rank + factor
+						count = count - 1
+					elseif effectiveRank >= yellow and effectiveRank < green then
+						local chance =  1-(effectiveRank-yellow+1)/(effectiveRank-yellow+1)*.5
+						count = count - (1/chance)
+						if count >= 0 then
+							rank = rank + 1
+						end
 					else
-						effectiveRank = effectiveRank + (1 - (math.floor(effectiveRank) - yellow + 1) / (gray - yellow + 1))
+						local chance = (1-(effectiveRank-green+1)/(effectiveRank-green+1))*.5
+						count = count - (1/chance)
+						if count >= 0 then
+							rank = rank + 1
+						end
 					end
-					count = count - 1
+
+					tradeTable[tradeID] = rank
 				end
-				tradeTable[tradeID] = math.floor(effectiveRank)
 			end
 		end
 	end
+
 
 
 	local sourceScore = {
@@ -1475,7 +1496,7 @@ local start = GetTime()
 
 						if not GnomeWorks.MainWindow:IsVisible() then
 							GnomeWorks.hideMainWindow = true
-						end
+             			end
 
 						local result = pseudoTrade.DoTradeSkill(entry.recipeID, entry.count)
 

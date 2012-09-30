@@ -1,4 +1,4 @@
-
+local _
 
 
 
@@ -1195,8 +1195,7 @@ do
 					local itemIcon = GetItemIcon(itemID)
 
 					if itemID < 0 then
-						local _
-						_, _, itemIcon = GetSpellInfo(-itemID)
+						_,_,itemIcon = GetSpellInfo(-itemID)
 					end
 
 					detailIconList[resultCount]:SetNormalTexture(itemIcon)
@@ -1246,7 +1245,6 @@ do
 
 			if not isPseudoTrade and results then
 				local rank, maxRank, estimatedRank = GnomeWorks:GetTradeSkillRank()
-				rank = estimatedRank or rank
 
 				local orange, yellow, green, gray = GetSkillLevels(recipeID)
 
@@ -1254,12 +1252,12 @@ do
 
 				detailFrame.levelsBar.recipeID = recipeID
 
-				detailFrame.levelsBar.green:SetMinMaxValues(0,maxRank)
-				detailFrame.levelsBar.yellow:SetMinMaxValues(0,maxRank)
-				detailFrame.levelsBar.orange:SetMinMaxValues(0,maxRank)
-				detailFrame.levelsBar.red:SetMinMaxValues(0,maxRank)
+				detailFrame.levelsBar.green:SetMinMaxValues(1,maxRank)
+				detailFrame.levelsBar.yellow:SetMinMaxValues(1,maxRank)
+				detailFrame.levelsBar.orange:SetMinMaxValues(1,maxRank)
+				detailFrame.levelsBar.red:SetMinMaxValues(1,maxRank)
 
-				detailFrame.levelsBar.current:SetMinMaxValues(0,maxRank)
+				detailFrame.levelsBar.current:SetMinMaxValues(1,maxRank)
 
 
 				detailFrame.levelsBar.green:SetValue(gray)
@@ -1267,7 +1265,11 @@ do
 				detailFrame.levelsBar.orange:SetValue(yellow)
 				detailFrame.levelsBar.red:SetValue(orange)
 
-				detailFrame.levelsBar.current:SetValue(rank)
+				if estimatedRank then
+					detailFrame.levelsBar.current:SetValue(estimatedRank)
+				else
+					detailFrame.levelsBar.current:SetValue(rank)
+				end
 
 				detailFrame.levelsBar.bg:Show()
 			else

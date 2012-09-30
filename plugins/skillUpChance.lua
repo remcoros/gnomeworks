@@ -27,9 +27,9 @@ do
 		local function GetSkillLevels(id)
 			local gray = RecipeSkillLevels[3][recipeID] or 1
 			local yellow = RecipeSkillLevels[2][recipeID] or 1
-			local orange = RecipeSkillLevels[1][recipeID] or 1
+			local orange = GRecipeSkillLevels[1][recipeID] or 1
 
-			local green = math.ceil((gray + yellow)/2)
+			local green = (gray + yellow)/2
 
 			return orange, yellow, green, gray
 		end
@@ -55,12 +55,12 @@ do
 		local function GetSkillUpChance(id, rank)
 			local one, zero = RecipeSkillLevels[2][id] or 1, RecipeSkillLevels[3][id] or 1
 
-			if rank < one then
+			if rank <= one then
 				return 1
 			elseif rank >= zero then
 				return 0
 			else
-				return 1 - (rank - one + 1) / (zero - one + 1)
+				return 1 - (rank - one) / (zero - one)
 			end
 		end
 
@@ -152,15 +152,15 @@ do
 			end,
 
 			enabled = function()
+				local realRank,maxRank,estimatedRank,bonus = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, GnomeWorks.tradeID)
+				rank = (estimatedRank or realRank) - (bonus or 0)
+
 				if not plugin.enabled then
 					return
 				end
 
 				if scrollFrame:IsVisible() then
-					local realRank, maxRank, estimatedRank, bonus = GnomeWorks:GetTradeSkillRank(GnomeWorks.player, GnomeWorks.tradeID)
-					rank = (estimatedRank or realRank) - (bonus or 0)
-
-					if rank > 0 and realRank < maxRank then
+					if rank and maxRank and realRank < maxRank then
 						if not GnomeWorks.data.pseudoTradeData[GnomeWorks.tradeID] then
 							return true
 						end

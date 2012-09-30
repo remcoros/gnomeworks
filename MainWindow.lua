@@ -1,4 +1,4 @@
-
+local _
 
 
 
@@ -13,7 +13,7 @@ do
 	-- filter the text of the skill button
 	-- only set up for english clients at the moment
 
-	local controlFrame
+    local controlFrame
 
 	local GLYPH_MATCH_STRING	= "(%w+) Glyph"
 	local GLYPH_REPLACEMENT_STRING	= "Glyph of"
@@ -793,11 +793,12 @@ do
 						if entry.subGroup then
 							cr,cg,cb = 1,.82,0
 						else
-							local _
-							_, _, entry.skillColor = GnomeWorks:GetRecipeDifficulty(entry.recipeID)
+--							if not entry.skillColor then
+							_,_,entry.skillColor = GnomeWorks:GetRecipeDifficulty(entry.recipeID)
+--							end
 
 							if entry.skillColor then
-								cr, cg, cb = entry.skillColor.r, entry.skillColor.g, entry.skillColor.b
+								cr,cg,cb = entry.skillColor.r, entry.skillColor.g, entry.skillColor.b
 							end
 						end
 
@@ -1476,11 +1477,11 @@ do
 
 				if not entry.itemColor then
 
-					local _, itemRarity, reqLevel
+					local _,itemRarity,reqLevel
 					local itemColor
 
 					if itemLink then
-						_, _, itemRarity, _, reqLevel = GetItemInfo(itemLink)
+						_,_,itemRarity,_,reqLevel = GetItemInfo(itemLink)
 
 						itemColor = itemQualityColor[itemRarity]
 
@@ -1682,8 +1683,15 @@ do
 		self.levelStatusBar:SetMinMaxValues(0,maxRank)
 		self.levelStatusBar:SetValue(rank)
 		self.levelStatusBar.estimatedLevel:SetMinMaxValues(0,maxRank)
-		self.levelStatusBar.estimatedLevel:SetValue(estimatedSkillUp or rank)
+
 --		self.levelStatusBar:Show()
+
+
+		if estimatedSkillUp then
+			self.levelStatusBar.estimatedLevel:SetValue(estimatedSkillUp)
+		else
+			self.levelStatusBar.estimatedLevel:SetValue(rank)
+		end
 
 		self.playerNameFrame:SetFormattedText("%s - %s", self.player or "??", self:GetTradeName(self.tradeID) or "??")
 	end
@@ -1698,14 +1706,14 @@ do
 
 	function GnomeWorks:TRADE_SKILL_UPDATE(...)
 --print("MAIN WINDOW TRADE_SKILL_UPDATE")
-		local _, _, _, _, _, _, isTradeSkill, _, _ = UnitCastingInfo('player')
-		if not isTradeSkill then
-			if self.updateTimer then
-				self:CancelTimer(self.updateTimer, true)
-			end
+        local _, _, _, _, _, _, isTradeSkill, _, _ = UnitCastingInfo('player')
+        if not isTradeSkill then
+            if self.updateTimer then
+                self:CancelTimer(self.updateTimer, true)
+            end
 
-			self.updateTimer = self:ScheduleTimer("DoTradeSkillUpdate", 0.1)
-		end
+            self.updateTimer = self:ScheduleTimer("DoTradeSkillUpdate",.1)
+        end
 	end
 
 
@@ -2602,7 +2610,7 @@ do
 			local minValue, maxValue = frame:GetMinMaxValues()
 			local level = frame.level:GetValue()
 
-			if maxValue > 0 and value / maxValue > 0.5 then
+			if value/maxValue > .5 then
 				levelText:SetJustifyH("LEFT")
 			else
 				levelText:SetJustifyH("RIGHT")
@@ -2619,7 +2627,7 @@ do
 		level:HookScript("OnValueChanged", function(frame, value)
 			local minValue, maxValue = frame:GetMinMaxValues()
 
-			if maxValue > 0 and value / maxValue > 0.5 then
+			if value/maxValue > .5 then
 				levelText:SetJustifyH("LEFT")
 			else
 				levelText:SetJustifyH("RIGHT")

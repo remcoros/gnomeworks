@@ -3,7 +3,7 @@
 -- ARL support
 
 do
-	local plugin
+    local plugin
 	local function Initialize()
 
 		LoadAddOn("AckisRecipeList")
@@ -31,19 +31,19 @@ do
 				}
 
 --[[
-	* 1 = Alliance faction
-	* 2 = Horde faction
-	* 3 = Trainer
-	* 4 = Vendor
-	* 5 = Instance
-	* 6 = Raid
-	* 7 = Seasonal
-	* 8 = Quest
-	* 9 = PVP
-	* 10 = World Drop
-	* 11 = Mob drop
-	* 12 = Discovery
-	* 13-20 = Reserved for future use
+    * 1 = Alliance faction
+    * 2 = Horde faction
+    * 3 = Trainer
+    * 4 = Vendor
+    * 5 = Instance
+    * 6 = Raid
+    * 7 = Seasonal
+    * 8 = Quest
+    * 9 = PVP
+    * 10 = World Drop
+    * 11 = Mob drop
+    * 12 = Discovery
+    * 13-20 = Reserved for future use
 ]]
 
 				local sourceFlags = {

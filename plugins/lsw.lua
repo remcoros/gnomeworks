@@ -285,6 +285,8 @@ do
 
 			local total = 0
 
+			local pad = ""
+
 			local residualMaterials = {}
 
 			if not recipeID and itemID > 0 then
