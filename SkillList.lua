@@ -384,7 +384,7 @@ DebugSpam("parsing skill list")
 			end
 
 			playerData.rank[id] = 525
-			playerData.maxRank[id] = 525
+			playerData.maxRank[id] = 600
 			playerData.bonus[id] = 0
 		end
 DebugSpam("done parsing skill list")
